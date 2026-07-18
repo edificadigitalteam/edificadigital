@@ -5,9 +5,9 @@ Thanks for helping build this system! This guide covers the basics.
 ## Setup
 
 1. Clone the repo and navigate to `frontend/`
-2. `npm install`
+2. `pnpm install`
 3. Copy `.env.example` to `.env.local` and add your Supabase credentials
-4. `npm run dev`
+4. `pnpm dev`
 
 ## Code Guidelines
 

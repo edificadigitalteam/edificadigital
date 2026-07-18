@@ -70,13 +70,13 @@ git clone https://github.com/[org]/donation-traceability-system
 cd donation-traceability-system/frontend
 
 # 2. Install
-npm install
+pnpm install
 
 # 3. Create .env.local (see .env.example)
 # Add your Supabase credentials
 
 # 4. Run
-npm run dev
+pnpm dev
 ```
 
 Visit `http://localhost:5173`
