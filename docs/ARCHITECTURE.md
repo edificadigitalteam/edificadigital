@@ -134,14 +134,16 @@ ImpactEvent (campaign)
 ```
 GitHub Repo (main branch)
     ↓ (auto-webhook)
-Vercel (builds frontend, generates preview URL)
+Vercel (builds frontend)
     ↓
-Manual promotion required → Production domain
+Auto-promotes → edificadigital.vercel.app (default domain)
+    ↓ (manual `vercel alias set`, see ADR-001)
+Custom domain (production, public-facing)
     ↓
 React app talks to Supabase client via API keys
 ```
 
-**Production promotion is manual (see ADR-001):** pushes to `main` and PR branches auto-build a preview deployment, but nothing is promoted to the production domain (including any custom domain) automatically. Going live requires an explicit "Promote to Production" action in the Vercel dashboard or CLI.
+**Custom domain promotion is manual (see ADR-001):** pushes to `main` auto-build and auto-publish to the default `edificadigital.vercel.app` domain as usual. The custom domain is never auto-attached to Production — it only changes when someone manually runs `vercel alias set <deployment-url> yourdomain.com`.
 
 Environment variables flow:
 - `.env.local` (dev)

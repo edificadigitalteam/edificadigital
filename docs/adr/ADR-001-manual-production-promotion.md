@@ -1,4 +1,4 @@
-# ADR-001: Manual Production Promotion on Vercel
+# ADR-001: Manual Promotion for the Custom Domain Only
 
 **Status:** Accepted
 **Date:** [date]
@@ -6,30 +6,22 @@
 
 ## Context
 
-Prompt 2 (Vercel Setup) connects the `frontend` app to Vercel with Git integration on the `main` branch. Vercel's default behavior is to auto-promote every push to the production branch straight to the production domain (and any custom domain attached to it).
+Prompt 2 (Vercel Setup) connects the `frontend` app to Vercel with Git integration on the `main` branch. Vercel's default behavior is: every push to `main` auto-builds and auto-promotes to Production, which updates **every** domain currently attached as a Production domain — the default `edificadigital.vercel.app` and any custom domain alike, with no built-in distinction between them.
 
 ## Decision
 
-Pushes to `main` (and PR branches) still auto-build, producing a preview deployment URL for review. **No build is automatically promoted to the production domain.** Going live is a manual, explicit action:
-
-- Dashboard: open the desired deployment → **Promote to Production**
-- CLI: `vercel promote <deployment-url> --prod`
-
-This applies even after a custom domain is attached — the domain always points at whatever was last manually promoted, never at the newest build automatically.
-
-## Where this is configured
-
-`github.autoAlias: false` in `vercel.json` (Vercel's documented mechanism — see [Git configuration](https://vercel.com/docs/project-configuration/git-configuration)). This repo has two copies while Root Directory is unconfirmed:
-- `vercel.json` (repo root)
-- `frontend/vercel.json` (takes effect once Project Settings → Root Directory is set to `frontend`, per Prompt 2 step 3)
-
-Once Root Directory is confirmed as `frontend`, the root copy can be removed.
+- The default Vercel domain (`edificadigital.vercel.app` / `edificadigital-yangetzes-projects.vercel.app`) **keeps normal auto-deploy behavior** — every push to `main` publishes there automatically. No special configuration needed; this is Vercel's default.
+- The **custom domain** (once added) is never attached as an auto-tracking Production domain. It is only pointed at a deployment manually and explicitly, via:
+  ```
+  vercel alias set <deployment-url> yourdomain.com
+  ```
+  When adding the domain in the dashboard, skip/avoid any prompt that links it to auto-track Production or a Git branch — add it for DNS/TLS only, then alias it manually when ready to go live there.
 
 ## Consequences
 
-- Every merge to `main` is safe to build without risk of an unreviewed change going live.
-- Someone must remember to manually promote when a release is actually ready — add "Promote to Production" as an explicit step in the release checklist.
-- Preview URLs remain the fast feedback loop for reviewing PRs before merge.
+- `edificadigital.vercel.app` is always a live, current reflection of `main` — useful for the team to check builds without any manual step.
+- The custom (real, public-facing) domain only changes when someone deliberately runs `vercel alias set` — no risk of an unreviewed merge going live on the real domain.
+- Requires the Vercel CLI locally (`npm i -g vercel`, `vercel login`) to run the alias command; there's no dashboard-only equivalent as reliable as the CLI for this.
 
 ## Related
 
