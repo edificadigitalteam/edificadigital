@@ -108,4 +108,4 @@ What plan comes next after this one?
 
 **Version:** 1.0
 **Last Updated:** [date]
-**Maintained by:** Isaac Delgado + Claude
+**Maintained by:** Isaac Delgado, Yang (yangetze) + Claude

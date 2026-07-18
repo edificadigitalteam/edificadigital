@@ -7,6 +7,7 @@ This document defines the team structure, roles, and how AI agents (Claude) coll
 | Role | Responsibility | Mode |
 |------|---|---|
 | **Isaac Delgado** | Product Owner, Strategic Decisions, Project Lead | Human |
+| **Yang (yangetze)** | Product Owner, Strategic Decisions, Project Lead | Human |
 | **Claude (AI)** | Architecture, Code Structure, Documentation, TDD Framework | AI Agent |
 | **Developer(s)** | Implementation, Code Review, Deployment | Human (Future) |
 
@@ -143,6 +144,10 @@ Example:
 - `bugfix/[name]` — Bug fixes
 - `docs/[name]` — Documentation changes
 
+**Mandatory rules:**
+- **Never commit directly to `main`.** All changes go through a branch and a PR.
+- **Always branch from `main`** when creating a new branch (`git checkout main && git pull && git checkout -b [type]/[name]`), not from another feature branch.
+
 ### Pull Requests
 
 Every PR must include:
@@ -157,7 +162,7 @@ Every PR must include:
 
 1. Document the issue in GitHub Issues
 2. Tag @ai-agent (Claude) for technical analysis
-3. Tag @isaac (Isaac) for product/business decision
+3. Tag @isaac or @yangetze for product/business decision
 4. Discuss in issue comments
 5. Document decision in ADR
 
@@ -184,4 +189,4 @@ Every PR must include:
 
 **Version:** 1.0
 **Last Updated:** [date]
-**Maintained by:** Isaac Delgado, Claude (AI)
+**Maintained by:** Isaac Delgado, Yang (yangetze), Claude (AI)

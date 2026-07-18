@@ -33,7 +33,7 @@ Before submitting a PR:
 
 ## Pull Requests
 
-1. Create a feature branch: `git checkout -b feature/your-feature`
+1. **Never commit directly to `main`.** Always start a new branch, and always cut it from `main`: `git checkout main && git pull && git checkout -b feature/your-feature`
 2. Make changes
 3. Push and open a PR against `main`
 4. Describe what the PR does and link any related issues

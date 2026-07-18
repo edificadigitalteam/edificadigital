@@ -99,6 +99,6 @@ MIT
 
 ---
 
-**Prepared for:** Isaac Delgado
+**Prepared for:** Isaac Delgado, Yang (yangetze)
 **Version:** MVP Phase 1
 **Last updated:** [date]
