@@ -19,7 +19,11 @@ This applies even after a custom domain is attached — the domain always points
 
 ## Where this is configured
 
-Vercel Project Settings → Git (or Settings → Environments → Production, depending on dashboard version): disable automatic production promotion for the `main` branch while leaving preview builds enabled.
+`github.autoAlias: false` in `vercel.json` (Vercel's documented mechanism — see [Git configuration](https://vercel.com/docs/project-configuration/git-configuration)). This repo has two copies while Root Directory is unconfirmed:
+- `vercel.json` (repo root)
+- `frontend/vercel.json` (takes effect once Project Settings → Root Directory is set to `frontend`, per Prompt 2 step 3)
+
+Once Root Directory is confirmed as `frontend`, the root copy can be removed.
 
 ## Consequences
 
