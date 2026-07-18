@@ -8,22 +8,26 @@
 
 Prompt 2 (Vercel Setup) connects the `frontend` app to Vercel with Git integration on the `main` branch. Vercel's default behavior is: every push to `main` auto-builds and auto-promotes to Production, which updates **every** domain currently attached as a Production domain — the default `edificadigital.vercel.app` and any custom domain alike, with no built-in distinction between them.
 
+The production custom domain is `somosedificadigital.com`.
+
 ## Decision
 
 - The default Vercel domain (`edificadigital.vercel.app` / `edificadigital-yangetzes-projects.vercel.app`) **keeps normal auto-deploy behavior** — every push to `main` publishes there automatically. No special configuration needed; this is Vercel's default.
-- The **custom domain** (once added) is never attached as an auto-tracking Production domain. It is only pointed at a deployment manually and explicitly, via:
+- **`somosedificadigital.com`** is never attached as an auto-tracking Production domain. It only changes when someone deliberately runs the **"Promote to Custom Domain"** GitHub Action (`.github/workflows/promote-custom-domain.yml`), triggered manually from the Actions tab (`workflow_dispatch`, no automatic trigger). The workflow runs:
   ```
-  vercel alias set <deployment-url> yourdomain.com
+  vercel alias set edificadigital.vercel.app somosedificadigital.com
   ```
-  When adding the domain in the dashboard, skip/avoid any prompt that links it to auto-track Production or a Git branch — add it for DNS/TLS only, then alias it manually when ready to go live there.
+  which points the custom domain at whatever is currently live on the default domain, at the time you choose to run it.
+- Requires a `VERCEL_TOKEN` repository secret (Vercel dashboard → Settings → Tokens → Create Token → add as a GitHub Actions secret).
 
 ## Consequences
 
 - `edificadigital.vercel.app` is always a live, current reflection of `main` — useful for the team to check builds without any manual step.
-- The custom (real, public-facing) domain only changes when someone deliberately runs `vercel alias set` — no risk of an unreviewed merge going live on the real domain.
-- Requires the Vercel CLI locally (`npm i -g vercel`, `vercel login`) to run the alias command; there's no dashboard-only equivalent as reliable as the CLI for this.
+- `somosedificadigital.com` only changes when someone deliberately runs the workflow — no risk of an unreviewed merge going live on the real domain.
+- One-click promotion via GitHub Actions — no local Vercel CLI setup needed to promote.
 
 ## Related
 
 - `PROMPT_2_Vercel_Setup.md` (Phase 0 setup)
 - `docs/ARCHITECTURE.md` — Deployment section
+- `.github/workflows/promote-custom-domain.yml`

@@ -143,7 +143,7 @@ Custom domain (production, public-facing)
 React app talks to Supabase client via API keys
 ```
 
-**Custom domain promotion is manual (see ADR-001):** pushes to `main` auto-build and auto-publish to the default `edificadigital.vercel.app` domain as usual. The custom domain is never auto-attached to Production — it only changes when someone manually runs `vercel alias set <deployment-url> yourdomain.com`.
+**Custom domain promotion is manual (see ADR-001):** pushes to `main` auto-build and auto-publish to the default `edificadigital.vercel.app` domain as usual. The production custom domain, `somosedificadigital.com`, is never auto-attached to Production — it only changes when someone manually runs the "Promote to Custom Domain" GitHub Action (`.github/workflows/promote-custom-domain.yml`).
 
 Environment variables flow:
 - `.env.local` (dev)
