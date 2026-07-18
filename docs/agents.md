@@ -156,6 +156,12 @@ Every PR must include:
 - [ ] No linting errors
 - [ ] Meaningful description linking to issues
 
+### Deployment
+
+Merges to `main` auto-build and auto-publish to the default Vercel domain (`edificadigital.vercel.app`) — safe to check anytime, no manual step.
+
+Publishing to the real production domain (`somosedificadigital.com`) is **always manual**: run the **"Promote to Custom Domain"** GitHub Action from the Actions tab. See `docs/adr/ADR-001-manual-production-promotion.md` for the full policy.
+
 ## Escalation Path
 
 **Blocker or major decision needed?**
