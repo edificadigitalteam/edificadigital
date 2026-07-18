@@ -134,12 +134,14 @@ ImpactEvent (campaign)
 ```
 GitHub Repo (main branch)
     ↓ (auto-webhook)
-Vercel (builds frontend)
+Vercel (builds frontend, generates preview URL)
     ↓
-Deployment to Vercel CDN + env secrets
+Manual promotion required → Production domain
     ↓
 React app talks to Supabase client via API keys
 ```
+
+**Production promotion is manual (see ADR-001):** pushes to `main` and PR branches auto-build a preview deployment, but nothing is promoted to the production domain (including any custom domain) automatically. Going live requires an explicit "Promote to Production" action in the Vercel dashboard or CLI.
 
 Environment variables flow:
 - `.env.local` (dev)
