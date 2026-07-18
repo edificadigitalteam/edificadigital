@@ -17,6 +17,33 @@ Thanks for helping build this system! This guide covers the basics.
 - **Styling:** Tailwind CSS (utility-first)
 - **Hooks:** Custom hooks in `src/hooks/` (e.g., `useDonation`, `useAuth`)
 
+## Database Guidelines (MANDATORY)
+
+**All database artifacts MUST be in English:**
+- Table names: `actor`, `donation`, `impact_event` (snake_case)
+- Column names: `recorded_at`, `kit_name`, `quantity_generated` (snake_case)
+- Functions & procedures: English names only
+- Views & constraints: English names only
+- Comments & documentation: English
+
+Example:
+```sql
+CREATE TABLE actor (
+  id UUID PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL
+);
+```
+
+**NOT:**
+```sql
+CREATE TABLE actor (
+  id UUID PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  correo TEXT UNIQUE NOT NULL
+);
+```
+
 ## Commits
 
 - Use clear, present-tense messages: `"Add donation form"` not `"Added form"`

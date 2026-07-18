@@ -1,5 +1,23 @@
 # Database Schema Reference
 
+## 🔵 Naming Standard — ENGLISH ONLY
+
+**MANDATORY:** All database artifacts MUST be in English:
+- ✅ Table names: `actor`, `donation`, `impact_event`
+- ✅ Column names: `recorded_at`, `kit_name`, `quantity_generated`
+- ✅ Functions & procedures: `calculate_impact_summary()`
+- ✅ Views & constraints: `active_events`, `check_quantity_positive`
+- ✅ Comments & documentation: In English
+
+❌ **NOT allowed:**
+- No Spanish table names
+- No mixed languages (English + Spanish)
+- No abbreviated or unclear names
+
+**Why:** Database-level consistency across all environments, team clarity, and future scalability.
+
+---
+
 ## Tables Overview
 
 | Table | Purpose | Key Fields |
