@@ -1,38 +1,39 @@
-# ADR-001: Manual Promotion for the Custom Domain Only
+# ADR-001: Custom Domain Promotion — Status and History
 
-**Status:** Accepted
+**Status:** Superseded (manual-only approach abandoned; see below)
 **Date:** [date]
 **Deciders:** Isaac Delgado, Yang (yangetze)
 
-## Context
+## Current Behavior (as of this revision)
 
-Prompt 2 (Vercel Setup) connects the `frontend` app to Vercel with Git integration on the `main` branch. Vercel's default behavior is: every push to `main` auto-builds and auto-promotes to Production, which updates **every** domain currently attached as a Production domain — the default `edificadigital.vercel.app` and any custom domain alike, with no built-in distinction between them.
+Both `edificadigital.vercel.app` (default domain) and `somosedificadigital.com` / `www.somosedificadigital.com` (production custom domain) **auto-track Production** — every push to `main` publishes to all of them automatically. This is Vercel's default behavior, restored deliberately after the manual-only approach below caused a live outage.
 
-The production custom domain is `somosedificadigital.com`.
+The `.github/workflows/promote-custom-domain.yml` workflow still exists but currently only re-asserts this state (clears any `gitBranch` binding, re-aliases to the current production deployment) rather than providing true manual-only promotion.
 
-## Decision
+## Original Goal (abandoned)
 
-- The default Vercel domain (`edificadigital.vercel.app` / `edificadigital-yangetzes-projects.vercel.app`) **keeps normal auto-deploy behavior** — every push to `main` publishes there automatically. No special configuration needed; this is Vercel's default.
-- **`somosedificadigital.com`** is never attached as an auto-tracking Production domain. It only changes when someone deliberately runs the **"Promote to Custom Domain"** GitHub Action (`.github/workflows/promote-custom-domain.yml`), triggered manually from the Actions tab (`workflow_dispatch`, no automatic trigger). The workflow runs:
-  ```
-  vercel alias set edificadigital.vercel.app somosedificadigital.com
-  ```
-  which points the custom domain at whatever is currently live on the default domain, at the time you choose to run it.
-- Requires a `VERCEL_TOKEN` repository secret (Vercel dashboard → Settings → Tokens → Create Token → add as a GitHub Actions secret).
+The original intent was: default domain auto-publishes, but the real production domain (`somosedificadigital.com`) only updates when someone deliberately runs a promotion workflow — so an unreviewed merge could never go live on the public-facing domain automatically.
 
-## Consequences
+## What Was Tried and Why It Failed
 
-- `edificadigital.vercel.app` is always a live, current reflection of `main` — useful for the team to check builds without any manual step.
-- `somosedificadigital.com` only changes when someone deliberately runs the workflow — no risk of an unreviewed merge going live on the real domain.
-- One-click promotion via GitHub Actions — no local Vercel CLI setup needed to promote.
+1. **`vercel alias set` only, no domain-level lock.** Result: the custom domain silently auto-tracked every new Production deployment anyway — Vercel re-aliases any domain without an explicit `gitBranch` binding on every Production deploy, regardless of prior manual aliasing. A direct push to `main` went live on the real domain without anyone running the promotion workflow.
 
-## Bug found and fixed: domain was silently auto-tracking `main`
+2. **Bind `gitBranch` to a dummy branch name that doesn't exist.** Result: `git_branch_not_found` (HTTP 400) — Vercel validates the branch must actually exist in the connected repo.
 
-Shortly after setup, `somosedificadigital.com` was found live with content from a direct push to `main` that nobody had run the promotion workflow for. Root cause: once a domain is attached to a Vercel project without an explicit `gitBranch` binding, Vercel auto-aliases it to Production on every new Production deployment — regardless of how the domain was first pointed there. Running `vercel alias set` once does not "pin" the domain; it's a snapshot that Vercel's Git integration silently overwrites on the next push to `main`.
+3. **Bind `gitBranch` to a real but empty branch (`manual-domain-promotion-only`, created from `main`, never pushed to).** This appeared to work immediately after running the workflow (verified via API). However, after the *next* Production deployment happened on `main` (unrelated to this domain), `somosedificadigital.com` and its `www` variant **disappeared from the project's domain list entirely** — orphaned, not pinned. External visitors hit a Vercel-branded error page instead of the site. This was a live incident, not just a policy violation.
 
-**Fix:** the workflow now also `PATCH`es both `somosedificadigital.com` and `www.somosedificadigital.com` to bind `gitBranch` to a dummy branch name (`manual-domain-promotion-only`) before every alias operation. This permanently unhooks the domains from auto-tracking Production; the only thing that ever moves them afterward is this workflow's explicit `vercel alias set` call. This step re-runs (and re-applies) every time the workflow fires, so the binding self-heals even if something in the Vercel dashboard ever resets it.
+**Conclusion:** binding a custom domain's `gitBranch` to a branch with zero deployments does not "freeze" the domain at its last manually-aliased deployment the way we assumed. Vercel's domain-to-environment matching appears to detach the domain instead once any Production deployment happens outside that branch. Achieving true manual-only promotion for a domain that shares a project with an auto-deploying default domain likely requires either:
+- Vercel's Pro-tier "Deployment Protection: require approval before deployment," or
+- A properly configured Custom Environment (with its own branch and actual deployments matched to it) rather than a `vercel alias set` CLI override, or
+- Not sharing the project's default Production tracking at all (e.g. a separate project).
 
-**Important:** Vercel validates that `gitBranch` must reference a branch that actually exists in the connected GitHub repo — a purely fictional name fails with `git_branch_not_found` (HTTP 400). The fix required creating an actual, empty `manual-domain-promotion-only` branch in the repo (from `main`, never pushed to again) purely so this binding has something real to point at. Verified end-to-end: ran the workflow, confirmed both the `gitBranch` PATCH and the alias set succeeded, and `somosedificadigital.com` resolved to the expected deployment afterward.
+None of these were implemented — this needs real research (ideally testing against a low-stakes domain first) before being reattempted.
+
+## Consequences of Reverting to Auto-Tracking
+
+- Reliable: matches Vercel's normal, well-tested behavior — no more surprise orphaning.
+- Every push to `main` (including direct pushes, not just reviewed PRs) goes live on `somosedificadigital.com` immediately. This is a real tradeoff: the branch protection rules in `agents.md` (no direct commits to `main`, PR review required) are now the *only* thing standing between a bad change and the live production domain.
+- The `manual-domain-promotion-only` branch is no longer load-bearing but is harmless to leave in the repo.
 
 ## Related
 
