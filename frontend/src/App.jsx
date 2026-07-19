@@ -258,7 +258,12 @@ function App() {
             <h2>Trazabilidad que respalda cada resultado.</h2>
             <p>Conoce la propuesta funcional, el alcance del primer lanzamiento y las posibilidades de implementación para tu organización.</p>
           </div>
-          <a className="button button-light" href="mailto:contacto@somosedificadigital.com">
+          <a
+            className="button button-light"
+            href="https://wa.me/584123212012?text=Hola%2C%20quisiera%20conocer%20la%20propuesta%20de%20Edifica%20Digital."
+            target="_blank"
+            rel="noreferrer"
+          >
             Solicitar presentación <Arrow />
           </a>
         </section>
