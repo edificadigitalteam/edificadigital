@@ -33,6 +33,7 @@ All project plans are stored in `/docs/plans/` with a consistent naming conventi
 | S1-D2 | (TBD) | 📋 Planned | Day 2: Pillar Receive (New Donation) |
 | S1-INKIND | [SPRINT-S1-v1_in-kind-shipment-intake.md](SPRINT-S1-v1_in-kind-shipment-intake.md) | ✍️ Integration | In-kind interface implemented; database deployed; authenticated submission pending |
 | S1-DB | [SPRINT-S1-v1_supabase-foundation.md](SPRINT-S1-v1_supabase-foundation.md) | ✅ Complete | Supabase foundation and operational database deployment |
+| S1-SYNC | [SPRINT-S1-v1_supabase-submission.md](SPRINT-S1-v1_supabase-submission.md) | ✍️ In Progress | Authenticated form persistence, evidence upload, and publication gate |
 | S1-D3 | (TBD) | 📋 Planned | Day 3: Pillar Transform (New Kit) |
 | S1-D4 | (TBD) | 📋 Planned | Day 4: Pillar Impact (New Event) |
 | S1-D5 | (TBD) | 📋 Planned | Day 5: Dashboard (2 views) |
@@ -111,4 +112,4 @@ What plan comes next after this one?
 
 **Version:** 2.0
 **Last Updated:** 2026-07-19
-**Maintained by:** Isaac Delgado, Yang (`yangetze`), and project contributors
+**Maintained by:** Product owners and project contributors
