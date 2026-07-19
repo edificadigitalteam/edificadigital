@@ -53,3 +53,11 @@
 - The shipment migration subsequently adds five tables and one view.
 - Migration history records both migration names.
 - Supabase security and performance advisors are reviewed after deployment.
+
+## Advisor-driven optimization
+
+- Every foreign key reported by the Supabase performance advisor receives a covering index.
+- Policies targeted to the `authenticated` role use constant predicates for operational tables.
+- The private attachment policy evaluates the bucket boundary without a per-row authentication function call.
+- Security advisors remain clear after optimization.
+- Fresh indexes may appear as unused until operational traffic begins; they remain because they cover foreign keys and planned queries.
