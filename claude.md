@@ -82,6 +82,8 @@ We have N:N mapping and I'm not sure how to test role assignments."
 
 ## TDD Workflow: Claude's Role
 
+**Mandatory order, no exceptions:** plan → tests (red) → code (green) → refactor. Never start writing implementation code before a plan exists and failing tests are in place. If the plan touches the database in any way (new/altered table, column, constraint, migration, RLS policy), say so explicitly before moving to tests.
+
 ### Phase 1: Requirements → Test Spec (Claude helps)
 
 **You ask Claude:**
