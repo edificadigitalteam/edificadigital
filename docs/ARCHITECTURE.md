@@ -90,6 +90,10 @@ The budget module requires a dedicated schema and migration. Operational donatio
 - Granular permissions by organization and role remain a subsequent milestone.
 - Service-role keys and database secrets stay outside client code and source control.
 
+## Observability
+
+Uncaught client errors, unhandled promise rejections, React render errors, and failed in-kind donation submissions are reported from the browser to a small Vercel Serverless Function (`frontend/api/log.js`), which logs a sanitized, size-capped JSON line. Those lines appear directly in Vercel's built-in Runtime Logs — no log drain, third-party service, or extra cost is required. Reporting never blocks the UI and never includes donor data, only error messages, stack traces, and the originating URL. See `docs/plans/SPRINT-S1-v1_vercel-observability.md`.
+
 ## Current integration boundary
 
 The in-kind interface now provides magic-link access, validates operator authorization, preserves a browser draft, uploads private evidence to deterministic paths, and persists the announcement through the idempotent `submit_in_kind_shipment` RPC. One RPC transaction creates or reuses the sender actor, donor role, donation, details, shipment, declared items, and evidence metadata.

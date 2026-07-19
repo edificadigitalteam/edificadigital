@@ -4,6 +4,7 @@ import { OperatorAccessScreen } from './OperatorAccess.jsx'
 import { useOperatorAccess } from './useOperatorAccess.js'
 import { submitInKindShipment, validateEvidence } from './submission.js'
 import { supabase } from '../../lib/supabase.js'
+import { reportClientError } from '../../lib/logger.js'
 import {
   createEmptyItem,
   createInitialDraft,
@@ -279,6 +280,10 @@ function InKindDonationFlow() {
       window.localStorage.removeItem(DRAFT_KEY)
       setReference(result.reference_code)
     } catch (error) {
+      reportClientError({
+        message: error.message,
+        context: 'in_kind_submission:' + (error.stage ?? 'unknown'),
+      })
       setStorageError(copy.submissionErrors[error.stage] ?? copy.submissionErrors.default)
     } finally {
       setSaving(false)
