@@ -90,7 +90,7 @@ Inventory lots and movements begin at physical receipt because the current annou
 - Production configuration build passes with the active Supabase project URL and modern publishable key.
 - The Vercel branch deployment completed successfully; its preview requires team access through Vercel SSO.
 
-The remaining publication check is a human click on a magic link sent to an authorized operator account. A team member with Vercel access can perform it in the protected preview; the same interaction must be confirmed on the public domain before production promotion.
+The remaining pre-merge check is a human click on a magic link sent to an authorized operator account in the protected Vercel preview. After human approval and the merge publish `main`, repeat the same interaction on the public domain as the production smoke check.
 
 ## Rollback
 
