@@ -345,3 +345,248 @@ WHERE ie.status = 'Closed';
 **Version:** MVP
 **Last updated:** [date]
 **Related:** See 2_MVP_Specification.docx for detailed field descriptions
+
+
+## Proposed Budget and Financial Execution Extension
+
+> **Status:** Proposed in ADR-002. Database changes are intentionally absent until Product Owner approval and failing tests exist.
+>
+> **Resumen ES:** Esta extensión separa presupuesto aprobado, financiamiento comprometido, donaciones recibidas, compras reales, transformación de kits e impacto.
+
+### Why the Current Donation Schema Needs an Extension
+
+The current `donation` and `donation_detail` tables correctly represent resources actually received. An approved budget represents planned and authorized spending. Loading budget values as donations would overstate received resources.
+
+The proposed financial flow is:
+
+```text
+Approved plan        Committed funds       Actual receipt       Actual execution
+project_budget   ->   budget_funding   ->  donation/allocation -> procurement_expense
+      |                                                               |
+      +---------------- budget_line ----------------------------------+
+                                                                      |
+                                                                      v
+kit_definition -> kit_transformation -> impact_detail -> impact_event -> report_snapshot
+```
+
+### project
+
+```sql
+id UUID PK
+code TEXT UNIQUE NOT NULL
+country_code CHAR(2) NOT NULL
+name_es TEXT NOT NULL
+name_en TEXT NOT NULL
+phase INTEGER NOT NULL DEFAULT 1
+start_date DATE
+end_date DATE
+status ENUM (Draft | Active | Closed) DEFAULT 'Draft'
+created_at TIMESTAMP DEFAULT NOW()
+updated_at TIMESTAMP DEFAULT NOW()
+```
+
+### project_budget
+
+```sql
+id UUID PK
+project_id UUID FK -> project(id)
+version INTEGER NOT NULL
+currency_code CHAR(3) NOT NULL
+approved_amount DECIMAL(14,2) NOT NULL
+approval_status ENUM (Draft | Review | Approved | Superseded) DEFAULT 'Draft'
+approved_at TIMESTAMP
+source_file_url TEXT
+created_at TIMESTAMP DEFAULT NOW()
+UNIQUE(project_id, version)
+```
+
+Rules:
+
+- `approved_amount > 0`
+- Approved records require `approved_at` and approval evidence.
+- Approved records are immutable; amendments create a new version.
+- FORM 205 Phase 1 approved amount: USD 244,997.90.
+
+### budget_line
+
+```sql
+id UUID PK
+budget_id UUID FK -> project_budget(id)
+line_code TEXT NOT NULL
+category_code TEXT NOT NULL
+name_es TEXT NOT NULL
+name_en TEXT NOT NULL
+unit_es TEXT
+unit_en TEXT
+unit_price DECIMAL(14,3)
+quantity DECIMAL(14,3)
+calculation_method ENUM (UnitXQuantity | PercentOfBase | Fixed) NOT NULL
+percentage_rate DECIMAL(8,6)
+percentage_base_amount DECIMAL(14,2)
+total_amount DECIMAL(14,2) NOT NULL
+data_status ENUM (Ready | Review | Blocked) DEFAULT 'Review'
+source_reference TEXT
+created_at TIMESTAMP DEFAULT NOW()
+UNIQUE(budget_id, line_code)
+```
+
+Rules:
+
+- `line_code` is text to preserve values such as `2.3.1`.
+- `UnitXQuantity`: total equals unit price multiplied by quantity.
+- `PercentOfBase`: total equals rate multiplied by base amount.
+- FORM 205 line 5.2 uses base USD 228,970.00, rate 0.07, and total USD 16,027.90.
+- Component costs may use three decimals; approved line totals use two decimals.
+
+### funding_source
+
+```sql
+id UUID PK
+actor_id UUID FK -> actor(id)
+code TEXT UNIQUE NOT NULL
+name TEXT NOT NULL
+active BOOLEAN DEFAULT TRUE
+created_at TIMESTAMP DEFAULT NOW()
+```
+
+### budget_funding
+
+```sql
+id UUID PK
+budget_id UUID FK -> project_budget(id)
+funding_source_id UUID FK -> funding_source(id)
+committed_amount DECIMAL(14,2) NOT NULL
+commitment_reference TEXT
+created_at TIMESTAMP DEFAULT NOW()
+UNIQUE(budget_id, funding_source_id)
+```
+
+A budget reaches `funding_confirmed` only when all committed sources reconcile to `approved_amount`.
+
+### donation_allocation
+
+```sql
+id UUID PK
+donation_detail_id UUID FK -> donation_detail(id)
+project_id UUID FK -> project(id)
+budget_id UUID FK -> project_budget(id)
+funding_source_id UUID FK -> funding_source(id)
+allocated_amount DECIMAL(14,2) NOT NULL
+created_at TIMESTAMP DEFAULT NOW()
+```
+
+Rules:
+
+- A budget never creates a donation.
+- An allocation cannot exceed the unallocated monetary donation amount.
+- Allocation supports project-level funding traceability while exact expense matching remains deferred.
+
+### procurement_expense
+
+```sql
+id UUID PK
+project_id UUID FK -> project(id)
+budget_line_id UUID FK -> budget_line(id)
+supplier_actor_id UUID FK -> actor(id)
+incurred_at DATE NOT NULL
+description_es TEXT NOT NULL
+description_en TEXT NOT NULL
+currency_code CHAR(3) NOT NULL
+unit_cost DECIMAL(14,3)
+quantity DECIMAL(14,3)
+amount DECIMAL(14,2) NOT NULL
+payment_status ENUM (Draft | Approved | Paid | Voided) DEFAULT 'Draft'
+payment_reference TEXT
+lot_number TEXT
+expiration_date DATE
+asset_reference TEXT
+created_at TIMESTAMP DEFAULT NOW()
+updated_at TIMESTAMP DEFAULT NOW()
+```
+
+### procurement_expense_attachment
+
+```sql
+id UUID PK
+procurement_expense_id UUID FK -> procurement_expense(id)
+media_type_id UUID FK -> media_type(id)
+storage_url TEXT NOT NULL
+created_at TIMESTAMP DEFAULT NOW()
+```
+
+Paid expenses require payment evidence. Medical purchases may require lot and expiration metadata. Asset purchases require an asset reference.
+
+### kit_definition
+
+```sql
+id UUID PK
+project_id UUID FK -> project(id)
+budget_line_id UUID FK -> budget_line(id)
+code TEXT NOT NULL
+version INTEGER NOT NULL
+name_es TEXT NOT NULL
+name_en TEXT NOT NULL
+coverage_days INTEGER
+approved_unit_cost DECIMAL(14,2) NOT NULL
+component_cost DECIMAL(14,3) NOT NULL
+status ENUM (Draft | Active | Archived) DEFAULT 'Draft'
+created_at TIMESTAMP DEFAULT NOW()
+UNIQUE(project_id, code, version)
+```
+
+### kit_component
+
+```sql
+id UUID PK
+kit_definition_id UUID FK -> kit_definition(id)
+component_code TEXT NOT NULL
+name_es TEXT NOT NULL
+name_en TEXT NOT NULL
+unit_of_measure_id UUID FK -> unit_of_measure(id)
+unit_price DECIMAL(14,3) NOT NULL
+quantity_per_kit DECIMAL(14,3) NOT NULL
+component_cost DECIMAL(14,3) NOT NULL
+UNIQUE(kit_definition_id, component_code)
+```
+
+FORM 205 food basket stores component cost USD 75.265 and approved unit cost USD 75.27. The USD 0.005 per-kit rounding difference remains explicit.
+
+### report_snapshot
+
+```sql
+id UUID PK
+project_id UUID FK -> project(id)
+language_code CHAR(2) NOT NULL
+period_start DATE NOT NULL
+period_end DATE NOT NULL
+data_cutoff TIMESTAMP NOT NULL
+status ENUM (Draft | Published) DEFAULT 'Draft'
+storage_url TEXT
+created_at TIMESTAMP DEFAULT NOW()
+```
+
+Published snapshots are immutable. Spanish and English snapshots may share a cutoff.
+
+### Proposed Changes to Existing Tables
+
+```text
+donation
+  + project_id UUID FK -> project(id)
+
+kit_transformation
+  + kit_definition_id UUID FK -> kit_definition(id)
+  + budget_line_id UUID FK -> budget_line(id)
+
+impact_event
+  + project_id UUID FK -> project(id)
+```
+
+### Proposed Reconciliation Views
+
+- `budget_funding_reconciliation`: approved, committed, received, and remaining funding.
+- `budget_actual_summary`: approved amount, paid amount, available balance, and execution percentage by line.
+- `project_financial_summary`: project-level approved, received, spent, transformed, and impacted totals.
+
+### Implementation Gate
+
+The companion test specification at `docs/specs/budget-donation-traceability.md` must be implemented and failing before migration work begins.
