@@ -170,6 +170,8 @@ Merges to `main` auto-build and auto-publish to the default Vercel domain (`edif
 
 Publishing to the real production domain (`somosedificadigital.com`) is **always manual**: run the **"Promote to Custom Domain"** GitHub Action from the Actions tab. See `docs/adr/ADR-001-manual-production-promotion.md` for the full policy.
 
+**Do not delete the `manual-domain-promotion-only` branch.** It's an intentionally empty, never-pushed-to branch that keeps the production domain unhooked from Vercel's automatic Production tracking — deleting it will break the manual-promotion policy.
+
 ## Escalation Path
 
 **Blocker or major decision needed?**
