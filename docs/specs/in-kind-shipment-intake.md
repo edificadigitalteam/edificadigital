@@ -1,6 +1,6 @@
 # Test Specification: In-Kind Shipment Intake
 
-**Status:** In Progress — tests precede implementation  
+**Status:** Interface and schema implemented; persistence integration pending
 **Related plan:** `../plans/SPRINT-S1-v1_in-kind-shipment-intake.md`
 
 ## Frontend validation
@@ -62,6 +62,13 @@
 - Authenticated RLS policies exist on every new table.
 - Anonymous access is excluded from operational shipment records.
 
-## Required red state
+## Recorded red state
 
-Before implementation, the frontend tests import functions that are still absent and therefore fail. SQL tests reference tables that are still absent and therefore fail. The red-state command and result are recorded in the implementation commit history and PR.
+Before implementation, the frontend tests imported absent functions and the SQL tests referenced absent tables. Those failures are recorded in the implementation commit history and pull request. The current implementation passes the frontend behavior suite, and the deployed database satisfies the schema contract.
+
+## Remaining integration behavior
+
+- A successful screen requires a confirmed persisted database record.
+- The local draft clears only after all required records and evidence metadata are committed.
+- Network and RLS failures preserve entered data and provide bilingual retry actions.
+- Multi-table writes use an atomic server-side operation or a transactionally equivalent service boundary.

@@ -1,6 +1,6 @@
 # ADR-003: Model In-Kind Containers as Shipments with Inventory Lots
 
-**Status:** Accepted for implementation  
+**Status:** Implemented and deployed
 **Date:** 2026-07-19
 
 ## Context
@@ -33,3 +33,9 @@ Reference valuation is stored separately from cash. It records currency, amount,
 ## Interface direction
 
 The initial workflow uses four short steps, retains draft data, and shows a review before submission. Specialized fields appear when the selected category needs them.
+
+## Deployment record
+
+The schema was deployed to Supabase project `edifydb` on 2026-07-19. It includes authenticated RLS, private evidence Storage, covering foreign-key indexes, scalar authorization predicates, and the security-invoker `inventory_lot_balance` view.
+
+The interface currently retains a browser draft and prepares the submission payload. Authenticated database persistence is the next integration step.

@@ -1,6 +1,6 @@
 # Test Specification: Supabase Foundation
 
-**Status:** Tests precede migration
+**Status:** Implemented and verified
 **Related plan:** `../plans/SPRINT-S1-v1_supabase-foundation.md`
 
 ## Schema existence
@@ -51,7 +51,7 @@
 - The pre-migration existence query returns zero expected foundation tables.
 - The post-migration query returns twelve foundation tables.
 - The shipment migration subsequently adds five tables and one view.
-- Migration history records both migration names.
+- Migration history records the four applied migration names.
 - Supabase security and performance advisors are reviewed after deployment.
 
 ## Advisor-driven optimization
@@ -61,3 +61,12 @@
 - The private attachment policy combines the bucket boundary with the same scalar-subquery authorization pattern.
 - Security advisors remain clear after optimization.
 - Fresh indexes may appear as unused until operational traffic begins; they remain because they cover foreign keys and planned queries.
+
+## Verified result
+
+- The foundation migration created twelve tables.
+- The shipment migration added five tables and one security-invoker view.
+- Optimization migrations added the required foreign-key indexes and scalar authorization predicates.
+- All 17 operational tables have RLS and one explicit authenticated-user policy.
+- The security advisor returns zero findings.
+- A rollback-safe functional scenario verified the complete container and inventory path without leaving test records.

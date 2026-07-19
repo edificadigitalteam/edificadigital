@@ -1,7 +1,7 @@
 # Sprint S1 Plan: In-Kind Shipment Intake
 
 **Code:** S1-INKIND  
-**Status:** Implemented for Review
+**Status:** Interface Implemented; Database Deployed
 **Owner:** Isaac Delgado, Yang (yangetze)  
 **Created:** 2026-07-19  
 **Last Updated:** 2026-07-19
@@ -100,13 +100,14 @@ This plan adds database objects. All names and comments are in English and use s
 - Customs authority integrations.
 - Barcode scanning.
 - Offline synchronization across devices.
-- Production submission to Supabase until environment credentials and the foundational Sprint 1 schema are available.
+- Authenticated production submission from the interface to the deployed Supabase schema.
+- Atomic upload and persistence retries across actor, donation, shipment, inventory, and evidence records.
 
 ## Risks and treatment
 
 | Risk | Treatment |
 |---|---|
-| The foundational donation migration is pending | Use guarded alterations and document its required order |
+| Application writes span several related tables | Use an authenticated atomic submission service and retain the draft until confirmation |
 | Actual received quantities differ from declarations | Preserve declared, received, accepted, and damaged values separately |
 | Valuation may be unavailable at intake | Keep valuation optional with method and source metadata |
 | Food safety data may be incomplete | Mark verification state and require expiry where policy applies |
@@ -120,3 +121,6 @@ This plan adds database objects. All names and comments are in English and use s
 - [x] Bilingual intake workflow.
 - [x] Updated architecture and database documentation.
 - [x] Draft pull request for review.
+- [x] Foundation and shipment migrations deployed to `edifydb`.
+- [x] Security and performance advisors reviewed.
+- [ ] Authenticated frontend submission connected and verified.

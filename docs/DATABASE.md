@@ -1,403 +1,131 @@
-# Database Schema Reference
+# Database Reference
 
-## 🔵 Naming Standard — ENGLISH ONLY
+## Current state
 
-**MANDATORY:** All database artifacts MUST be in English:
-- ✅ Table names: `actor`, `donation`, `impact_event`
-- ✅ Column names: `recorded_at`, `kit_name`, `quantity_generated`
-- ✅ Functions & procedures: `calculate_impact_summary()`
-- ✅ Views & constraints: `active_events`, `check_quantity_positive`
-- ✅ Comments & documentation: In English
+The Edifica Digital operational database is deployed in Supabase project `edifydb` (`rrqyihsjftlloizsccvi`). The schema currently contains 17 operational tables, one security-invoker balance view, protected catalog data, and a private attachment bucket.
 
-❌ **NOT allowed:**
-- No Spanish table names
-- No mixed languages (English + Spanish)
-- No abbreviated or unclear names
+All database identifiers and stored enum-like values use English `snake_case`. Spanish and English belong in interface content, catalog display names, exports, and reports.
 
-**Why:** Database-level consistency across all environments, team clarity, and future scalability.
+## Applied migrations
 
----
+| Order | Repository migration | Supabase migration | Purpose |
+|---|---|---|---|
+| 1 | `202607190000_foundation_schema.sql` | `foundation_schema` | Actors, donations, transformations, impact, catalogs, evidence, RLS, and Storage |
+| 2 | `202607190001_in_kind_shipment.sql` | `in_kind_shipment_inventory` | Containers, declared goods, received lots, movements, and shipment evidence |
+| 3 | `202607190002_optimize_rls_and_foreign_keys.sql` | `optimize_rls_and_foreign_keys` | Foreign-key indexes and scalar RLS predicates |
+| 4 | `202607190003_harden_rls_predicates.sql` | `harden_rls_predicates` | Explicit authenticated-user predicates for every operational table |
 
-## Tables Overview
+DDL changes must be added as new migration files and applied through Supabase migration history. Existing applied migrations remain immutable.
 
-| Table | Purpose | Key Fields |
-|-------|---------|-----------|
-| `actor` | People and organizations | name, email, is_organization, is_anonymous |
-| `actor_role` | N:N relationships | actor_id, role (Donor\|Supplier\|Manager\|Beneficiary) |
-| `donation` | Master: intake of resources | actor_id, recorded_at |
-| `donation_detail` | Lines: monetary or in-kind | type, amount, quantity, unit_of_measure_id |
-| `donation_attachment` | Evidence: proof of payment, receipts | donation_id, media_type_id, storage_url |
-| `kit_transformation` | Master: kits created | kit_name, quantity_generated |
-| `kit_transformation_attachment` | Evidence: invoices, photos | kit_transformation_id, storage_url |
-| `impact_event` | Master: campaign/delivery event | responsible_actor_id, start_date, end_date, status, demographics |
-| `impact_detail` | Lines: kit dispatch | impact_event_id, kit_transformation_id, quantity_delivered |
-| `impact_event_attachment` | Evidence: delivery photos, sign-in sheets | impact_event_id, storage_url |
-| `media_type` | Catalog: photo/document classification | name (Proof of Payment, Fiscal Invoice, ...) |
-| `unit_of_measure` | Catalog: units | name (Unit, Kg, Pallet, ...) |
-| `shipment` | International or local transport for an in-kind donation | route, transport mode, ETA, status |
-| `shipment_item` | Declared goods within a shipment | category, quantity, unit, reference value |
-| `inventory_lot` | Goods accepted or quarantined at receipt | lot, expiry, condition, dietary attributes |
-| `inventory_movement` | Append-only stock ledger | movement type, signed quantity, destination |
-| `shipment_attachment` | Logistics and receipt evidence | document type, storage URL |
+## Operational model
 
-## Entity Relationships
+### Catalogs and actors
 
-```
-actor ──── actor_role ────┐
-                          └──→ (Donor, Supplier, Manager, Beneficiary)
+| Table | Purpose | Important decisions |
+|---|---|---|
+| `actor` | People and organizations that participate in operations | `name` required; `email`, `phone`, and `country` optional; organization and anonymity flags supported |
+| `actor_role` | Many-to-many actor roles | Values: `donor`, `supplier`, `manager`, `beneficiary` |
+| `media_type` | Bilingual evidence catalog | Stable `code`, `name_es`, `name_en` |
+| `unit_of_measure` | Bilingual unit catalog | Stable `code`, bilingual names, abbreviation |
 
-actor (Donor) ──→ donation ──→ donation_detail
-                            └──→ donation_attachment
+Actor email uniqueness is case-insensitive and applies only when an email exists. This permits organizations and senders whose first record arrives with limited contact data.
 
-kit_transformation ──→ kit_transformation_attachment
+### Receive: monetary and in-kind donations
 
-actor (Manager) ──→ impact_event ──→ impact_detail ──→ kit_transformation
-                  └──→ impact_event_attachment
-```
+| Table | Purpose |
+|---|---|
+| `donation` | Donation header linked to one donor actor |
+| `donation_detail` | Monetary or in-kind lines |
+| `donation_attachment` | Payment, receipt, and supporting evidence |
 
-## Detailed Schema
+`donation.donation_type` accepts `monetary`, `in_kind`, or `mixed`. Its lifecycle accepts `draft`, `announced`, `received`, `verified`, and `closed`.
 
-### actor
-```sql
-id UUID PK
-name TEXT NOT NULL
-email TEXT UNIQUE NOT NULL
-is_organization BOOLEAN DEFAULT FALSE
-is_anonymous BOOLEAN DEFAULT FALSE
-active BOOLEAN DEFAULT TRUE
-created_at TIMESTAMP DEFAULT NOW()
-updated_at TIMESTAMP DEFAULT NOW()
-```
+Each detail line has exactly one form:
 
-**Purpose:** Master record for all people and organizations
-**Use cases:** Search by email to find or create Actor for Donation
+- `monetary`: positive `amount` plus a three-letter uppercase `currency`.
+- `in_kind`: description, positive `quantity`, and `unit_of_measure_id`.
 
----
+An in-kind line can also carry item metadata, dietary attributes, allergens, expiry data, and an optional reference valuation. `reference_value` records an informative valuation and remains separate from cash received.
 
-### actor_role
-```sql
-id UUID PK
-actor_id UUID FK → actor(id)
-role ENUM (Donor | Supplier | Beneficiary | Manager)
-assigned_at TIMESTAMP DEFAULT NOW()
-UNIQUE(actor_id, role)
-```
+### Shipments, containers, and inventory
 
-**Purpose:** Define what roles an Actor can have
-**Use cases:** One person can be both Donor and Manager simultaneously
+| Table or view | Purpose |
+|---|---|
+| `shipment` | Logistics record for one in-kind donation |
+| `shipment_item` | One declared product line in a shipment |
+| `inventory_lot` | Physical receipt, inspection, accepted quantity, damage, expiry, and warehouse |
+| `inventory_movement` | Append-only stock movement ledger |
+| `shipment_attachment` | Packing, carrier, customs, inspection, receipt, and photographic evidence |
+| `inventory_lot_balance` | Security-invoker balance derived from movements |
 
----
+A container follows this sequence:
 
-### donation
-```sql
-id UUID PK
-actor_id UUID FK → actor(id)
-recorded_at TIMESTAMP DEFAULT NOW()
-created_at TIMESTAMP DEFAULT NOW()
-```
+1. Register an actor with the `donor` role.
+2. Create an `in_kind` donation.
+3. Add the shipment route, container or tracking reference, departure, and estimated arrival.
+4. Add declared goods as separate `shipment_item` rows.
+5. On arrival, create one or more `inventory_lot` rows from each declared item.
+6. Add a positive `receipt` movement for accepted inventory.
+7. Record later reservations, transformations, distributions, transfers, and damage as movements.
 
-**Purpose:** Master record for a donation intake event
-**Use cases:** "User recorded a donation from John Doe on June 1"
+The database rejects shipments linked to monetary or mixed donations. Declared, received, accepted, damaged, and available quantities remain distinct.
 
----
+Food items support `expiry_date`, `dietary_attributes`, and `allergens`. A value such as `gluten_free` belongs in `dietary_attributes`.
 
-### donation_detail
-```sql
-id UUID PK
-donation_id UUID FK → donation(id)
-type ENUM (Monetary | InKind)
-amount DECIMAL(12,2)           ← Only if type = Monetary (USD)
-item_description TEXT          ← Only if type = InKind
-quantity DECIMAL(12,2)         ← Only if type = InKind
-unit_of_measure_id UUID FK → unit_of_measure(id)  ← Only if InKind
-created_at TIMESTAMP DEFAULT NOW()
-```
+### Transform and impact
 
-**Purpose:** Grid lines within a Donation (multiple lines in one intake event)
-**Example:**
-- Line 1: Monetary, amount=500, currency=USD
-- Line 2: InKind, item_description="Pallets of water", quantity=5, unit="pallet"
+| Table | Purpose |
+|---|---|
+| `kit_transformation` | One prepared kit type and quantity per transformation record |
+| `kit_transformation_attachment` | Transformation evidence |
+| `impact_event` | Distribution event, dates, manager, target population, and aggregate demographics |
+| `impact_detail` | Quantity from a transformation delivered at an impact event |
+| `impact_event_attachment` | Delivery and participation evidence |
 
-**Validation:** If type=Monetary, amount must be set; if InKind, quantity + unit must be set
+Impact data stays aggregate. Personally identifiable beneficiary lists are outside the current schema.
 
----
+## Budget and reporting boundary
 
-### donation_attachment
-```sql
-id UUID PK
-donation_id UUID FK → donation(id)
-media_type_id UUID FK → media_type(id)
-storage_url TEXT NOT NULL      ← Supabase Storage URL
-created_at TIMESTAMP DEFAULT NOW()
-```
+The approved budget and donations are related reporting domains with different accounting meaning:
 
-**Purpose:** Evidence files (receipts, proof of payment) for a Donation
-**Storage:** Supabase Storage bucket `attachments`
-**Access:** RLS policies ensure only authenticated users can view/upload
+- Donations record resources received.
+- In-kind reference value records an evidence-backed estimate of donated goods.
+- Shipment, customs, transport, handling, and warehousing costs are project expenses.
+- Budget lines record approved spending authority and later execution.
+
+Reports for international organizations must present cash received, in-kind reference value, approved budget, and operating expenses as separate totals. The budget schema remains a planned module and must receive its own tested migration before budget data is loaded. Donation or shipment tables must never be used as a substitute for budget lines.
+
+## Security model
+
+- RLS is enabled on all 17 operational tables.
+- Every operational policy requires `(select auth.role()) = 'authenticated'`.
+- `anon` has no table privileges on operational data.
+- `inventory_lot_balance` uses `security_invoker` and inherits access from its source tables.
+- The `attachments` bucket is private, limited to 20 MB per object, and accepts JPEG, PNG, WebP, and PDF files.
+- Storage access requires an authenticated session and the `attachments` bucket identifier.
+- The MVP grants authenticated team members operational access. Granular role permissions remain a later security milestone.
+
+Client code may use the Supabase project URL and publishable client key. Service-role credentials and database secrets belong only in protected server environments.
+
+## Verification baseline
+
+The deployment was verified on 2026-07-19 with:
+
+- schema assertions for all tables, constraints, policies, catalogs, and Storage;
+- a transactional Germany-to-Venezuela container scenario with canned food, clothing, and gluten-free goods;
+- inventory receipt and a calculated balance of 250 units;
+- rejection of a shipment linked to a monetary donation;
+- rollback of all verification records, leaving operational tables empty;
+- Supabase security advisor result with zero findings;
+- performance advisor review, with only expected unused-index informational notices on the empty schema.
+
+The repository pgTAP specifications are in `supabase/tests/`. Run them against an isolated database or inside a rollback-safe transaction.
+
+## Application integration status
+
+The database foundation is ready. The current in-kind interface prepares a bilingual payload and saves a browser draft. Its next implementation step is authenticated Supabase submission with one atomic workflow for actor, donation, shipment, item, lot, movement, and attachment records.
 
 ---
 
-### kit_transformation
-```sql
-id UUID PK
-date TIMESTAMP DEFAULT NOW()
-kit_name TEXT NOT NULL         ← e.g., "Basic Food Kit"
-quantity_generated INTEGER NOT NULL (> 0)
-created_at TIMESTAMP DEFAULT NOW()
-```
-
-**Purpose:** One record per kit type created
-**Note:** If creating 100 food kits AND 50 hygiene kits same day → 2 separate records
-**Rationale:** Keeps evidence (invoice, photos) unambiguous per kit type
-
----
-
-### kit_transformation_attachment
-```sql
-id UUID PK
-kit_transformation_id UUID FK → kit_transformation(id)
-media_type_id UUID FK → media_type(id)
-storage_url TEXT NOT NULL
-created_at TIMESTAMP DEFAULT NOW()
-```
-
-**Purpose:** Evidence (fiscal invoice, assembly photos) for a KitTransformation
-
----
-
-### impact_event
-```sql
-id UUID PK
-responsible_actor_id UUID FK → actor(id)  ← Manager/Responsible
-start_date DATE NOT NULL
-end_date DATE NOT NULL
-target_population TEXT NOT NULL            ← e.g., "Caraballeda Community"
-status ENUM (InProgress | Closed) DEFAULT 'InProgress'
-total_families INTEGER DEFAULT 0           ← Aggregate demographics
-men INTEGER DEFAULT 0
-women INTEGER DEFAULT 0
-boys INTEGER DEFAULT 0
-girls INTEGER DEFAULT 0
-elderly INTEGER DEFAULT 0
-created_at TIMESTAMP DEFAULT NOW()
-updated_at TIMESTAMP DEFAULT NOW()
-```
-
-**Purpose:** Master record for a campaign/delivery event
-**Note:** `responsible_actor_id` must reference an Actor with Manager role
-**Demographics:** Totals extracted from physical sign-in sheets (aggregate, not nominal)
-
----
-
-### impact_detail
-```sql
-id UUID PK
-impact_event_id UUID FK → impact_event(id)
-kit_transformation_id UUID FK → kit_transformation(id)
-quantity_delivered INTEGER NOT NULL (> 0)
-created_at TIMESTAMP DEFAULT NOW()
-```
-
-**Purpose:** Grid: which kits were dispatched to this event, and how many
-**Example:** "Dispatched 60 of the 100 Food Kits to ImpactEvent X"
-**Inventory:** quantity_delivered deducts from kit_transformation.quantity_generated
-
----
-
-### impact_event_attachment
-```sql
-id UUID PK
-impact_event_id UUID FK → impact_event(id)
-media_type_id UUID FK → media_type(id)
-storage_url TEXT NOT NULL
-created_at TIMESTAMP DEFAULT NOW()
-```
-
-**Purpose:** Evidence (delivery photos, signed sign-in sheets) for an ImpactEvent
-
----
-
-### media_type (Catalog)
-```sql
-id UUID PK
-name TEXT UNIQUE NOT NULL
-description TEXT
-created_at TIMESTAMP DEFAULT NOW()
-```
-
-**Predefined values:**
-- "Proof of Payment" — Bank transfer, cash receipt
-- "Fiscal Invoice" — Official invoice for goods/services
-- "Transformation Evidence" — Photos of kit assembly
-- "Delivery Evidence" — Photos/PDFs of delivery events
-
-**Use:** Classification in attachment tables; filterable in UI ("show invoices")
-
----
-
-### unit_of_measure (Catalog)
-```sql
-id UUID PK
-name TEXT UNIQUE NOT NULL
-abbreviation TEXT
-created_at TIMESTAMP DEFAULT NOW()
-```
-
-**Predefined values:**
-- Unit (u)
-- Kilogram (kg)
-- Pallet (pallet)
-- Box (box)
-- Liter (L)
-
-**Use:** Quantification in DonationDetail when type=InKind
-
----
-
-## In-Kind Shipment Extension
-
-Migration: `supabase/migrations/202607190001_in_kind_shipment.sql`
-
-The extension preserves the donation as the contribution record and adds the logistics and inventory records required for mixed containers.
-
-```text
-donation (in_kind)
-└── shipment
-    ├── shipment_attachment[]
-    └── shipment_item[]
-        └── inventory_lot[]
-            └── inventory_movement[]
-```
-
-### `shipment`
-
-- One-to-one relationship with an in-kind `donation`.
-- Transport modes: `sea`, `air`, `road`, `other`.
-- Lifecycle: `announced`, `in_transit`, `customs`, `received`, `closed`.
-- Stores route, carrier, container, tracking, departure, estimated arrival, actual arrival, customs reference, and notes.
-- A trigger verifies that the linked donation uses `donation_type = 'in_kind'`.
-
-### `shipment_item`
-
-- One declared product line within a shipment.
-- Categories: food, clothing, hygiene, medical, household, and other.
-- Quantity uses `numeric(14,3)`.
-- Reference valuation remains optional and separate from cash received.
-- Food metadata includes dietary attributes, allergens, declared lot, and declared expiry.
-- An optional `donation_detail_id` links the logistics line to the original intake line.
-
-### `inventory_lot`
-
-- Represents the quantities physically received and inspected at one warehouse.
-- Preserves received, accepted, and damaged quantities separately.
-- Accepted plus damaged quantity cannot exceed received quantity.
-- Verification supports pending, verified, quarantined, and rejected states.
-- Lot-level dietary and expiry metadata supports food-safety review.
-
-### `inventory_movement`
-
-- Append-only quantity events for receipt, adjustment, reservation, transformation, distribution, transfer, and damage.
-- Inbound receipt uses a positive quantity.
-- Resource consumption and outbound movements use negative quantities.
-- `inventory_lot_balance` derives the current balance per lot.
-
-### Security
-
-All five extension tables enable RLS. The MVP policy grants operational access to authenticated users. Anonymous sessions cannot query these records through the Supabase API.
-
-## Key Constraints & Relationships
-
-### Referential Integrity
-- `donation_detail.donation_id` → `donation.id` (CASCADE delete: removing a Donation removes all its details)
-- `donation_attachment.donation_id` → `donation.id` (CASCADE delete)
-- `kit_transformation_attachment.kit_transformation_id` → `kit_transformation.id` (CASCADE delete)
-- `impact_detail.impact_event_id` → `impact_event.id` (CASCADE delete)
-- `impact_detail.kit_transformation_id` → `kit_transformation.id` (RESTRICT delete: can't delete a kit that's already been dispatched)
-- `impact_event_attachment.impact_event_id` → `impact_event.id` (CASCADE delete)
-- `actor.id` ← `donation.actor_id`, `impact_event.responsible_actor_id` (RESTRICT delete: can't delete an actor with transactions)
-
-### Unique Constraints
-- `actor.email` — one email per actor (used for lookup)
-- `actor_role` (actor_id, role) — an actor can have one of each role, but not duplicates of the same role
-- `media_type.name`, `unit_of_measure.name` — unique catalog entries
-
-### Validation (App-Level)
-- `donation_detail.type = Monetary` ⟹ `amount` required, `quantity/unit_of_measure_id` must be NULL
-- `donation_detail.type = InKind` ⟹ `quantity` and `unit_of_measure_id` required, `amount` must be NULL
-- `impact_event.start_date <= end_date`
-- `kit_transformation.quantity_generated > 0`
-- `impact_detail.quantity_delivered <= kit_transformation.quantity_generated` (can't dispatch more than generated, but multi-event dispatch is possible)
-
-## Row Level Security (RLS)
-
-**MVP approach:** Authenticated users have full access; no column-level restrictions.
-
-**Policies (per table):**
-- SELECT: `auth.role() = 'authenticated'`
-- INSERT/UPDATE/DELETE: `auth.role() = 'authenticated'`
-
-**Future (post-MVP):** Add actor-specific row restrictions (e.g., only Managers can edit their own ImpactEvents).
-
-## Storage (Supabase Storage)
-
-**Bucket:** `attachments` (private, access via RLS)
-
-**Path structure (recommended):**
-```
-attachments/
-├── donation/[donation_id]/[file-name]
-├── kit_transformation/[kit_id]/[file-name]
-└── impact_event/[event_id]/[file-name]
-```
-
-**File types:** JPEG, PNG, PDF (others can be allowed as needed)
-**Size limit:** Individual files up to 5 GB; total bucket limit 1 GB (free tier)
-
----
-
-## Queries (Common Use Cases)
-
-### List all Donations for a specific Actor
-```sql
-SELECT d.* FROM donation d
-WHERE d.actor_id = $1
-ORDER BY d.recorded_at DESC;
-```
-
-### Get a Donation with all its details and attachments
-```sql
-SELECT d.*,
-       json_agg(json_build_object('id', dd.id, 'type', dd.type, 'amount', dd.amount, ...)) as details,
-       json_agg(json_build_object('id', da.id, 'url', da.storage_url, ...)) as attachments
-FROM donation d
-LEFT JOIN donation_detail dd ON dd.donation_id = d.id
-LEFT JOIN donation_attachment da ON da.donation_id = d.id
-WHERE d.id = $1
-GROUP BY d.id;
-```
-
-### Get an ImpactEvent with kit dispatch and demographics
-```sql
-SELECT ie.*,
-       json_agg(json_build_object('kit_name', kt.kit_name, 'quantity_delivered', id.quantity_delivered, ...)) as kits_dispatched
-FROM impact_event ie
-LEFT JOIN impact_detail id ON id.impact_event_id = ie.id
-LEFT JOIN kit_transformation kt ON kt.id = id.kit_transformation_id
-WHERE ie.id = $1
-GROUP BY ie.id;
-```
-
-### Total people impacted (dashboard metric)
-```sql
-SELECT SUM(
-  ie.total_families + ie.men + ie.women + ie.boys + ie.girls + ie.elderly
-) as total_people_impacted
-FROM impact_event ie
-WHERE ie.status = 'Closed';
-```
-
----
-
-**Version:** MVP
-**Last updated:** [date]
-**Related:** See 2_MVP_Specification.docx for detailed field descriptions
+**Version:** 2.0
+**Last updated:** 2026-07-19

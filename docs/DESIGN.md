@@ -1,6 +1,17 @@
-# Design System & Visual Identity
+# Design System and Visual Identity
 
-This document defines the visual identity for the Donation Traceability System, based on the original Congrega App + Edifica Digital brand guidelines.
+This document defines the visual identity for `somosedificadigital`, based on the established Congrega App and Edifica Digital work. Preserve this system across the landing page and operational application.
+
+## Experience principles
+
+- Spanish and English cover every visible label, message, status, and report heading.
+- The language control remains visible and preserves route, step, and entered values.
+- Mobile is the primary composition. Each step has one primary action and a visible position in the flow.
+- Labels remain visible, instructions stay short, and errors state the exact action needed to continue.
+- Decorative elements must support meaning, hierarchy, or navigation.
+- Use direct product copy. Avoid antitheses, comparisons, personification of non-human subjects, and generic AI-page motifs.
+- Replace the word “no” with a direct construction when the result remains precise.
+- Respect the dignity of users with varied cognitive and digital literacy through familiar language and predictable interaction.
 
 ## Color Palette
 
@@ -57,17 +68,17 @@ For common UI states, derive these from the primary palette:
 
 ## Typography
 
-### Font Stack
+### Font stack
 
 ```css
-/* Headlines */
-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+/* Editorial headings */
+font-family: "Source Serif 4", Georgia, serif;
 
-/* Body */
-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+/* Interface and body */
+font-family: "Manrope", Arial, sans-serif;
 ```
 
-**Recommendation:** Use system fonts for simplicity and performance. Consider Tailwind's default stack.
+Manrope provides clear interface text. Source Serif 4 provides a serious editorial tone for selected headings. Retain the existing loading and fallback strategy.
 
 ### Type Scale
 
@@ -167,9 +178,9 @@ Use multiples of 4px for consistency.
 
 ### Grid & Responsive
 
-**MANDATORY: Mobile-first.** Design and build the mobile layout first — it's the primary target, not an afterthought. Desktop must remain fully usable, but every screen starts from the mobile base styles and is progressively enhanced upward, never the other way around.
+**Mandatory: mobile-first.** Design and build the mobile layout first. Desktop remains fully usable, and every screen grows from the mobile base styles.
 
-- Write base (unprefixed) styles for mobile. Add tablet/desktop refinements with Tailwind's `min-width` breakpoint prefixes (`sm:`, `md:`, `lg:`, `xl:`) layered on top — never build the desktop layout first and try to cram it down to mobile with `max-width` overrides.
+- Write base styles for mobile. Add tablet and desktop refinements with `min-width` breakpoints.
 - **Mobile (base, <640px):** Single column, gutters 16px, padding 16px
 - **Tablet (`md:`, ≥768px):** Adjust column widths, gutters 20px
 - **Desktop (`lg:`, ≥1024px):** Full width, gutters 24px
@@ -274,8 +285,8 @@ This system is based on:
 
 ## Versioning
 
-- **Version:** 1.0
-- **Last Updated:** [date]
+- **Version:** 2.0
+- **Last Updated:** 2026-07-19
 - **Maintained by:** Design & Development Team
 - **Review Cycle:** Every 6 months or on major brand changes
 
