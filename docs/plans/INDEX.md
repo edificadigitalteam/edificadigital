@@ -32,6 +32,7 @@ All project plans are stored in `/docs/plans/` with a consistent naming conventi
 | S1-D1 | (TBD) | 📋 Planned | Day 1: Foundation & Supabase schema |
 | S1-D2 | (TBD) | 📋 Planned | Day 2: Pillar Receive (New Donation) |
 | S1-INKIND | [SPRINT-S1-v1_in-kind-shipment-intake.md](SPRINT-S1-v1_in-kind-shipment-intake.md) | ✅ Review | In-kind shipment, container, and inventory intake |
+| S1-DB | [SPRINT-S1-v1_supabase-foundation.md](SPRINT-S1-v1_supabase-foundation.md) | ✍️ In Progress | Supabase foundation and operational database deployment |
 | S1-D3 | (TBD) | 📋 Planned | Day 3: Pillar Transform (New Kit) |
 | S1-D4 | (TBD) | 📋 Planned | Day 4: Pillar Impact (New Event) |
 | S1-D5 | (TBD) | 📋 Planned | Day 5: Dashboard (2 views) |
