@@ -57,7 +57,7 @@
 ## Advisor-driven optimization
 
 - Every foreign key reported by the Supabase performance advisor receives a covering index.
-- Policies targeted to the `authenticated` role use constant predicates for operational tables.
-- The private attachment policy evaluates the bucket boundary without a per-row authentication function call.
+- Policies wrap `auth.role()` in scalar subqueries to retain explicit authorization and avoid per-row function initialization.
+- The private attachment policy combines the bucket boundary with the same scalar-subquery authorization pattern.
 - Security advisors remain clear after optimization.
 - Fresh indexes may appear as unused until operational traffic begins; they remain because they cover foreign keys and planned queries.

@@ -12,15 +12,32 @@ select has_index('public', 'shipment_attachment', 'shipment_attachment_media_typ
 select has_index('public', 'shipment_item', 'shipment_item_unit_of_measure_idx', 'shipment item unit is indexed');
 
 select is(
-  (select count(*) from pg_policies where schemaname = 'public' and (qual ilike '%auth.role%' or with_check ilike '%auth.role%')),
+  (
+    select count(*)
+    from pg_policies
+    where schemaname = 'public'
+      and (
+        (qual ilike '%auth.role%' and qual not ilike '%select auth.role%')
+        or (with_check ilike '%auth.role%' and with_check not ilike '%select auth.role%')
+      )
+  ),
   0::bigint,
-  'public policies avoid per-row auth function calls'
+  'public policies wrap auth functions in scalar subqueries'
 );
 
 select is(
-  (select count(*) from pg_policies where schemaname = 'storage' and tablename = 'objects' and (qual ilike '%auth.role%' or with_check ilike '%auth.role%')),
+  (
+    select count(*)
+    from pg_policies
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and (
+        (qual ilike '%auth.role%' and qual not ilike '%select auth.role%')
+        or (with_check ilike '%auth.role%' and with_check not ilike '%select auth.role%')
+      )
+  ),
   0::bigint,
-  'attachment policy avoids per-row auth function calls'
+  'attachment policy wraps auth functions in scalar subqueries'
 );
 
 select * from finish();
