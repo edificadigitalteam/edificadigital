@@ -72,12 +72,14 @@ It contains:
 
 - 12 foundation tables for actors, donations, transformations, impact, catalogs, and evidence;
 - 5 shipment and inventory tables;
+- one public multi-currency monetary extension table;
+- two private beneficiary identity and participation tables;
 - the security-invoker `inventory_lot_balance` view;
-- RLS on all 17 operational tables;
+- RLS on all 18 public operational tables and both private beneficiary tables;
 - a private `attachments` Storage bucket;
 - bilingual unit and media catalogs.
 
-Applied migrations establish the foundation, in-kind shipment model, foreign-key indexes, operator authorization, idempotent submission, and private evidence uploads.
+Applied migrations establish the foundation, in-kind shipment model, foreign-key indexes, operator authorization, idempotent in-kind and monetary submission, protected beneficiary registration, and private evidence uploads.
 
 ### Safe database procedure
 
@@ -101,7 +103,10 @@ Use application-facing publishable credentials only in the client. Service-role 
 - Actor name is required. Email, phone, and country are optional.
 - Roles are `donor`, `supplier`, `manager`, and `beneficiary`.
 - Donation types are `monetary`, `in_kind`, and `mixed`.
-- A monetary detail requires a positive amount and uppercase ISO currency.
+- A monetary detail requires a positive origin amount and uppercase ISO currency.
+- Operational monetary receipts preserve the USD base amount, applied USD-per-origin-unit rate, rate source/date for foreign currency, receipt method, transaction details, and private evidence.
+- USD uses a rate of 1 with equal origin and base amounts.
+- Cash, bank transfer, mobile payment, digital wallet, cryptoasset, and other documented methods are supported.
 - An in-kind detail requires a description, positive quantity, and unit.
 - A reference valuation is optional and remains separate from cash received.
 
@@ -122,6 +127,14 @@ Use application-facing publishable credentials only in the client. Service-role 
 - International reports preserve currencies, valuation basis, sources, dates, evidence, inventory flow, and aggregate impact.
 - Every report label and explanatory passage is available in Spanish and English.
 
+### Protected beneficiary data
+
+- Minimum nominal identity belongs in `private.beneficiary`; participation belongs in `private.beneficiary_event`.
+- Records require privacy acknowledgement and return a non-identifying `BEN-…` code.
+- Names, dates of birth, phone numbers, email addresses, and nominal participation stay outside public reporting endpoints.
+- Public and international reports use aggregate impact data.
+- Archive operational beneficiary history instead of deleting it.
+
 ## Interface guidance
 
 - Preserve the established typography, color, spacing, and component system.
@@ -140,6 +153,8 @@ Use application-facing publishable credentials only in the client. Service-role 
 
 The in-kind workflow now initializes the Supabase client, establishes an allow-listed magic-link session, uploads private evidence, and calls `submit_in_kind_shipment` for atomic and idempotent persistence. It clears the local draft only after Supabase returns the persisted reference.
 
+The monetary workflow uses one continuous bilingual form. It retains its draft, requires payment or receipt evidence, uploads to deterministic private paths, and calls `submit_monetary_donation`. The beneficiary foundation is deployed through `register_beneficiary`; its dedicated interface follows after a focused accessibility and privacy review.
+
 The next operational workflow begins at physical receipt. It must collect warehouse, received, accepted, damaged, condition, verification, expiry, and responsible-actor information before creating inventory lots and movements. Preserve the announcement record and declared quantities as the comparison baseline.
 
 ## Git and release
@@ -156,6 +171,7 @@ The next operational workflow begins at physical receipt. It must collect wareho
 - `docs/ARCHITECTURE.md` — runtime and domain boundaries
 - `docs/DATABASE.md` — deployed schema and security baseline
 - `docs/adr/ADR-003-in-kind-shipment-inventory.md` — shipment model decision
+- `docs/adr/ADR-004-protected-beneficiary-identity.md` — protected beneficiary data boundary
 - `docs/plans/` — implementation order and delivery status
 - `docs/specs/` — executable behavior descriptions
 
@@ -163,5 +179,5 @@ When code and documentation differ, verify deployed behavior and update both in 
 
 ---
 
-**Version:** 2.0
+**Version:** 2.1
 **Last updated:** 2026-07-19

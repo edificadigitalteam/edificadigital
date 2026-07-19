@@ -1,7 +1,7 @@
 # Sprint S1 Plan: Monetary Donations and Protected Beneficiary Foundation
 
 **Code:** S1-MONEY-PEOPLE
-**Status:** In Progress
+**Status:** Implemented — Review Required
 **Owner:** Product owners
 **Created:** 2026-07-19
 **Last Updated:** 2026-07-19
@@ -91,9 +91,23 @@ The beneficiary interface follows after the protected schema and RPC pass their 
 - Frontend tests, lint, build, database assertions, advisors, and Vercel preview pass.
 - Human review is required before merge to `main`.
 
+## Verification record
+
+- Frontend: 33 Vitest tests pass.
+- Static quality: ESLint and the Vite production build pass.
+- Database: both immutable migrations are applied to `edifydb` through Supabase migration history.
+- Functional database scenarios: USD cash, VES bank transfer, evidence metadata, retry idempotency, protected beneficiary registration, privacy acknowledgement, and unauthorized rejection pass inside rollback-safe transactions.
+- Security: 18 public operational policies and 2 private beneficiary policies enforce the active-operator predicate; anonymous access and function execution are revoked.
+- Performance: the three new audit foreign keys have covering indexes; the advisor reports only expected unused-index information on new or empty data structures.
+- Auth: the advisor reports leaked-password protection as disabled. The current application entrypoint is passwordless Magic Link.
+- Persistence: all verification records were rolled back. Existing operational records were preserved.
+
+## Implemented boundary
+
+The monetary form and its Supabase persistence are complete for review. The beneficiary schema, RLS policies, retry-safe RPC, and optional impact-event link are deployed. The dedicated beneficiary interface remains the next application milestone so its collection experience can receive separate accessibility and privacy review.
+
 ## Rollback
 
 - Revert the application commit to remove the monetary route.
 - Applied migrations remain immutable; database corrections use a later migration.
 - Archive beneficiary records instead of deleting operational history.
-

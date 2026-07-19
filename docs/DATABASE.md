@@ -2,7 +2,7 @@
 
 ## Current state
 
-The Edifica Digital operational database is deployed in Supabase project `edifydb` (`rrqyihsjftlloizsccvi`). The schema currently contains 17 operational tables, one security-invoker balance view, protected catalog data, and a private attachment bucket.
+The Edifica Digital operational database is deployed in Supabase project `edifydb` (`rrqyihsjftlloizsccvi`). The schema currently contains 18 public operational tables, 2 protected private beneficiary tables, one security-invoker balance view, protected catalog data, and a private attachment bucket.
 
 All database identifiers and stored enum-like values use English `snake_case`. Spanish and English belong in interface content, catalog display names, exports, and reports.
 
@@ -15,6 +15,8 @@ All database identifiers and stored enum-like values use English `snake_case`. S
 | 3 | `202607190002_optimize_rls_and_foreign_keys.sql` | `optimize_rls_and_foreign_keys` | Foreign-key indexes and scalar RLS predicates |
 | 4 | `202607190003_harden_rls_predicates.sql` | `harden_rls_predicates` | Explicit authenticated-user predicates for every operational table |
 | 5 | `20260719031418_authenticated_submission.sql` | `authenticated_submission` | Operator allow-list, audit fields, idempotent RPC, evidence access, and current RLS predicates |
+| 6 | `20260719041213_monetary_beneficiary_foundation.sql` | `monetary_beneficiary_foundation` | Multi-currency receipt details, authenticated monetary submission, and protected beneficiary identity and participation |
+| 7 | `20260719042848_optimize_monetary_beneficiary_foreign_keys.sql` | `optimize_monetary_beneficiary_foreign_keys` | Covering indexes for the new reconciliation and beneficiary audit foreign keys |
 
 DDL changes must be added as new migration files and applied through Supabase migration history. Existing applied migrations remain immutable.
 
@@ -37,6 +39,7 @@ Actor email uniqueness is case-insensitive and applies only when an email exists
 |---|---|
 | `donation` | Donation header linked to one donor actor |
 | `donation_detail` | Monetary or in-kind lines |
+| `monetary_donation_detail` | Payment method, USD reporting base, conversion evidence, transaction references, and reconciliation audit for one monetary line |
 | `donation_attachment` | Payment, receipt, and supporting evidence |
 
 `donation.donation_type` accepts `monetary`, `in_kind`, or `mixed`. Its lifecycle accepts `draft`, `announced`, `received`, `verified`, and `closed`.
@@ -47,6 +50,17 @@ Each detail line has exactly one form:
 - `in_kind`: description, positive `quantity`, and `unit_of_measure_id`.
 
 An in-kind line can also carry item metadata, dietary attributes, allergens, expiry data, and an optional reference valuation. `reference_value` records an informative valuation and remains separate from cash received.
+
+Each operational monetary receipt has four explicit reporting values:
+
+| Value | Storage | Meaning |
+|---|---|---|
+| Origin amount | `donation_detail.amount` | Quantity of money received |
+| Origin currency | `donation_detail.currency` | Three-letter uppercase receipt currency |
+| USD base amount | `monetary_donation_detail.usd_base_amount` | Confirmed institutional reporting value |
+| Applied rate | `monetary_donation_detail.exchange_rate_to_usd` | USD per one origin-currency unit |
+
+Supported receipt methods are `cash`, `bank_transfer`, `mobile_payment`, `digital_wallet`, `crypto`, and `other`. A USD receipt requires a rate of 1 and equal origin/base amounts. A foreign-currency receipt requires a positive rate plus its source and date. Every application submission includes at least one private payment proof or receipt record. Non-cash methods require a transaction reference; bank transfer and mobile payment also require sending and receiving institution labels.
 
 ### Shipments, containers, and inventory
 
@@ -83,7 +97,14 @@ Food items support `expiry_date`, `dietary_attributes`, and `allergens`. A value
 | `impact_detail` | Quantity from a transformation delivered at an impact event |
 | `impact_event_attachment` | Delivery and participation evidence |
 
-Impact data stays aggregate. Personally identifiable beneficiary lists are outside the current schema.
+Public impact data stays aggregate. Nominal beneficiary records use a separate protected boundary:
+
+| Private table | Purpose |
+|---|---|
+| `private.beneficiary` | Minimum identity, date of birth or age band, contact availability, residence area, privacy acknowledgement, archive state, and non-identifying public code |
+| `private.beneficiary_event` | Participation in an impact event, attendance state, represented household size, service codes, and audit values |
+
+Both private tables use creator-scoped submission keys for retry safety. `public.register_beneficiary(payload jsonb)` is the authenticated application entrypoint. It requires a privacy acknowledgement and returns a `BEN-…` code. Public and international reports use aggregate `impact_event` data and exclude names, birth dates, phone numbers, email addresses, and exact beneficiary records.
 
 ## Budget and reporting boundary
 
@@ -98,7 +119,7 @@ Reports for international organizations must present cash received, in-kind refe
 
 ## Security model
 
-- RLS is enabled on all 17 operational tables.
+- RLS is enabled on all 18 public operational tables and both private beneficiary tables. RLS is forced on the private tables.
 - Every operational policy requires an authenticated identity whose email appears as active in `private.operator_access`.
 - Operator identities are provisioned directly in the protected Supabase environment; personal addresses stay outside Git history.
 - `private.is_authorized_operator()` is a protected security-definer function in a non-exposed schema and begins with an authenticated-user check.
@@ -107,6 +128,7 @@ Reports for international organizations must present cash received, in-kind refe
 - `inventory_lot_balance` uses `security_invoker` and inherits access from its source tables.
 - The `attachments` bucket is private, limited to 20 MB per object, and accepts JPEG, PNG, WebP, and PDF files.
 - Storage access requires an authenticated session and the `attachments` bucket identifier.
+- Nominal beneficiary tables revoke access from `public` and `anon`; active operator authorization applies to every permitted operation.
 - The MVP grants authenticated team members operational access. Granular role permissions remain a later security milestone.
 
 Client code may use the Supabase project URL and publishable client key. Service-role credentials and database secrets belong only in protected server environments.
@@ -120,9 +142,15 @@ The deployment was verified on 2026-07-19 with:
 - inventory receipt and a calculated balance of 250 units;
 - rejection of a shipment linked to a monetary donation;
 - rejection of an authenticated submission from an identity outside the private operator allow-list;
+- one USD cash receipt with identity conversion and private receipt evidence;
+- one VES bank transfer preserving 3,650 VES, a 10 USD base value, the applied rate, source, date, institutions, and transaction reference;
+- idempotent monetary and beneficiary retries that returned one record per submission key;
+- rejection of unauthorized monetary and beneficiary registration calls;
+- beneficiary privacy acknowledgement, non-identifying code generation, and private-schema isolation;
 - rollback of all verification records, leaving operational tables empty;
-- Supabase security advisor result with zero findings;
-- performance advisor review, with only expected unused-index informational notices on the empty schema.
+- Supabase database security advisor result with no schema or RLS findings;
+- one project-level Auth warning for leaked-password protection being disabled; the current application uses passwordless Magic Link access;
+- performance advisor review, with only expected unused-index informational notices on new or empty tables.
 
 The repository pgTAP specifications are in `supabase/tests/`. Run them against an isolated database or inside a rollback-safe transaction.
 
@@ -142,7 +170,16 @@ The application uploads evidence before the RPC using deterministic paths scoped
 
 Inventory lots and movements stay outside this announcement RPC. They require physical receipt data such as warehouse, received quantity, accepted quantity, damage, condition, and verification status.
 
+`public.submit_monetary_donation(payload jsonb)` follows the same security-invoker and idempotency model. It creates or reuses:
+
+1. donor actor and donor role;
+2. monetary donation and origin amount/currency detail;
+3. multi-currency, payment-method, transaction, and reconciliation extension; and
+4. metadata for successfully uploaded private payment or receipt evidence.
+
+`public.register_beneficiary(payload jsonb)` is available only to authenticated active operators. It writes minimum nominal identity into `private.beneficiary`, optionally links an existing `impact_event` through `private.beneficiary_event`, and returns the non-identifying public code. The beneficiary application form follows in a later interface milestone; the deployed data and security boundary is ready for that integration.
+
 ---
 
-**Version:** 2.0
+**Version:** 2.1
 **Last updated:** 2026-07-19

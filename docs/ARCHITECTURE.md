@@ -8,6 +8,7 @@ Edifica Digital combines a public bilingual landing page with an authenticated o
 |---|---|---|
 | `/` | Present the proposal, methodology, and international reporting capability | Bilingual landing experience |
 | `/donations/in-kind/new` | Register containers and other in-kind shipments | Bilingual mobile-first workflow with local draft |
+| `/donations/monetary/new` | Register cash, transfers, foreign currency, and other monetary receipts | Bilingual continuous workflow with local draft and private evidence |
 | Receive, Transform, Impact | Record the complete operational cycle | Database foundation deployed; interface integration proceeds by module |
 | Reports and dashboard | Summarize resources, operations, and impact | Reporting model defined; application views proceed by module |
 
@@ -19,7 +20,7 @@ The product name shown on the primary page and production domain is `somosedific
 flowchart TD
     A["React + Vite on Vercel"] --> B["Supabase client"]
     B --> C["Supabase Auth"]
-    B --> D["Postgres: 17 RLS tables"]
+    B --> D["Postgres: 18 public + 2 private RLS tables"]
     B --> E["Private attachment Storage"]
     D --> F["Bilingual operational reports"]
 ```
@@ -45,6 +46,8 @@ flowchart TD
 
 Donations accept monetary, in-kind, and mixed headers. Each detail line records one resource type. Reference valuation for donated goods remains separate from cash received.
 
+A monetary line preserves origin amount and currency in `donation_detail`. Its one-to-one `monetary_donation_detail` extension records receipt method, USD reporting base, applied exchange rate, rate source and date, transaction references, and reconciliation audit data. USD cash uses an identity rate of 1. Foreign-currency receipts retain the source values and evidence used for conversion.
+
 For a shipment or container, the application records the donor, origin, route, transport reference, estimated arrival, declared items, dietary and expiry information, physical receipt, accepted or damaged quantities, inventory movements, and supporting evidence.
 
 ### Transform
@@ -53,7 +56,7 @@ One `kit_transformation` represents one kit type and the quantity prepared. Evid
 
 ### Impact
 
-An `impact_event` records its responsible actor, dates, target population, operational status, aggregate demographics, delivered kit quantities, and evidence. Current demographic storage is aggregate to reduce sensitive personal data.
+An `impact_event` records its responsible actor, dates, target population, operational status, aggregate demographics, delivered kit quantities, and evidence. Minimum nominal beneficiary identity and event participation are stored separately in the private schema. Public and international reporting uses aggregate impact data and non-identifying references.
 
 ## Budget, donations, and international reporting
 
@@ -83,9 +86,10 @@ The budget module requires a dedicated schema and migration. Operational donatio
 ## Security and data access
 
 - Supabase Auth supplies authenticated sessions. Magic-link sign-in is the current planned entry method.
-- All 17 operational tables use RLS backed by a private active-operator allow-list.
+- All 18 public operational tables and both private beneficiary tables use RLS backed by a private active-operator allow-list.
 - Anonymous table access is revoked.
 - Attachments live in a private bucket with file-size and MIME restrictions.
+- Beneficiary identity and contact data stay in the private schema and are absent from public reporting endpoints.
 - The balance view uses security-invoker behavior.
 - Granular permissions by organization and role remain a subsequent milestone.
 - Service-role keys and database secrets stay outside client code and source control.
@@ -93,6 +97,10 @@ The budget module requires a dedicated schema and migration. Operational donatio
 ## Current integration boundary
 
 The in-kind interface now provides magic-link access, validates operator authorization, preserves a browser draft, uploads private evidence to deterministic paths, and persists the announcement through the idempotent `submit_in_kind_shipment` RPC. One RPC transaction creates or reuses the sender actor, donor role, donation, details, shipment, declared items, and evidence metadata.
+
+The monetary interface uses the same operator gate, deterministic private uploads, and retry-safe submission key. The security-invoker `submit_monetary_donation` RPC creates or reuses the donor, monetary donation, origin detail, multi-currency extension, and evidence metadata in one transaction.
+
+The protected beneficiary foundation is available through the security-invoker `register_beneficiary` RPC. It requires privacy acknowledgement, returns a non-identifying `BEN-…` code, and can link participation to an impact event. A dedicated beneficiary interface remains a subsequent module; direct public access to nominal rows is outside the product boundary.
 
 Inventory lots and movements begin after physical receipt. This boundary preserves declared quantities until a team member records warehouse, accepted, damaged, condition, and verification data from inspection.
 
@@ -117,9 +125,9 @@ docs/specs/               Executable behavior descriptions
 6. Open a pull request for human review.
 7. Merge to `main` to publish both production domains.
 
-See `docs/adr/ADR-001-manual-production-promotion.md` for the production-domain history and `docs/adr/ADR-003-in-kind-shipment-inventory.md` for the shipment model.
+See `docs/adr/ADR-001-manual-production-promotion.md` for the production-domain history, `docs/adr/ADR-003-in-kind-shipment-inventory.md` for the shipment model, and `docs/adr/ADR-004-protected-beneficiary-identity.md` for the beneficiary privacy boundary.
 
 ---
 
-**Version:** 2.0
+**Version:** 2.1
 **Last updated:** 2026-07-19

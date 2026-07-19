@@ -1,6 +1,6 @@
 # Test Specification: In-Kind Shipment Intake
 
-**Status:** Interface and schema implemented; persistence integration pending
+**Status:** Interface, schema, private evidence, and Supabase persistence implemented
 **Related plan:** `../plans/SPRINT-S1-v1_in-kind-shipment-intake.md`
 
 ## Frontend validation
@@ -66,9 +66,10 @@
 
 Before implementation, the frontend tests imported absent functions and the SQL tests referenced absent tables. Those failures are recorded in the implementation commit history and pull request. The current implementation passes the frontend behavior suite, and the deployed database satisfies the schema contract.
 
-## Remaining integration behavior
+## Persistence behavior
 
-- A successful screen requires a confirmed persisted database record.
+- The success screen uses the confirmed reference returned by `submit_in_kind_shipment`.
 - The local draft clears only after all required records and evidence metadata are committed.
 - Network and RLS failures preserve entered data and provide bilingual retry actions.
-- Multi-table writes use an atomic server-side operation or a transactionally equivalent service boundary.
+- One security-invoker RPC writes the sender, donor role, donation, shipment, declared items, and evidence metadata atomically.
+- Repeated submission keys return the existing shipment and preserve one operational record.

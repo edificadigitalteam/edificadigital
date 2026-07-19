@@ -30,7 +30,7 @@ All project plans are stored in `/docs/plans/` with a consistent naming conventi
 |------|------|--------|---|
 | P0 | Phase 0 setup docs (in `/docs`) | ✅ Complete | GitHub, Vercel, Supabase initial config |
 | S1-D1 | [SPRINT-S1-v1_supabase-foundation.md](SPRINT-S1-v1_supabase-foundation.md) | ✅ Complete | Foundation and Supabase schema |
-| S1-D2 | [SPRINT-S1-v1_monetary-beneficiary-foundation.md](SPRINT-S1-v1_monetary-beneficiary-foundation.md) | ✍️ In Progress | Monetary receipt intake and protected beneficiary foundation |
+| S1-D2 | [SPRINT-S1-v1_monetary-beneficiary-foundation.md](SPRINT-S1-v1_monetary-beneficiary-foundation.md) | 🧪 In Review | Monetary receipt intake and protected beneficiary foundation implemented |
 | S1-INKIND | [SPRINT-S1-v1_in-kind-shipment-intake.md](SPRINT-S1-v1_in-kind-shipment-intake.md) | ✅ Complete | Bilingual in-kind intake, database, evidence, and persistence implemented |
 | S1-DB | [SPRINT-S1-v1_supabase-foundation.md](SPRINT-S1-v1_supabase-foundation.md) | ✅ Complete | Supabase foundation and operational database deployment |
 | S1-SYNC | [SPRINT-S1-v1_supabase-submission.md](SPRINT-S1-v1_supabase-submission.md) | ✅ Complete | Authenticated in-kind persistence merged to `main` in PR #16 |
@@ -44,6 +44,7 @@ All project plans are stored in `/docs/plans/` with a consistent naming conventi
 
 - 📋 **Draft** — Being written
 - ✍️ **In Progress** — Actively being executed
+- 🧪 **In Review** — Implemented and awaiting human pull-request review
 - ✅ **Complete** — Done and reviewed
 - 🔄 **Archived** — Old version (see newer)
 
