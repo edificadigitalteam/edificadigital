@@ -1,104 +1,82 @@
-# Donation Traceability System — MVP
+# somosedificadigital
 
-**Transparent, multimedia-backed donation tracking: Receive → Transform → Impact**
+Plataforma bilingüe de trazabilidad de donaciones: recibir, transformar y documentar impacto.
 
-## Quick Start
+Bilingual donation-traceability platform for receiving resources, transforming them, and documenting impact.
 
-This is the MVP of a donation traceability platform. Every donation flows through three sequential pillars with supporting evidence (photos, invoices, sign-in sheets).
+## Current delivery
 
-### The Three Pillars
+- Public Spanish/English landing page for the Edifica Digital proposal.
+- Mobile-first Spanish/English intake for in-kind shipments at `/donations/in-kind/new`.
+- Supabase foundation deployed in `edifydb` with 17 RLS-protected operational tables.
+- Container, declared-item, inventory-lot, movement, and evidence model.
+- Private attachment Storage with authenticated access.
+- Technical model for bilingual institutional and international reporting.
+- Allow-listed magic-link access for the initial product owners.
+- Atomic, idempotent Supabase persistence with private evidence uploads.
 
-| Pillar | What | Evidence |
-|--------|------|----------|
-| **Receive** | Donations (cash or in-kind) enter the system | Proof of payment, receipt |
-| **Transform** | Resources are packaged into distributable kits | Fiscal invoice, assembly photos |
-| **Impact** | Kits are delivered in field events | Delivery photos, signed sign-in sheets |
+The in-kind interface validates data, preserves a local draft, uploads approved evidence, and persists the sender, donation, shipment, and declared items through one transactional RPC. The success reference comes from Supabase. Inventory lots and movements begin when the shipment is physically received and verified.
 
-## Tech Stack
+## Operational model
 
-- **Frontend:** React + Vite (deployed on Vercel)
-- **Backend:** Supabase (Postgres + Auth + Storage)
-- **Charts:** Recharts
-- **PDF:** @react-pdf/renderer
-- **Language:** English (MVP) — Spanish next
+| Stage | Records | Evidence |
+|---|---|---|
+| Receive | Monetary and in-kind donations, shipments, declared goods, inventory lots | Payment, packing, carrier, customs, inspection, and receipt records |
+| Transform | Prepared kit types and quantities | Procurement and preparation records |
+| Impact | Distribution events, kit quantities, aggregate demographics | Delivery records and field evidence |
 
-## MVP Scope
+Cash received, in-kind reference value, approved budget, and operating expenses remain separate measures throughout the system.
 
-✅ **Included:**
-- Actor management (Donor, Supplier, Manager)
-- New Donation (multi-line: monetary + in-kind)
-- New Transformation (kits with evidence)
-- New Impact Event (demographics + kits dispatched)
-- Dashboard (global view + campaign detail)
-- Downloadable PDF report
-- Magic link authentication
+## Technology
 
-❌ **Out of scope (roadmap):**
-- Exact financial traceability per campaign
-- Multi-currency
-- Granular permissions
-- Public live link
-- OCR automation
+- React and Vite
+- Supabase Postgres, Auth, and Storage
+- Vercel production hosting
+- Vitest and pgTAP specifications
+- Manrope for interface text and Source Serif 4 for editorial headings
 
-## Project Structure
-
-```
-donation-traceability-system/
-├── docs/
-│   ├── 1_Pillars_and_Philosophy.docx     (strategy + principles)
-│   ├── 2_MVP_Specification.docx          (features + data model)
-│   ├── 3_Stack_and_Roadmap.docx          (tech + roadmap)
-│   ├── ARCHITECTURE.md                   (system design overview)
-│   └── DATABASE.md                       (schema + relationships)
-├── frontend/                             (React app — created by Vite)
-│   ├── src/
-│   ├── public/
-│   └── package.json
-├── .github/
-│   └── workflows/                        (CI/CD — future)
-├── .env.example                          (template)
-├── .gitignore
-├── README.md                             (this file)
-└── CONTRIBUTING.md                       (contributor guide)
-```
-
-## Getting Started (Local Development)
+## Local development
 
 ```bash
-# 1. Clone
-git clone https://github.com/[org]/donation-traceability-system
-cd donation-traceability-system/frontend
-
-# 2. Install
+git clone https://github.com/edificadigitalteam/edificadigital.git
+cd edificadigital/frontend
 pnpm install
-
-# 3. Create .env.local (see .env.example)
-# Add your Supabase credentials
-
-# 4. Run
+cp ../.env.example .env.local
 pnpm dev
 ```
 
-Visit `http://localhost:5173`
+Open `http://localhost:5173`.
+
+Use publishable Supabase client values in the frontend environment. Keep database and service-role secrets in protected server environments.
+
+## Verification
+
+From `frontend/`:
+
+```bash
+pnpm test
+pnpm lint
+pnpm build
+```
+
+Database migrations and pgTAP specifications live in `supabase/migrations/` and `supabase/tests/`.
 
 ## Documentation
 
-- **1_Pillars_and_Philosophy.docx** — Core principles (Receive → Transform → Impact)
-- **2_MVP_Specification.docx** — Features, data model, dashboard design
-- **3_Stack_and_Roadmap.docx** — Tech choices, post-MVP roadmap
-- **ARCHITECTURE.md** — System overview (this repo)
-- **DATABASE.md** — Data model and relationships
+- [Architecture](docs/ARCHITECTURE.md)
+- [Database reference](docs/DATABASE.md)
+- [Design system](docs/DESIGN.md)
+- [Plans](docs/plans/INDEX.md)
+- [Agent rules](agents.md)
+- [AI coding guide](claude.md)
 
-## Contributing
+## Delivery rules
 
-See CONTRIBUTING.md
+Every change follows plan → tests → implementation → refactor → verification → documentation → pull request. Database changes are declared before implementation and applied through immutable migrations.
 
-## License
-
-MIT
+Merging `main` publishes `edificadigital.vercel.app` and `somosedificadigital.com`.
 
 ---
 
-**Prepared for:** Isaac Delgado, Yang (yangetze)
 **Version:** MVP Phase 1
-**Last updated:** [date]
+**Last updated:** 2026-07-19

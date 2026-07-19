@@ -1,206 +1,157 @@
-# Agents & Team
+# Agents and Team
 
-This document defines the team structure, roles, and how AI agents (Claude) collaborate on this project.
+This file contains binding working rules for human contributors and AI coding agents in Edifica Digital.
 
-## Team Structure
+## Team
 
 | Role | Responsibility | Mode |
-|------|---|---|
-| **Isaac Delgado** | Product Owner, Strategic Decisions, Project Lead | Human |
-| **Yang (yangetze)** | Product Owner, Strategic Decisions, Project Lead | Human |
-| **Claude (AI)** | Architecture, Code Structure, Documentation, TDD Framework | AI Agent |
-| **Developer(s)** | Implementation, Code Review, Deployment | Human (Future) |
+|---|---|---|
+| Product owners | Product ownership, strategy, scope, and approvals | Human |
+| Human developers | Implementation review, security review, and release approval | Human |
+| AI coding agents | Planning, tests, implementation, database migrations, documentation, and verification within explicit task scope | AI |
 
-## Claude's Role in This Project
+Product owners decide business direction. AI agents may make reversible implementation choices that follow repository decisions and may update external infrastructure only when the user explicitly authorizes that action and identifies the target.
 
-Claude acts as an **architecture and TDD coach** — not a code generator replacing developers.
+Human review remains required before merge to `main`.
 
-### Responsibilities
+## Mandatory delivery workflow
 
-1. **Architecture & Design**
-   - Data model design
-   - System flow documentation
-   - Technology recommendations
-   - Design patterns and best practices
+Every implementation follows this order:
 
-2. **Test-Driven Development (TDD)**
-   - Test case structure and examples
-   - Testing strategy documentation
-   - Test file templates
-   - Validation of test coverage
+1. **Plan.** State the requested outcome, affected files, risks, and verification method.
+2. **Flag database changes.** Identify every table, column, constraint, index, trigger, function, view, RLS policy, Storage rule, seed, or migration before implementation.
+3. **Red.** Add or update executable tests that fail for the missing behavior.
+4. **Green.** Implement the smallest complete change that passes the tests.
+5. **Refactor.** Improve structure while tests remain green.
+6. **Verify.** Run relevant tests, lint, build, accessibility checks, schema checks, and security or performance advisors.
+7. **Document.** Update architecture, database reference, plans, specs, and ADRs when the implemented truth changes.
+8. **Review.** Publish a pull request and obtain human approval.
 
-3. **Documentation**
-   - Technical specifications
-   - API contract documentation
-   - Component design docs
-   - Decision records (ADRs)
+For urgent work, compress feedback loops while preserving the order above.
 
-4. **Code Structure & Patterns**
-   - Project layout recommendations
-   - Naming conventions
-   - Folder organization
-   - Hook and component templates
+## Current product decisions
 
-5. **Git & DevOps Guidance**
-   - Commit message standards
-   - Branch strategy
-   - Deployment checklists
-   - Environment configuration
+### Identity and language
 
-### What Claude Does NOT Do
+- The primary public identity is `somosedificadigital`.
+- The landing page and operational application are bilingual in Spanish and English.
+- The language switch remains visible, preserves the current task and form values, and changes all visible interface content.
+- Database artifacts use English `snake_case` and stable lower-case values.
+- Reports intended for international organizations are available in Spanish and English.
 
-- Write production code (developers do that, guided by tests)
-- Make unilateral project decisions (Isaac owns decisions)
-- Deploy or manage infrastructure directly
-- Replace human code review
+### Interaction and writing
 
-## Communication Protocol
+- Preserve the existing typography, palette, spacing, and component language unless the product owners approve a new direction.
+- Use a restrained, professional, human visual composition. Decorative elements must support content or navigation.
+- Design mobile-first with one primary action per step, persistent labels, short instructions, safe defaults, visible progress, and generous touch targets.
+- Validation messages state the exact action needed to continue.
+- Support keyboard navigation, visible focus, screen readers, sufficient contrast, and reduced motion.
+- Product and marketing copy uses direct statements and avoids antitheses, comparisons, and personification of non-human subjects.
+- Replace the word “no” with a direct construction when clarity and accuracy remain intact.
+- Avoid generic AI-page motifs, excessive gradients, ornamental grids, floating cards without purpose, and filler metrics.
+- Use respectful plain language suited to people with varied cognitive and digital literacy.
 
-### When to Ask Claude
+### Donations, shipments, and budgets
 
-- "Help me design the schema for [feature]"
-- "What tests should I write for [component]?"
-- "What's the best folder structure for [module]?"
-- "Review the architecture of [system]"
-- "Write a test spec for [feature]"
-- "Create an ADR for [decision]"
+- Donations may be `monetary`, `in_kind`, or `mixed`.
+- Monetary value received and in-kind reference value remain separate measures.
+- A container is represented by one `in_kind` donation, one shipment, many declared items, received inventory lots, and append-only movements.
+- Sender email is optional. A person or organization can be registered with a name and available contact data.
+- Dietary information, including `gluten_free`, belongs to item and lot metadata.
+- Declared, received, accepted, damaged, and available quantities remain distinct.
+- Transport, customs, handling, warehousing, and similar costs are expenses rather than donations.
+- Approved budgets, received donations, in-kind reference values, and expenses remain separate reporting domains.
+- International reports preserve currencies, valuation methods, sources, dates, and evidence references.
 
-### When to Ask Isaac
+## Supabase rules
 
-- "Which feature should we prioritize?"
-- "Should we use [technology] vs [alternative]?"
-- "Is this in scope for the MVP?"
-- "Approve this design direction?"
+The authorized Edifica Digital project is `edifydb`, reference `rrqyihsjftlloizsccvi`. Other visible Supabase projects are outside scope unless the user explicitly identifies them.
 
-### When to Pair (Isaac + Claude)
+Current deployed baseline:
 
-- Reviewing architectural decisions against business goals
-- Making trade-offs between tech and timeline
-- Deciding scope for upcoming sprints
-- Evaluating post-MVP roadmap items
+- 17 operational tables and one security-invoker view;
+- RLS enabled on every operational table;
+- operator allow-list authorization on every operational table and private attachment object;
+- anonymous table privileges revoked;
+- private `attachments` bucket with a 20 MB limit and approved image/PDF MIME types;
+- six bilingual units and eight bilingual evidence types;
+- foundation, in-kind shipment, foreign-key/RLS optimization, policy hardening, and authenticated-submission migrations applied.
 
-## Workflow: TDD-Driven Development
+Database work must follow these rules:
 
-### Mandatory Order for Every Task
+1. Inspect the selected project and current schema before DDL.
+2. Put every DDL change in a timestamped repository migration.
+3. Add pgTAP coverage before the migration.
+4. Apply DDL through Supabase migration history, never as an untracked ad hoc statement.
+5. Keep applied migration files immutable; corrective work gets a later migration.
+6. Use generated IDs and conflict-safe catalog inserts.
+7. Exercise writes inside a transaction and roll them back when validating production structure.
+8. Run security and performance advisors after schema or policy changes.
+9. Keep service-role keys, database passwords, and secrets outside source control and client bundles.
+10. Document the resulting schema and application integration boundary.
 
-1. **Plan first.** Before writing any code, write out the plan for the issue/task (what's changing, why, affected files). Get it reviewed/agreed before moving on.
-2. **Tests before code.** Once the plan is agreed, write the failing tests (TDD red) before writing any implementation code.
-3. **Flag database changes.** If the plan implies any database change (new/altered table, column, constraint, migration, RLS policy), call it out explicitly in the plan and in the PR description before writing code — don't let a schema change surface only in the diff.
+The detailed reference is `docs/DATABASE.md`. The in-kind frontend now uses allow-listed magic-link access, deterministic private uploads, and the idempotent `submit_in_kind_shipment` RPC. Inventory receipt remains a distinct later workflow because accepted, damaged, warehouse, and verification quantities require physical inspection.
 
-### The Flow
-
-```
-1. Feature Request / Requirement
-        ↓
-2. Claude: Write Test Spec (tests describe behavior)
-        ↓
-3. Developer: Write Failing Tests (red)
-        ↓
-4. Developer: Write Minimal Code (green)
-        ↓
-5. Developer: Refactor (using test coverage as safety net)
-        ↓
-6. Developer: Code Review (human + Claude)
-        ↓
-7. Merge to Main
-```
-
-### Claude's Role in Each Step
-
-- **Step 2:** Provide test structure, edge cases, validation rules
-- **Step 6:** Review code against test coverage, patterns, best practices
-
-## Documentation Standards
-
-All decisions that affect architecture must be documented in:
-
-1. **ADRs** (Architecture Decision Records) — `/docs/adr/` folder
-2. **Test Specs** — Alongside test files or in `/docs/specs/`
-3. **Comments** — In code, especially non-obvious logic
-4. **README** sections — High-level explanation
-
-Example ADR filename: `ADR-001-why-we-chose-supabase.md`
-
-## Git Workflow
-
-### Commit Messages
-
-Format: `[TYPE] Brief description`
-
-Types:
-- `[FEAT]` — New feature
-- `[FIX]` — Bug fix
-- `[TEST]` — Test additions/changes
-- `[DOCS]` — Documentation
-- `[REFACTOR]` — Code refactoring
-- `[CHORE]` — Build, deps, setup
-
-Example:
-```
-[TEST] Add tests for Donation form validation
-[FEAT] Implement Actor CRUD endpoints
-[DOCS] Add database relationships diagram
-```
+## Git and release rules
 
 ### Branches
 
-- `main` — Production-ready, all tests pass
-- `develop` — Integration branch for features
-- `feature/[name]` — Individual feature branches
-- `bugfix/[name]` — Bug fixes
-- `docs/[name]` — Documentation changes
+- `main` contains production-ready code.
+- Create every work branch from an up-to-date `main`.
+- Use `feature/`, `bugfix/`, `docs/`, or another descriptive prefix.
+- Never commit directly to `main`.
+- Never mix unrelated user changes into an agent commit.
 
-**Mandatory rules:**
-- **Never commit directly to `main`.** All changes go through a branch and a PR.
-- **Always branch from `main`** when creating a new branch (`git checkout main && git pull && git checkout -b [type]/[name]`), not from another feature branch.
+### Commits
 
-### Pull Requests
+Use `[TYPE] Brief description`.
 
-Every PR must include:
-- [ ] Plan referenced/linked (written before coding started)
-- [ ] Tests (new + modified), written before the implementation (TDD)
-- [ ] Documentation (if architecture changed)
-- [ ] **Database changes called out explicitly** in the description, if any (new/altered tables, columns, constraints, migrations, RLS)
-- [ ] No linting errors
-- [ ] Meaningful description linking to issues
+Accepted types include `[PLAN]`, `[TEST]`, `[FEAT]`, `[FIX]`, `[SECURITY]`, `[PERF]`, `[REFACTOR]`, `[DOCS]`, and `[CHORE]`.
+
+Keep plan, red tests, implementation, and later corrections in reviewable commits when the workflow permits.
+
+### Pull requests
+
+Every pull request includes:
+
+- linked plan or issue;
+- test evidence and the observed red-to-green sequence;
+- explicit database-change notice;
+- security and accessibility implications;
+- verification commands and results;
+- screenshots for visible interface changes;
+- documentation updates;
+- rollback or recovery considerations for external changes.
 
 ### Deployment
 
-Merges to `main` auto-build and auto-publish to **both** the default Vercel domain (`edificadigital.vercel.app`) and the real production domain (`somosedificadigital.com`) — this is standard Vercel behavior. An earlier attempt at manual-only promotion for the custom domain caused a live outage (domain got orphaned) and was reverted — see `docs/adr/ADR-001-manual-production-promotion.md` for the full history before attempting this again.
+Merges to `main` publish automatically to `edificadigital.vercel.app` and `somosedificadigital.com`. Pull-request review is the production release gate. See `docs/adr/ADR-001-manual-production-promotion.md` before changing this model.
 
-Because both domains now go live automatically, **the branch protection rules above (PR review required, no direct commits to `main`) are the only safeguard before something reaches the public domain.** Treat every PR into `main` accordingly.
+## Review checklist
 
-## Escalation Path
+### Behavior
 
-**Blocker or major decision needed?**
+- [ ] Requirements and edge cases have executable tests.
+- [ ] Spanish and English remain complete and equivalent.
+- [ ] Drafts and entered values survive language changes and backward navigation.
+- [ ] Errors tell the user what action enables progress.
 
-1. Document the issue in GitHub Issues
-2. Tag @ai-agent (Claude) for technical analysis
-3. Tag @isaac or @yangetze for product/business decision
-4. Discuss in issue comments
-5. Document decision in ADR
+### Data and security
 
-## Review Checklist (Human + AI)
+- [ ] Database changes were planned, tested, migrated, and documented.
+- [ ] RLS, grants, Storage rules, and secrets were reviewed.
+- [ ] Monetary, in-kind, budget, and expense figures retain their distinct meaning.
+- [ ] Verification data was rolled back or intentionally labeled.
 
-### Claude Reviews For
+### Quality and release
 
-- [ ] TDD principles followed (tests exist before code)
-- [ ] Architecture consistency
-- [ ] Naming conventions
-- [ ] Code duplication
-- [ ] Edge cases
-- [ ] Documentation completeness
-
-### Human Developer Reviews For
-
-- [ ] Functional correctness
-- [ ] Performance implications
-- [ ] Security concerns
-- [ ] Business logic accuracy
-- [ ] User experience
+- [ ] Relevant tests, lint, and production build pass.
+- [ ] Accessibility and responsive states were checked.
+- [ ] Existing design language is preserved.
+- [ ] The PR is focused and ready for human review.
 
 ---
 
-**Version:** 1.0
-**Last Updated:** [date]
-**Maintained by:** Isaac Delgado, Yang (yangetze), Claude (AI)
+**Version:** 2.0
+**Last updated:** 2026-07-19
+**Maintained by:** Product owners and project contributors

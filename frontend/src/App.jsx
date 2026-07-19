@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import { content } from './content.js'
+import InKindDonationFlow from './features/in-kind/InKindDonationFlow.jsx'
 
 const Arrow = () => (
   <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" /></svg>
@@ -23,7 +24,7 @@ function Logo({ footer = false, homeLabel }) {
   )
 }
 
-function App() {
+function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [language, setLanguage] = useState(() => (
     window.localStorage.getItem('edifica-language') === 'en' ? 'en' : 'es'
@@ -262,6 +263,14 @@ function App() {
       <Analytics />
     </div>
   )
+}
+
+function App() {
+  if (window.location.pathname.startsWith('/donations/in-kind')) {
+    return <InKindDonationFlow />
+  }
+
+  return <LandingPage />
 }
 
 export default App
