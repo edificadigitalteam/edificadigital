@@ -50,6 +50,15 @@ svg {
 }
 .nav-links > a { transition: color 180ms ease; }
 .nav-links > a:hover { color: var(--purple); }
+.language-switch {
+  min-width: 61px; padding: 6px 0; display: inline-flex; align-items: center;
+  justify-content: center; gap: 5px; border: 0; border-bottom: 1px solid #bfb6c3;
+  background: transparent; color: #918797; font-size: 10px; cursor: pointer;
+}
+.language-switch span { color: var(--purple); font-weight: 800; }
+.language-switch i { font-style: normal; color: #c0b8c4; }
+.language-switch b { font-weight: 600; }
+.language-switch:hover { border-color: var(--purple); }
 .nav-cta {
   height: 45px; padding: 0 19px; display: inline-flex; align-items: center;
   gap: 15px; background: var(--purple); color: white !important;
@@ -426,6 +435,10 @@ footer > span { text-align: right; }
   }
   .nav-links.is-open { display: flex; }
   .nav-links > a { padding: 15px 4px; }
+  .language-switch {
+    width: 76px; margin: 8px 0 14px; padding: 10px 0;
+    justify-content: flex-start; font-size: 12px;
+  }
   .nav-links .nav-cta { margin-top: 10px; padding: 0 16px; }
   .hero, .section, .closing, footer { width: calc(100% - 36px); }
   .hero { min-height: auto; gap: 55px; padding: 62px 0 88px; }
