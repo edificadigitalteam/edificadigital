@@ -77,6 +77,19 @@ test('uses the existing private evidence limits', () => {
   assert.equal(validateMonetaryEvidence({ type: 'image/jpeg', size: 20 * 1024 * 1024 + 1 }).size, 'too_large')
 })
 
+test('requires payment or receipt evidence before persistence', async () => {
+  const client = {
+    auth: { getUser: async () => ({ data: { user: { id: 'user-1' } }, error: null }) },
+    storage: { from: () => ({ upload: async () => ({ data: null, error: null }) }) },
+    rpc: async () => ({ data: { created: true }, error: null }),
+  }
+
+  await assert.rejects(
+    submitMonetaryDonation({ client, draft: completeDraft(), evidence: [] }),
+    (error) => error.name === 'MonetarySubmissionError' && error.stage === 'evidence_required',
+  )
+})
+
 test('uploads payment evidence before the atomic monetary RPC', async () => {
   const calls = { uploads: [], rpc: [] }
   const client = {
@@ -148,4 +161,3 @@ test('retries with the same submission key and evidence path', async () => {
   assert.equal(paths[0], paths[1])
   assert.equal(keys[0], keys[1])
 })
-
