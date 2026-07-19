@@ -167,9 +167,14 @@ Use multiples of 4px for consistency.
 
 ### Grid & Responsive
 
-- **Desktop:** Full width, gutters 24px
-- **Tablet (768px):** Adjust column widths, gutters 20px
-- **Mobile (640px):** Single column, gutters 16px, padding 16px
+**MANDATORY: Mobile-first.** Design and build the mobile layout first — it's the primary target, not an afterthought. Desktop must remain fully usable, but every screen starts from the mobile base styles and is progressively enhanced upward, never the other way around.
+
+- Write base (unprefixed) styles for mobile. Add tablet/desktop refinements with Tailwind's `min-width` breakpoint prefixes (`sm:`, `md:`, `lg:`, `xl:`) layered on top — never build the desktop layout first and try to cram it down to mobile with `max-width` overrides.
+- **Mobile (base, <640px):** Single column, gutters 16px, padding 16px
+- **Tablet (`md:`, ≥768px):** Adjust column widths, gutters 20px
+- **Desktop (`lg:`, ≥1024px):** Full width, gutters 24px
+
+Every new screen/component must be checked at a mobile viewport first, before checking desktop.
 
 ## Dark Mode (Future)
 

@@ -81,6 +81,12 @@ Claude acts as an **architecture and TDD coach** — not a code generator replac
 
 ## Workflow: TDD-Driven Development
 
+### Mandatory Order for Every Task
+
+1. **Plan first.** Before writing any code, write out the plan for the issue/task (what's changing, why, affected files). Get it reviewed/agreed before moving on.
+2. **Tests before code.** Once the plan is agreed, write the failing tests (TDD red) before writing any implementation code.
+3. **Flag database changes.** If the plan implies any database change (new/altered table, column, constraint, migration, RLS policy), call it out explicitly in the plan and in the PR description before writing code — don't let a schema change surface only in the diff.
+
 ### The Flow
 
 ```
@@ -151,8 +157,10 @@ Example:
 ### Pull Requests
 
 Every PR must include:
-- [ ] Tests (new + modified)
+- [ ] Plan referenced/linked (written before coding started)
+- [ ] Tests (new + modified), written before the implementation (TDD)
 - [ ] Documentation (if architecture changed)
+- [ ] **Database changes called out explicitly** in the description, if any (new/altered tables, columns, constraints, migrations, RLS)
 - [ ] No linting errors
 - [ ] Meaningful description linking to issues
 
