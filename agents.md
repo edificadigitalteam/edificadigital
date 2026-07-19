@@ -6,8 +6,7 @@ This file contains binding working rules for human contributors and AI coding ag
 
 | Role | Responsibility | Mode |
 |---|---|---|
-| Isaac Delgado | Product ownership, strategy, scope, and approvals | Human |
-| Yang (`yangetze`) | Product ownership, strategy, scope, and approvals | Human |
+| Product owners | Product ownership, strategy, scope, and approvals | Human |
 | Human developers | Implementation review, security review, and release approval | Human |
 | AI coding agents | Planning, tests, implementation, database migrations, documentation, and verification within explicit task scope | AI |
 
@@ -72,11 +71,11 @@ Current deployed baseline:
 
 - 17 operational tables and one security-invoker view;
 - RLS enabled on every operational table;
-- explicit authenticated-user policies with scalar `auth.role()` subqueries;
+- operator allow-list authorization on every operational table and private attachment object;
 - anonymous table privileges revoked;
 - private `attachments` bucket with a 20 MB limit and approved image/PDF MIME types;
 - six bilingual units and eight bilingual evidence types;
-- foundation, in-kind shipment, foreign-key/RLS optimization, and policy-hardening migrations applied.
+- foundation, in-kind shipment, foreign-key/RLS optimization, policy hardening, and authenticated-submission migrations applied.
 
 Database work must follow these rules:
 
@@ -91,7 +90,7 @@ Database work must follow these rules:
 9. Keep service-role keys, database passwords, and secrets outside source control and client bundles.
 10. Document the resulting schema and application integration boundary.
 
-The detailed reference is `docs/DATABASE.md`. The current frontend still needs authenticated submission orchestration before browser drafts become persisted operational records.
+The detailed reference is `docs/DATABASE.md`. The in-kind frontend now uses allow-listed magic-link access, deterministic private uploads, and the idempotent `submit_in_kind_shipment` RPC. Inventory receipt remains a distinct later workflow because accepted, damaged, warehouse, and verification quantities require physical inspection.
 
 ## Git and release rules
 
@@ -155,4 +154,4 @@ Merges to `main` publish automatically to `edificadigital.vercel.app` and `somos
 
 **Version:** 2.0
 **Last updated:** 2026-07-19
-**Maintained by:** Isaac Delgado, Yang (`yangetze`), and project contributors
+**Maintained by:** Product owners and project contributors

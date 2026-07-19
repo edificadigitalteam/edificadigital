@@ -12,8 +12,10 @@ Bilingual donation-traceability platform for receiving resources, transforming t
 - Container, declared-item, inventory-lot, movement, and evidence model.
 - Private attachment Storage with authenticated access.
 - Technical model for bilingual institutional and international reporting.
+- Allow-listed magic-link access for the initial product owners.
+- Atomic, idempotent Supabase persistence with private evidence uploads.
 
-The in-kind interface currently validates data, prepares a structured payload, and preserves a local draft. Authenticated Supabase persistence is the next application milestone.
+The in-kind interface validates data, preserves a local draft, uploads approved evidence, and persists the sender, donation, shipment, and declared items through one transactional RPC. The success reference comes from Supabase. Inventory lots and movements begin when the shipment is physically received and verified.
 
 ## Operational model
 

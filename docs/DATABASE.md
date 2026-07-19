@@ -14,6 +14,7 @@ All database identifiers and stored enum-like values use English `snake_case`. S
 | 2 | `202607190001_in_kind_shipment.sql` | `in_kind_shipment_inventory` | Containers, declared goods, received lots, movements, and shipment evidence |
 | 3 | `202607190002_optimize_rls_and_foreign_keys.sql` | `optimize_rls_and_foreign_keys` | Foreign-key indexes and scalar RLS predicates |
 | 4 | `202607190003_harden_rls_predicates.sql` | `harden_rls_predicates` | Explicit authenticated-user predicates for every operational table |
+| 5 | `20260719031418_authenticated_submission.sql` | `authenticated_submission` | Operator allow-list, audit fields, idempotent RPC, evidence access, and current RLS predicates |
 
 DDL changes must be added as new migration files and applied through Supabase migration history. Existing applied migrations remain immutable.
 
@@ -98,7 +99,10 @@ Reports for international organizations must present cash received, in-kind refe
 ## Security model
 
 - RLS is enabled on all 17 operational tables.
-- Every operational policy requires `(select auth.role()) = 'authenticated'`.
+- Every operational policy requires an authenticated identity whose email appears as active in `private.operator_access`.
+- Operator identities are provisioned directly in the protected Supabase environment; personal addresses stay outside Git history.
+- `private.is_authorized_operator()` is a protected security-definer function in a non-exposed schema and begins with an authenticated-user check.
+- `public.current_operator_access()` lets the authenticated application verify access without exposing the allow-list.
 - `anon` has no table privileges on operational data.
 - `inventory_lot_balance` uses `security_invoker` and inherits access from its source tables.
 - The `attachments` bucket is private, limited to 20 MB per object, and accepts JPEG, PNG, WebP, and PDF files.
@@ -121,9 +125,21 @@ The deployment was verified on 2026-07-19 with:
 
 The repository pgTAP specifications are in `supabase/tests/`. Run them against an isolated database or inside a rollback-safe transaction.
 
-## Application integration status
+## Authenticated submission
 
-The database foundation is ready. The current in-kind interface prepares a bilingual payload and saves a browser draft. Its next implementation step is authenticated Supabase submission with one atomic workflow for actor, donation, shipment, item, lot, movement, and attachment records.
+`donation.submission_key` and `donation.created_by` provide retry identity and submission audit data. The unique `(created_by, submission_key)` index prevents repeated client attempts from creating duplicate donations.
+
+`public.submit_in_kind_shipment(payload jsonb)` is a security-invoker RPC available only to `authenticated`. It verifies the active operator and creates or reuses:
+
+1. sender actor and donor role;
+2. in-kind donation and audit values;
+3. shipment route and lifecycle;
+4. donation details and linked declared shipment items; and
+5. metadata for successfully uploaded private evidence.
+
+The application uploads evidence before the RPC using deterministic paths scoped by user and submission key. A retry uses the same object paths and the same submission key.
+
+Inventory lots and movements stay outside this announcement RPC. They require physical receipt data such as warehouse, received quantity, accepted quantity, damage, condition, and verification status.
 
 ---
 

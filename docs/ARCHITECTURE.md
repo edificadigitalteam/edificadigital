@@ -83,7 +83,7 @@ The budget module requires a dedicated schema and migration. Operational donatio
 ## Security and data access
 
 - Supabase Auth supplies authenticated sessions. Magic-link sign-in is the current planned entry method.
-- All 17 operational tables use RLS with explicit authenticated-user predicates.
+- All 17 operational tables use RLS backed by a private active-operator allow-list.
 - Anonymous table access is revoked.
 - Attachments live in a private bucket with file-size and MIME restrictions.
 - The balance view uses security-invoker behavior.
@@ -92,7 +92,9 @@ The budget module requires a dedicated schema and migration. Operational donatio
 
 ## Current integration boundary
 
-The Supabase schema, policies, indexes, catalogs, and Storage bucket are deployed. The in-kind interface currently validates input, prepares the payload, and preserves a browser draft. Persisting that workflow requires the application client, authentication, atomic write orchestration, upload handling, and user-facing retry states.
+The in-kind interface now provides magic-link access, validates operator authorization, preserves a browser draft, uploads private evidence to deterministic paths, and persists the announcement through the idempotent `submit_in_kind_shipment` RPC. One RPC transaction creates or reuses the sender actor, donor role, donation, details, shipment, declared items, and evidence metadata.
+
+Inventory lots and movements begin after physical receipt. This boundary preserves declared quantities until a team member records warehouse, accepted, damaged, condition, and verification data from inspection.
 
 ## Repository map
 

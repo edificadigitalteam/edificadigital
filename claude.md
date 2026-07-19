@@ -22,7 +22,7 @@ An AI agent may:
 
 An AI agent must:
 
-- keep product ownership with Isaac Delgado and Yang (`yangetze`);
+- keep product ownership with the designated human product owners;
 - ask for direction when a missing choice materially changes business behavior or external scope;
 - preserve unrelated work in a dirty worktree;
 - keep secrets out of logs, source control, client code, and documentation;
@@ -77,7 +77,7 @@ It contains:
 - a private `attachments` Storage bucket;
 - bilingual unit and media catalogs.
 
-Applied migrations establish the foundation, in-kind shipment model, foreign-key indexes, optimized RLS evaluation, and explicit authenticated-user predicates.
+Applied migrations establish the foundation, in-kind shipment model, foreign-key indexes, operator authorization, idempotent submission, and private evidence uploads.
 
 ### Safe database procedure
 
@@ -138,17 +138,9 @@ Use application-facing publishable credentials only in the client. Service-role 
 
 ## Current integration boundary
 
-The Supabase schema is deployed and ready. The in-kind workflow currently validates data, prepares a payload, and stores a local browser draft. The next application milestone is authenticated persistence:
+The in-kind workflow now initializes the Supabase client, establishes an allow-listed magic-link session, uploads private evidence, and calls `submit_in_kind_shipment` for atomic and idempotent persistence. It clears the local draft only after Supabase returns the persisted reference.
 
-1. initialize the Supabase client from environment variables;
-2. establish the user session;
-3. create or select the actor;
-4. submit donation, shipment, items, lots, and receipt movements atomically;
-5. upload evidence to the private bucket and persist attachment metadata;
-6. map database errors to bilingual actions and retry states;
-7. clear the local draft only after confirmed persistence.
-
-Avoid presenting a locally generated success reference as a persisted database record.
+The next operational workflow begins at physical receipt. It must collect warehouse, received, accepted, damaged, condition, verification, expiry, and responsible-actor information before creating inventory lots and movements. Preserve the announcement record and declared quantities as the comparison baseline.
 
 ## Git and release
 

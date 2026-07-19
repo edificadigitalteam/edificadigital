@@ -38,4 +38,4 @@ The initial workflow uses four short steps, retains draft data, and shows a revi
 
 The schema was deployed to Supabase project `edifydb` on 2026-07-19. It includes authenticated RLS, private evidence Storage, covering foreign-key indexes, scalar authorization predicates, and the security-invoker `inventory_lot_balance` view.
 
-The interface currently retains a browser draft and prepares the submission payload. Authenticated database persistence is the next integration step.
+The interface retains a browser draft, accepts private evidence, and persists the shipment announcement through an authenticated, allow-listed, idempotent RPC. Inventory lots and movements begin during the later physical receipt workflow.

@@ -51,14 +51,14 @@
 - The pre-migration existence query returns zero expected foundation tables.
 - The post-migration query returns twelve foundation tables.
 - The shipment migration subsequently adds five tables and one view.
-- Migration history records the four applied migration names.
+- Migration history records the five applied migration names.
 - Supabase security and performance advisors are reviewed after deployment.
 
 ## Advisor-driven optimization
 
 - Every foreign key reported by the Supabase performance advisor receives a covering index.
-- Policies wrap `auth.role()` in scalar subqueries to retain explicit authorization and avoid per-row function initialization.
-- The private attachment policy combines the bucket boundary with the same scalar-subquery authorization pattern.
+- Policies use the scalar private operator-authorization function and avoid the deprecated `auth.role()` predicate.
+- The private attachment policy combines the bucket boundary with the same operator authorization check.
 - Security advisors remain clear after optimization.
 - Fresh indexes may appear as unused until operational traffic begins; they remain because they cover foreign keys and planned queries.
 
@@ -67,6 +67,6 @@
 - The foundation migration created twelve tables.
 - The shipment migration added five tables and one security-invoker view.
 - Optimization migrations added the required foreign-key indexes and scalar authorization predicates.
-- All 17 operational tables have RLS and one explicit authenticated-user policy.
+- All 17 operational tables have RLS and one active-operator policy.
 - The security advisor returns zero findings.
 - A rollback-safe functional scenario verified the complete container and inventory path without leaving test records.

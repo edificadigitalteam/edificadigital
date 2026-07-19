@@ -1,8 +1,8 @@
 # Sprint S1 Plan: In-Kind Shipment Intake
 
 **Code:** S1-INKIND  
-**Status:** Interface Implemented; Database Deployed
-**Owner:** Isaac Delgado, Yang (yangetze)  
+**Status:** Complete
+**Owner:** Product owners
 **Created:** 2026-07-19  
 **Last Updated:** 2026-07-19
 
@@ -100,8 +100,7 @@ This plan adds database objects. All names and comments are in English and use s
 - Customs authority integrations.
 - Barcode scanning.
 - Offline synchronization across devices.
-- Authenticated production submission from the interface to the deployed Supabase schema.
-- Atomic upload and persistence retries across actor, donation, shipment, inventory, and evidence records.
+- Physical receipt workflow for verified inventory lots and movements.
 
 ## Risks and treatment
 
@@ -123,4 +122,5 @@ This plan adds database objects. All names and comments are in English and use s
 - [x] Draft pull request for review.
 - [x] Foundation and shipment migrations deployed to `edifydb`.
 - [x] Security and performance advisors reviewed.
-- [ ] Authenticated frontend submission connected and verified.
+- [x] Authenticated frontend submission connected and transactionally verified.
+- [x] Private evidence uploads and idempotent retry behavior implemented.

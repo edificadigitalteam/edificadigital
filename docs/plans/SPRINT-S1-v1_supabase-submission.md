@@ -1,7 +1,7 @@
 # Sprint S1 Plan: Authenticated Supabase Submission
 
 **Code:** S1-SYNC
-**Status:** In Progress
+**Status:** Implemented for Review
 **Owner:** Product owners
 **Created:** 2026-07-19
 **Last Updated:** 2026-07-19
@@ -75,6 +75,20 @@ Inventory lots and movements begin at physical receipt because the current annou
 - A success screen uses the reference returned by Supabase.
 - Frontend tests, lint, build, database assertions, advisors, and Vercel preview pass.
 - The branch remains a draft until the production interaction is verified through an authorized email account.
+
+## Verification result
+
+- Frontend: 18 tests pass; lint and production build pass.
+- Supabase migration `authenticated_submission` is applied in `edifydb`.
+- Structural validation confirms the active operator configuration, 17 protected public policies, one protected Storage policy, security-invoker RPC, authenticated execution, anonymous denial, and the idempotency index.
+- A rollback-safe authorized scenario created one donation, one shipment, and three linked item rows.
+- Repeating the same submission key returned the existing record and kept all row counts at one shipment with three items.
+- The functional transaction rolled back; Auth, donation, and shipment tables returned to zero rows.
+- Supabase security advisor returned zero findings.
+- Performance advisor returned only unused-index informational notices on the empty operational schema.
+- Production configuration build passes with the active Supabase project URL and modern publishable key.
+
+The remaining publication check is a human click on a magic link sent to an authorized operator account through the Vercel preview or production domain.
 
 ## Rollback
 
