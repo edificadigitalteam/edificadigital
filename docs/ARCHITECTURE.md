@@ -11,6 +11,7 @@
 FRONTEND (React + Vite on Vercel)
     ↓
     ├─── /receive     → New Donation form
+    ├─── /donations/in-kind/new → Guided in-kind shipment intake
     ├─── /transform   → New Transformation (kits)
     ├─── /impact      → New Impact Event
     ├─── /dashboard   → Global + Campaign views
@@ -39,6 +40,29 @@ Donation (master)
 ```
 
 Resources enter the "general pool" (no per-campaign attribution in MVP).
+
+#### In-kind shipments and containers
+
+The operational intake route guides the user through four short steps:
+
+1. sender and origin;
+2. transport and arrival;
+3. declared goods; and
+4. final review.
+
+```text
+Donation (in_kind)
+  ↓
+Shipment (route, container, ETA, customs state)
+  ↓
+ShipmentItem[] (food, clothing, hygiene, health, household, other)
+  ↓
+InventoryLot[] (received, accepted, damaged, expiry, dietary attributes)
+  ↓
+InventoryMovement[] (receipt, transformation, distribution, adjustment)
+```
+
+The first interface implementation retains a browser draft and prepares the Supabase payload. Operational synchronization follows the foundational donation-schema deployment and environment connection.
 
 ### Pillar B: TRANSFORM
 User creates a KitTransformation for one kit type + quantity + attachments.

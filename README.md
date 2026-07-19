@@ -81,6 +81,16 @@ pnpm dev
 
 Visit `http://localhost:5173`
 
+## In-Kind Shipment Intake / Registro de Embarques en Especie
+
+Open `/donations/in-kind/new` to use the bilingual, mobile-first intake workflow for containers and other shipments.
+
+Abre `/donations/in-kind/new` para registrar contenedores y otros embarques mediante el flujo bilingüe diseñado para dispositivos móviles.
+
+The workflow covers sender, route, estimated arrival, itemized goods, food and dietary metadata, reference valuation, local draft recovery, and final review. The Supabase migration adds shipment, item, lot, movement, attachment, RLS, and balance-view records.
+
+El flujo incluye remitente, ruta, llegada estimada, productos, datos alimentarios, atributos dietéticos, valoración de referencia, recuperación del borrador y revisión final. La migración de Supabase incorpora embarques, partidas, lotes, movimientos, evidencias, RLS y una vista de saldos.
+
 ## Documentation
 
 - **1_Pillars_and_Philosophy.docx** — Core principles (Receive → Transform → Impact)

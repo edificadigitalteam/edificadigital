@@ -1,7 +1,7 @@
 # Sprint S1 Plan: In-Kind Shipment Intake
 
 **Code:** S1-INKIND  
-**Status:** In Progress  
+**Status:** Implemented for Review
 **Owner:** Isaac Delgado, Yang (yangetze)  
 **Created:** 2026-07-19  
 **Last Updated:** 2026-07-19
@@ -114,9 +114,9 @@ This plan adds database objects. All names and comments are in English and use s
 
 ## Deliverables
 
-- Executable frontend validation tests.
-- SQL pgTAP specification.
-- Supabase migration for shipment and inventory records.
-- Bilingual intake workflow.
-- Updated architecture and database documentation.
-- Draft pull request for review.
+- [x] Executable frontend validation tests.
+- [x] SQL pgTAP specification.
+- [x] Supabase migration for shipment and inventory records.
+- [x] Bilingual intake workflow.
+- [x] Updated architecture and database documentation.
+- [x] Draft pull request for review.

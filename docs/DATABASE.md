@@ -34,6 +34,11 @@
 | `impact_event_attachment` | Evidence: delivery photos, sign-in sheets | impact_event_id, storage_url |
 | `media_type` | Catalog: photo/document classification | name (Proof of Payment, Fiscal Invoice, ...) |
 | `unit_of_measure` | Catalog: units | name (Unit, Kg, Pallet, ...) |
+| `shipment` | International or local transport for an in-kind donation | route, transport mode, ETA, status |
+| `shipment_item` | Declared goods within a shipment | category, quantity, unit, reference value |
+| `inventory_lot` | Goods accepted or quarantined at receipt | lot, expiry, condition, dietary attributes |
+| `inventory_movement` | Append-only stock ledger | movement type, signed quantity, destination |
+| `shipment_attachment` | Logistics and receipt evidence | document type, storage URL |
 
 ## Entity Relationships
 
@@ -248,6 +253,57 @@ created_at TIMESTAMP DEFAULT NOW()
 **Use:** Quantification in DonationDetail when type=InKind
 
 ---
+
+## In-Kind Shipment Extension
+
+Migration: `supabase/migrations/202607190001_in_kind_shipment.sql`
+
+The extension preserves the donation as the contribution record and adds the logistics and inventory records required for mixed containers.
+
+```text
+donation (in_kind)
+└── shipment
+    ├── shipment_attachment[]
+    └── shipment_item[]
+        └── inventory_lot[]
+            └── inventory_movement[]
+```
+
+### `shipment`
+
+- One-to-one relationship with an in-kind `donation`.
+- Transport modes: `sea`, `air`, `road`, `other`.
+- Lifecycle: `announced`, `in_transit`, `customs`, `received`, `closed`.
+- Stores route, carrier, container, tracking, departure, estimated arrival, actual arrival, customs reference, and notes.
+- A trigger verifies that the linked donation uses `donation_type = 'in_kind'`.
+
+### `shipment_item`
+
+- One declared product line within a shipment.
+- Categories: food, clothing, hygiene, medical, household, and other.
+- Quantity uses `numeric(14,3)`.
+- Reference valuation remains optional and separate from cash received.
+- Food metadata includes dietary attributes, allergens, declared lot, and declared expiry.
+- An optional `donation_detail_id` links the logistics line to the original intake line.
+
+### `inventory_lot`
+
+- Represents the quantities physically received and inspected at one warehouse.
+- Preserves received, accepted, and damaged quantities separately.
+- Accepted plus damaged quantity cannot exceed received quantity.
+- Verification supports pending, verified, quarantined, and rejected states.
+- Lot-level dietary and expiry metadata supports food-safety review.
+
+### `inventory_movement`
+
+- Append-only quantity events for receipt, adjustment, reservation, transformation, distribution, transfer, and damage.
+- Inbound receipt uses a positive quantity.
+- Resource consumption and outbound movements use negative quantities.
+- `inventory_lot_balance` derives the current balance per lot.
+
+### Security
+
+All five extension tables enable RLS. The MVP policy grants operational access to authenticated users. Anonymous sessions cannot query these records through the Supabase API.
 
 ## Key Constraints & Relationships
 
