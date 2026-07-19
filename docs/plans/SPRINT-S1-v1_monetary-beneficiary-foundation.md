@@ -93,7 +93,7 @@ The beneficiary interface follows after the protected schema and RPC pass their 
 
 ## Verification record
 
-- Frontend: 33 Vitest tests pass.
+- Frontend: 34 Vitest tests pass.
 - Static quality: ESLint and the Vite production build pass.
 - Database: both immutable migrations are applied to `edifydb` through Supabase migration history.
 - Functional database scenarios: USD cash, VES bank transfer, evidence metadata, retry idempotency, protected beneficiary registration, privacy acknowledgement, and unauthorized rejection pass inside rollback-safe transactions.

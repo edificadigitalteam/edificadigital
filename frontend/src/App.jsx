@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Analytics } from '@vercel/analytics/react'
+import { buildPublicContactUrl } from './contact.js'
 import { content } from './content.js'
 import InKindDonationFlow from './features/in-kind/InKindDonationFlow.jsx'
 import MonetaryDonationFlow from './features/monetary/MonetaryDonationFlow.jsx'
@@ -31,6 +32,10 @@ function LandingPage() {
     window.localStorage.getItem('edifica-language') === 'en' ? 'en' : 'es'
   ))
   const copy = content[language]
+  const publicContactUrl = buildPublicContactUrl(
+    copy.closing.whatsapp,
+    import.meta.env.VITE_PUBLIC_CONTACT_URL,
+  )
   const closeMenu = () => setMenuOpen(false)
   const toggleLanguage = () => {
     setLanguage((current) => current === 'es' ? 'en' : 'es')
@@ -247,7 +252,7 @@ function LandingPage() {
           </div>
           <a
             className="button button-light"
-            href={'https://wa.me/?text=' + encodeURIComponent(copy.closing.whatsapp)}
+            href={publicContactUrl}
             target="_blank"
             rel="noreferrer"
           >

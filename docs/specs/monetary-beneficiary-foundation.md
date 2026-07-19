@@ -52,7 +52,7 @@
 ## Recorded verification
 
 - The red commits captured missing frontend modules, missing SQL objects, missing evidence enforcement, and uncovered audit foreign keys.
-- The current frontend suite passes 33 tests; lint and production build pass.
+- The current frontend suite passes 34 tests; lint and production build pass.
 - pgTAP defines 29 monetary and beneficiary schema assertions.
 - Rollback-safe live scenarios pass for USD cash, VES transfer, evidence metadata, idempotent retry, privacy acknowledgement, beneficiary code generation, and authorization rejection.
 - Supabase performance review reports only expected unused-index information after covering the new foreign keys.

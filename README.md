@@ -50,7 +50,7 @@ pnpm dev
 
 Open `http://localhost:5173`.
 
-Use publishable Supabase client values in the frontend environment. Keep database and service-role secrets in protected server environments.
+Use publishable Supabase client values in the frontend environment. Set `VITE_PUBLIC_CONTACT_URL` in the protected hosting environment when the closing action should open an official organization contact. Keep database and service-role secrets in protected server environments.
 
 ## Verification
 
@@ -64,7 +64,7 @@ pnpm build
 
 Database migrations and pgTAP specifications live in `supabase/migrations/` and `supabase/tests/`.
 
-The current frontend baseline contains 33 passing Vitest tests. Database behavior is verified with pgTAP contracts and rollback-safe live scenarios.
+The current frontend baseline contains 34 passing Vitest tests. Database behavior is verified with pgTAP contracts and rollback-safe live scenarios.
 
 ## Documentation
 
