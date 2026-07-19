@@ -28,7 +28,7 @@ All project plans are stored in `/docs/plans/` with a consistent naming conventi
 
 | Code | File | Status | Description |
 |------|------|--------|---|
-| P0 | Phase 0 setup docs (in `/docs`) | 📋 Draft | GitHub, Vercel, Supabase initial config |
+| P0 | Phase 0 setup docs (in `/docs`) | ✅ Complete | GitHub, Vercel, Supabase initial config |
 | S1-D1 | (TBD) | 📋 Planned | Day 1: Foundation & Supabase schema |
 | S1-D2 | (TBD) | 📋 Planned | Day 2: Pillar Receive (New Donation) |
 | S1-D3 | (TBD) | 📋 Planned | Day 3: Pillar Transform (New Kit) |
