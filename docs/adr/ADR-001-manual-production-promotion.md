@@ -26,6 +26,12 @@ The production custom domain is `somosedificadigital.com`.
 - `somosedificadigital.com` only changes when someone deliberately runs the workflow — no risk of an unreviewed merge going live on the real domain.
 - One-click promotion via GitHub Actions — no local Vercel CLI setup needed to promote.
 
+## Bug found and fixed: domain was silently auto-tracking `main`
+
+Shortly after setup, `somosedificadigital.com` was found live with content from a direct push to `main` that nobody had run the promotion workflow for. Root cause: once a domain is attached to a Vercel project without an explicit `gitBranch` binding, Vercel auto-aliases it to Production on every new Production deployment — regardless of how the domain was first pointed there. Running `vercel alias set` once does not "pin" the domain; it's a snapshot that Vercel's Git integration silently overwrites on the next push to `main`.
+
+**Fix:** the workflow now also `PATCH`es both `somosedificadigital.com` and `www.somosedificadigital.com` to bind `gitBranch` to a dummy, never-pushed-to branch name (`manual-domain-promotion-only`) before every alias operation. This permanently unhooks the domains from auto-tracking Production; the only thing that ever moves them afterward is this workflow's explicit `vercel alias set` call. This step re-runs (and re-applies) every time the workflow fires, so the binding self-heals even if something in the Vercel dashboard ever resets it.
+
 ## Related
 
 - `PROMPT_2_Vercel_Setup.md` (Phase 0 setup)

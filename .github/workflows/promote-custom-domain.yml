@@ -3,6 +3,14 @@ name: Promote to Custom Domain
 on:
   workflow_dispatch: {}
 
+env:
+  VERCEL_PROJECT_ID: prj_YF92R4H7foXEMsy7aWDEsl0TYQop
+  VERCEL_TEAM_ID: team_UfbR878tcAcAeYeaLtJcUlSA
+  # Dummy branch name: keeps the domains from auto-tracking `main`'s Production
+  # deployments. Nothing ever pushes to this branch, so the only thing that
+  # moves these domains is this workflow's explicit `vercel alias set` below.
+  UNTRACKED_BRANCH: manual-domain-promotion-only
+
 jobs:
   promote:
     runs-on: ubuntu-latest
@@ -10,10 +18,25 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
+      - name: Unlink domains from automatic Production tracking
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          for domain in somosedificadigital.com www.somosedificadigital.com; do
+            curl --fail -sS -X PATCH \
+              "https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/domains/${domain}?teamId=${VERCEL_TEAM_ID}" \
+              -H "Authorization: Bearer $VERCEL_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"gitBranch\":\"${UNTRACKED_BRANCH}\"}"
+          done
+
       - name: Alias custom domain to current production deployment
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           vercel alias set edificadigital.vercel.app somosedificadigital.com \
+            --token="$VERCEL_TOKEN" \
+            --scope=yangetzes-projects
+          vercel alias set edificadigital.vercel.app www.somosedificadigital.com \
             --token="$VERCEL_TOKEN" \
             --scope=yangetzes-projects
