@@ -51,7 +51,7 @@ export function useOperatorAccess() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/donations/in-kind/new`,
+        emailRedirectTo: new URL(window.location.pathname, window.location.origin).toString(),
         shouldCreateUser: true,
       },
     })
@@ -69,4 +69,3 @@ export function useOperatorAccess() {
 
   return { ...state, requestMagicLink, signOut }
 }
-

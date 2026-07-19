@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import { content } from './content.js'
 import InKindDonationFlow from './features/in-kind/InKindDonationFlow.jsx'
+import MonetaryDonationFlow from './features/monetary/MonetaryDonationFlow.jsx'
 
 const Arrow = () => (
   <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" /></svg>
@@ -246,7 +247,7 @@ function LandingPage() {
           </div>
           <a
             className="button button-light"
-            href={'https://wa.me/584123212012?text=' + encodeURIComponent(copy.closing.whatsapp)}
+            href={'https://wa.me/?text=' + encodeURIComponent(copy.closing.whatsapp)}
             target="_blank"
             rel="noreferrer"
           >
@@ -268,6 +269,10 @@ function LandingPage() {
 function App() {
   if (window.location.pathname.startsWith('/donations/in-kind')) {
     return <InKindDonationFlow />
+  }
+
+  if (window.location.pathname.startsWith('/donations/monetary')) {
+    return <MonetaryDonationFlow />
   }
 
   return <LandingPage />
