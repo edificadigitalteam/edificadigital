@@ -1,9 +1,12 @@
 import { cloneElement, isValidElement, useEffect, useId, useRef, useState } from 'react'
 import { inKindContent } from './inKindContent.js'
+import { OperatorAccessScreen } from './OperatorAccess.jsx'
+import { useOperatorAccess } from './useOperatorAccess.js'
+import { submitInKindShipment, validateEvidence } from './submission.js'
+import { supabase } from '../../lib/supabase.js'
 import {
   createEmptyItem,
   createInitialDraft,
-  createShipmentReference,
   validateDraft,
   validateItems,
   validateOrigin,
@@ -12,7 +15,6 @@ import {
 import './in-kind.css'
 
 const DRAFT_KEY = 'edifica-in-kind-draft-v1'
-const RECORDS_KEY = 'edifica-in-kind-records-v1'
 
 const ArrowLeft = () => (
   <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16 10H4m5-5-5 5 5 5" /></svg>
@@ -105,8 +107,11 @@ function InKindDonationFlow() {
   const [storageError, setStorageError] = useState('')
   const [reference, setReference] = useState('')
   const [savedPulse, setSavedPulse] = useState(false)
+  const [evidence, setEvidence] = useState([])
   const headingRef = useRef(null)
+  const evidenceInputId = useId()
   const copy = inKindContent[language]
+  const access = useOperatorAccess()
 
   useEffect(() => {
     document.documentElement.lang = language
@@ -226,6 +231,29 @@ function InKindDonationFlow() {
     setConfirmed(false)
   }
 
+  const addEvidence = (files) => {
+    const additions = Array.from(files).map((file) => ({
+      id: globalThis.crypto?.randomUUID?.() ?? `proof-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      type: file.type.startsWith('image/') ? 'photo' : 'packing_list',
+      file,
+      errors: validateEvidence(file),
+    }))
+    setEvidence((current) => [...current, ...additions])
+    setStorageError('')
+    setConfirmed(false)
+  }
+
+  const updateEvidenceType = (id, type) => {
+    setEvidence((current) => current.map((entry) => entry.id === id ? { ...entry, type } : entry))
+    setConfirmed(false)
+  }
+
+  const removeEvidence = (id) => {
+    setEvidence((current) => current.filter((entry) => entry.id !== id))
+    setStorageError('')
+    setConfirmed(false)
+  }
+
   const submit = async () => {
     const result = validateDraft(draft, language)
     if (!result.valid) {
@@ -237,31 +265,24 @@ function InKindDonationFlow() {
     }
     if (!confirmed) return
 
-    setSaving(true)
-    await new Promise((resolve) => window.setTimeout(resolve, 450))
-    let existing = []
-    try {
-      existing = JSON.parse(window.localStorage.getItem(RECORDS_KEY) || '[]')
-      if (!Array.isArray(existing)) existing = []
-    } catch {
-      existing = []
-    }
-    const shipmentReference = createShipmentReference(draft.originCountry, draft.estimatedArrival, existing.length + 1)
-    const record = {
-      ...draft,
-      reference: shipmentReference,
-      createdAt: new Date().toISOString(),
-    }
-    try {
-      window.localStorage.setItem(RECORDS_KEY, JSON.stringify([...existing, record]))
-      window.localStorage.removeItem(DRAFT_KEY)
-    } catch {
-      setStorageError(copy.saveError)
-      setSaving(false)
+    const invalidEvidence = evidence.find((entry) => Object.keys(entry.errors).length)
+    if (invalidEvidence) {
+      setStorageError(invalidEvidence.errors.size
+        ? copy.review.evidenceTooLarge
+        : copy.review.evidenceUnsupported)
       return
     }
-    setReference(shipmentReference)
-    setSaving(false)
+
+    setSaving(true)
+    try {
+      const result = await submitInKindShipment({ client: supabase, draft, evidence })
+      window.localStorage.removeItem(DRAFT_KEY)
+      setReference(result.reference_code)
+    } catch (error) {
+      setStorageError(copy.submissionErrors[error.stage] ?? copy.submissionErrors.default)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const reset = () => {
@@ -272,6 +293,18 @@ function InKindDonationFlow() {
     setConfirmed(false)
     setStorageError('')
     setReference('')
+    setEvidence([])
+  }
+
+  if (access.status !== 'authorized') {
+    return (
+      <OperatorAccessScreen
+        access={access}
+        copy={copy}
+        language={language}
+        onLanguageChange={() => setLanguage((current) => current === 'es' ? 'en' : 'es')}
+      />
+    )
   }
 
   if (reference) {
@@ -303,6 +336,9 @@ function InKindDonationFlow() {
         <a href="/" aria-label={copy.backHome}><Brand /></a>
         <div className="intake-header-actions">
           <span className={savedPulse ? 'save-state pulse' : 'save-state'}><Check /> {copy.draftSaved}</span>
+          <button className="operator-signout" type="button" onClick={access.signOut} title={access.email}>
+            {copy.auth.signOut}
+          </button>
           <button
             className="intake-language"
             type="button"
@@ -622,6 +658,56 @@ function InKindDonationFlow() {
                     ))}
                   </section>
                 </div>
+                <section className="evidence-panel" aria-labelledby="evidence-title">
+                  <div className="evidence-heading">
+                    <div>
+                      <h3 id="evidence-title">{copy.review.evidence}</h3>
+                      <p>{copy.review.evidenceHelp}</p>
+                    </div>
+                    <span>{evidence.length}</span>
+                  </div>
+                  <p className="evidence-formats">{copy.review.evidenceFormats}</p>
+                  <label className="evidence-add" htmlFor={evidenceInputId}>
+                    <Plus /> {copy.review.evidenceAdd}
+                  </label>
+                  <input
+                    className="evidence-input"
+                    id={evidenceInputId}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    multiple
+                    onChange={(event) => {
+                      addEvidence(event.target.files)
+                      event.target.value = ''
+                    }}
+                  />
+                  {evidence.length > 0 && (
+                    <div className="evidence-list">
+                      {evidence.map((entry) => (
+                        <article key={entry.id}>
+                          <div className="evidence-file">
+                            <strong>{entry.file.name}</strong>
+                            <span>{(entry.file.size / 1024 / 1024).toLocaleString(language, { maximumFractionDigits: 1 })} MB</span>
+                            {entry.errors.type && <small role="alert">{copy.review.evidenceUnsupported}</small>}
+                            {entry.errors.size && <small role="alert">{copy.review.evidenceTooLarge}</small>}
+                          </div>
+                          <label>
+                            <span>{copy.review.evidenceType}</span>
+                            <select value={entry.type} onChange={(event) => updateEvidenceType(entry.id, event.target.value)}>
+                              {Object.entries(copy.review.evidenceTypes).map(([value, label]) => (
+                                <option key={value} value={value}>{label}</option>
+                              ))}
+                            </select>
+                          </label>
+                          <button type="button" onClick={() => removeEvidence(entry.id)}>
+                            <Trash /> {copy.review.evidenceRemove}
+                          </button>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                  <p className="evidence-session">{copy.review.evidenceSession}</p>
+                </section>
                 <label className="confirmation-field">
                   <input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
                   <span><Check /></span><b>{copy.review.confirmation}</b>

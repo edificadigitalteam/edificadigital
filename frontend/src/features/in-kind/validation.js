@@ -41,7 +41,11 @@ const countryCodes = {
 
 const createItemId = () => {
   if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID()
-  return `item-${Date.now()}-${Math.random().toString(16).slice(2)}`
+  const tail = `${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`
+    .replace(/[^a-f0-9]/g, '')
+    .padEnd(12, '0')
+    .slice(0, 12)
+  return `00000000-0000-4000-8000-${tail}`
 }
 
 export const createEmptyItem = () => ({
@@ -60,6 +64,7 @@ export const createEmptyItem = () => ({
 })
 
 export const createInitialDraft = () => ({
+  submissionId: createItemId(),
   donationType: 'in_kind',
   senderName: '',
   senderType: 'organization',
