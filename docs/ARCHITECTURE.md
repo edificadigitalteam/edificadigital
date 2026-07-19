@@ -136,14 +136,12 @@ GitHub Repo (main branch)
     ↓ (auto-webhook)
 Vercel (builds frontend)
     ↓
-Auto-promotes → edificadigital.vercel.app (default domain)
-    ↓ (manual `vercel alias set`, see ADR-001)
-Custom domain (production, public-facing)
+Auto-promotes → edificadigital.vercel.app AND somosedificadigital.com
     ↓
 React app talks to Supabase client via API keys
 ```
 
-**Custom domain promotion is manual (see ADR-001):** pushes to `main` auto-build and auto-publish to the default `edificadigital.vercel.app` domain as usual. The production custom domain, `somosedificadigital.com`, is never auto-attached to Production — it only changes when someone manually runs the "Promote to Custom Domain" GitHub Action (`.github/workflows/promote-custom-domain.yml`).
+**Both domains auto-publish on every push to `main`** (standard Vercel behavior). A manual-only promotion policy for the custom domain was attempted and reverted after it caused a live outage — see `docs/adr/ADR-001-manual-production-promotion.md` for the full history. PR review on `main` is currently the only gate before a change reaches the public domain.
 
 Environment variables flow:
 - `.env.local` (dev)

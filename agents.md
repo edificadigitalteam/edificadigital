@@ -166,11 +166,9 @@ Every PR must include:
 
 ### Deployment
 
-Merges to `main` auto-build and auto-publish to the default Vercel domain (`edificadigital.vercel.app`) — safe to check anytime, no manual step.
+Merges to `main` auto-build and auto-publish to **both** the default Vercel domain (`edificadigital.vercel.app`) and the real production domain (`somosedificadigital.com`) — this is standard Vercel behavior. An earlier attempt at manual-only promotion for the custom domain caused a live outage (domain got orphaned) and was reverted — see `docs/adr/ADR-001-manual-production-promotion.md` for the full history before attempting this again.
 
-Publishing to the real production domain (`somosedificadigital.com`) is **always manual**: run the **"Promote to Custom Domain"** GitHub Action from the Actions tab. See `docs/adr/ADR-001-manual-production-promotion.md` for the full policy.
-
-**Do not delete the `manual-domain-promotion-only` branch.** It's an intentionally empty, never-pushed-to branch that keeps the production domain unhooked from Vercel's automatic Production tracking — deleting it will break the manual-promotion policy.
+Because both domains now go live automatically, **the branch protection rules above (PR review required, no direct commits to `main`) are the only safeguard before something reaches the public domain.** Treat every PR into `main` accordingly.
 
 ## Escalation Path
 
