@@ -333,3 +333,23 @@ for all
 to authenticated
 using (auth.role() = 'authenticated')
 with check (auth.role() = 'authenticated');
+
+grant select, insert, update, delete on table
+  public.shipment,
+  public.shipment_item,
+  public.inventory_lot,
+  public.inventory_movement,
+  public.shipment_attachment
+to authenticated;
+
+grant select on public.inventory_lot_balance to authenticated;
+
+revoke all on table
+  public.shipment,
+  public.shipment_item,
+  public.inventory_lot,
+  public.inventory_movement,
+  public.shipment_attachment
+from anon;
+
+revoke all on public.inventory_lot_balance from anon;
