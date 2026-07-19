@@ -83,12 +83,14 @@ Inventory lots and movements begin at physical receipt because the current annou
 - Structural validation confirms the active operator configuration, 17 protected public policies, one protected Storage policy, security-invoker RPC, authenticated execution, anonymous denial, and the idempotency index.
 - A rollback-safe authorized scenario created one donation, one shipment, and three linked item rows.
 - Repeating the same submission key returned the existing record and kept all row counts at one shipment with three items.
+- A rollback-safe authenticated session outside the private allow-list returned `false` from the access check and the submission RPC rejected its payload.
 - The functional transaction rolled back; Auth, donation, and shipment tables returned to zero rows.
 - Supabase security advisor returned zero findings.
 - Performance advisor returned only unused-index informational notices on the empty operational schema.
 - Production configuration build passes with the active Supabase project URL and modern publishable key.
+- The Vercel branch deployment completed successfully; its preview requires team access through Vercel SSO.
 
-The remaining publication check is a human click on a magic link sent to an authorized operator account through the Vercel preview or production domain.
+The remaining publication check is a human click on a magic link sent to an authorized operator account. A team member with Vercel access can perform it in the protected preview; the same interaction must be confirmed on the public domain before production promotion.
 
 ## Rollback
 

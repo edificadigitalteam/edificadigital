@@ -119,6 +119,7 @@ The deployment was verified on 2026-07-19 with:
 - a transactional Germany-to-Venezuela container scenario with canned food, clothing, and gluten-free goods;
 - inventory receipt and a calculated balance of 250 units;
 - rejection of a shipment linked to a monetary donation;
+- rejection of an authenticated submission from an identity outside the private operator allow-list;
 - rollback of all verification records, leaving operational tables empty;
 - Supabase security advisor result with zero findings;
 - performance advisor review, with only expected unused-index informational notices on the empty schema.
