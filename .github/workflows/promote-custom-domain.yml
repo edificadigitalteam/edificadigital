@@ -23,11 +23,18 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           for domain in somosedificadigital.com www.somosedificadigital.com; do
-            curl --fail -sS -X PATCH \
+            resp=$(curl -sS -X PATCH \
               "https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/domains/${domain}?teamId=${VERCEL_TEAM_ID}" \
               -H "Authorization: Bearer $VERCEL_TOKEN" \
               -H "Content-Type: application/json" \
-              -d "{\"gitBranch\":\"${UNTRACKED_BRANCH}\"}"
+              -d "{\"gitBranch\":\"${UNTRACKED_BRANCH}\"}" \
+              -w '\nHTTP_STATUS:%{http_code}\n')
+            echo "$resp"
+            status=$(echo "$resp" | grep HTTP_STATUS | cut -d: -f2)
+            if [ "$status" != "200" ]; then
+              echo "::error::PATCH failed for $domain (status $status)"
+              exit 1
+            fi
           done
 
       - name: Alias custom domain to current production deployment
