@@ -206,3 +206,60 @@ See Document 3 (3_Stack_and_Roadmap.docx) for:
 
 **Version:** MVP
 **Last updated:** [date]
+
+
+## Proposed Budget-to-Impact Architecture
+
+> **Status:** Proposed in ADR-002. This section documents the target architecture; the current MVP schema remains unchanged until approval and TDD migration work.
+
+### Resumen ES
+
+El presupuesto aprobado pertenece a la planificación. Las donaciones representan recursos recibidos. Las compras y gastos representan ejecución real. La transformación registra kits preparados. El impacto registra entregas y población atendida.
+
+### Target Flow
+
+```text
+PROJECT PLANNING
+Project -> Approved Budget -> Budget Lines -> Funding Commitments
+
+RECEIVE
+Donation -> Donation Details -> Project/Budget Allocation
+
+EXECUTE
+Budget Line -> Procurement/Expense -> Invoice and Payment Evidence
+
+TRANSFORM
+Kit Definition + Components -> Kit Transformation -> Assembly Evidence
+
+IMPACT
+Impact Event -> Kit Delivery -> Demographics and Delivery Evidence
+
+REPORT
+Budget vs Actual + Funding + Receive + Transform + Impact -> ES/EN Report Snapshot
+```
+
+### Separation of Records
+
+| Record | Meaning | Creation trigger |
+|---|---|---|
+| `project_budget` | Approved plan | Formal budget approval |
+| `budget_funding` | Committed funding source | Signed commitment or approved allocation |
+| `donation` | Resources actually received | Confirmed receipt |
+| `procurement_expense` | Actual purchase or payment | Approved invoice/payment |
+| `kit_transformation` | Kits actually assembled | Completed preparation record |
+| `impact_event` | Actual field activity | Delivery activity |
+| `report_snapshot` | Institutional report version | Reporting cutoff and publication |
+
+### FORM 205 Load Gate
+
+The first FORM 205 budget may be staged after normalization. Final approval requires:
+
+1. Project Manager duration confirmation.
+2. Food basket coverage confirmation.
+3. Organization contribution amount.
+4. BWAid request amount.
+5. M&E classification.
+
+### International Reporting
+
+Report snapshots support `es` and `en` language codes, a shared data cutoff, immutable published files, and evidence references. Reports can include approved, committed, received, spent, transformed, and impacted totals.
