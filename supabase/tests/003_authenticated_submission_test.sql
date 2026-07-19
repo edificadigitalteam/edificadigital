@@ -63,7 +63,7 @@ select is(
         or coalesce(with_check, '') ilike '%is_authorized_operator%'
       )
   ),
-  17::bigint,
+  18::bigint,
   'every operational table policy checks operator authorization'
 );
 
