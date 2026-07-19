@@ -1,6 +1,6 @@
 begin;
 
-select plan(26);
+select plan(29);
 
 select has_table('public', 'monetary_donation_detail', 'monetary detail extension exists');
 select has_column('public', 'monetary_donation_detail', 'payment_method', 'payment method is recorded');
@@ -103,6 +103,26 @@ select hasnt_constraint(
   'business receipt time may precede system recording time'
 );
 
+select has_index(
+  'public',
+  'monetary_donation_detail',
+  'monetary_donation_reconciled_by_idx',
+  'monetary reconciliation actor foreign key is covered'
+);
+
+select has_index(
+  'private',
+  'beneficiary',
+  'beneficiary_updated_by_idx',
+  'beneficiary updater foreign key is covered'
+);
+
+select has_index(
+  'private',
+  'beneficiary_event',
+  'beneficiary_event_updated_by_idx',
+  'beneficiary event updater foreign key is covered'
+);
+
 select * from finish();
 rollback;
-
