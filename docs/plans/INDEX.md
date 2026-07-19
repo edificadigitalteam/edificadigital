@@ -30,10 +30,10 @@ All project plans are stored in `/docs/plans/` with a consistent naming conventi
 |------|------|--------|---|
 | P0 | Phase 0 setup docs (in `/docs`) | ✅ Complete | GitHub, Vercel, Supabase initial config |
 | S1-D1 | [SPRINT-S1-v1_supabase-foundation.md](SPRINT-S1-v1_supabase-foundation.md) | ✅ Complete | Foundation and Supabase schema |
-| S1-D2 | (TBD) | 📋 Planned | Day 2: Pillar Receive (New Donation) |
+| S1-D2 | [SPRINT-S1-v1_monetary-beneficiary-foundation.md](SPRINT-S1-v1_monetary-beneficiary-foundation.md) | ✍️ In Progress | Monetary receipt intake and protected beneficiary foundation |
 | S1-INKIND | [SPRINT-S1-v1_in-kind-shipment-intake.md](SPRINT-S1-v1_in-kind-shipment-intake.md) | ✅ Complete | Bilingual in-kind intake, database, evidence, and persistence implemented |
 | S1-DB | [SPRINT-S1-v1_supabase-foundation.md](SPRINT-S1-v1_supabase-foundation.md) | ✅ Complete | Supabase foundation and operational database deployment |
-| S1-SYNC | [SPRINT-S1-v1_supabase-submission.md](SPRINT-S1-v1_supabase-submission.md) | ✅ Review | Authenticated persistence complete; production magic-link interaction requires human verification |
+| S1-SYNC | [SPRINT-S1-v1_supabase-submission.md](SPRINT-S1-v1_supabase-submission.md) | ✅ Complete | Authenticated in-kind persistence merged to `main` in PR #16 |
 | S1-D3 | (TBD) | 📋 Planned | Day 3: Pillar Transform (New Kit) |
 | S1-D4 | (TBD) | 📋 Planned | Day 4: Pillar Impact (New Event) |
 | S1-D5 | (TBD) | 📋 Planned | Day 5: Dashboard (2 views) |
