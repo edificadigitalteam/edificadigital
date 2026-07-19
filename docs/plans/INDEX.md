@@ -39,6 +39,7 @@ All project plans are stored in `/docs/plans/` with a consistent naming conventi
 | S1-D5 | (TBD) | 📋 Planned | Day 5: Dashboard (2 views) |
 | R | `plans/ROADMAP-R-v1_seo-and-offline-modules.md` | 📋 Draft | SEO + offline-capable field modules (needs decisions before implementation) |
 | S1-D6 | (TBD) | 📋 Planned | Day 6: PDF + QA + Polish |
+| S1-OBS | [SPRINT-S1-v1_vercel-observability.md](SPRINT-S1-v1_vercel-observability.md) | ✅ Complete | Client error tracking reported into Vercel Runtime Logs |
 
 ### Legend
 
