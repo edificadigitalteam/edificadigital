@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import { content } from './content.js'
 
 const Arrow = () => (
@@ -258,6 +259,7 @@ function App() {
         <p>{copy.footer.copy}</p>
         <span>© 2026 Edifica Digital</span>
       </footer>
+      <Analytics />
     </div>
   )
 }
