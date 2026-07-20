@@ -28,6 +28,12 @@ Production publishes from `main` to `edificadigital.vercel.app` and `somosedific
 
 The connected Supabase project is `edifydb` (`rrqyihsjftlloizsccvi`). Database identifiers use English `snake_case`; the interface and reporting layers provide Spanish and English.
 
+### Domain, DNS, and email
+
+- DNS for `somosedificadigital.com` is managed on Cloudflare (`brett.ns.cloudflare.com`, `selah.ns.cloudflare.com`). The site (Vercel) and mail (Zoho) records stay DNS-only; Cloudflare's orange-cloud proxy is not enabled for either, since Vercel manages its own TLS/edge for the site and MX/TXT records cannot be proxied regardless.
+- Mail is hosted on Zoho Mail (`mx.zoho.com`, `mx2.zoho.com`, `mx3.zoho.com`), with SPF, DKIM, and DMARC (`p=none`, monitor mode) published for the domain.
+- Supabase Auth sends transactional email (magic links) through Zoho's SMTP relay via custom SMTP (`Authentication > Emails > SMTP Settings`), using `contacto@somosedificadigital.com` as the sender. This replaces Supabase's rate-limited built-in relay (2 emails/hour) with Zoho's higher send limit.
+
 ## Operational flow
 
 ### Receive
