@@ -15,4 +15,7 @@ Lightweight backlog for future work that does not yet have a plan in `docs/plans
 
 ## Email deliverability
 
-- [ ] Verify spam filtering on transactional email (magic link) sent via the Zoho custom SMTP sender. Magic-link emails initially landed in spam; confirm SPF/DKIM/DMARC alignment for the sending domain and re-test inbox placement.
+- [ ] Verify spam filtering on transactional email (magic link) sent via the Zoho custom SMTP sender. Magic-link emails initially landed in spam. Findings and status:
+  - SPF (`v=spf1 include:zohomail.com ~all`) and DKIM (`zmail._domainkey.somosedificadigital.com`) were already published and aligned to `somosedificadigital.com`.
+  - DMARC was missing entirely. Added `_dmarc.somosedificadigital.com` as `v=DMARC1; p=none; rua=mailto:contacto@somosedificadigital.com; pct=100` (monitor mode) in Cloudflare DNS.
+  - Remaining: re-send a magic link after DNS propagation and confirm inbox placement (not spam). If it still lands in spam, next lever is customizing the default Supabase magic-link email template (`Authentication > Emails > Templates`), since the stock template is generic.
