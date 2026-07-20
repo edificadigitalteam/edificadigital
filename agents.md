@@ -101,6 +101,7 @@ The detailed reference is `docs/DATABASE.md`. The in-kind frontend now uses allo
 - Use `feature/`, `bugfix/`, `docs/`, or another descriptive prefix.
 - Never commit directly to `main`.
 - Never mix unrelated user changes into an agent commit.
+- Delete the branch as the final step once its pull request merges.
 
 ### Commits
 
