@@ -1,7 +1,7 @@
 # Sprint S1 Plan: Authenticated Supabase Submission
 
 **Code:** S1-SYNC
-**Status:** Implemented for Review
+**Status:** Complete — merged in PR #16
 **Owner:** Product owners
 **Created:** 2026-07-19
 **Last Updated:** 2026-07-19
@@ -90,7 +90,7 @@ Inventory lots and movements begin at physical receipt because the current annou
 - Production configuration build passes with the active Supabase project URL and modern publishable key.
 - The Vercel branch deployment completed successfully; its preview requires team access through Vercel SSO.
 
-The remaining pre-merge check is a human click on a magic link sent to an authorized operator account in the protected Vercel preview. After human approval and the merge publish `main`, repeat the same interaction on the public domain as the production smoke check.
+PR #16 received approval and was merged to `main` on 2026-07-19. The merge publishes the authenticated in-kind persistence boundary through the production Vercel project. Authorized Magic Link interaction remains part of every production smoke check because it depends on a protected operator mailbox.
 
 ## Rollback
 

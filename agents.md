@@ -54,6 +54,8 @@ For urgent work, compress feedback loops while preserving the order above.
 ### Donations, shipments, and budgets
 
 - Donations may be `monetary`, `in_kind`, or `mixed`.
+- Monetary receipts include cash, bank transfer, mobile payment, digital wallet, cryptoasset, and other documented methods.
+- Preserve origin amount, origin currency, USD base amount, applied rate, rate source/date, and private receipt evidence for multi-currency reporting.
 - Monetary value received and in-kind reference value remain separate measures.
 - A container is represented by one `in_kind` donation, one shipment, many declared items, received inventory lots, and append-only movements.
 - Sender email is optional. A person or organization can be registered with a name and available contact data.
@@ -62,6 +64,8 @@ For urgent work, compress feedback loops while preserving the order above.
 - Transport, customs, handling, warehousing, and similar costs are expenses rather than donations.
 - Approved budgets, received donations, in-kind reference values, and expenses remain separate reporting domains.
 - International reports preserve currencies, valuation methods, sources, dates, and evidence references.
+- Nominal beneficiary identity belongs in the private schema. Public and international reports use aggregate impact data and non-identifying codes.
+- Beneficiary intake requires privacy acknowledgement and collects only the operational identity and contact fields defined in the protected schema.
 
 ## Supabase rules
 
@@ -69,13 +73,13 @@ The authorized Edifica Digital project is `edifydb`, reference `rrqyihsjftlloizs
 
 Current deployed baseline:
 
-- 17 operational tables and one security-invoker view;
-- RLS enabled on every operational table;
+- 18 public operational tables, 2 private beneficiary tables, and one security-invoker view;
+- RLS enabled on every public operational and private beneficiary table, with forced RLS on beneficiary data;
 - operator allow-list authorization on every operational table and private attachment object;
 - anonymous table privileges revoked;
 - private `attachments` bucket with a 20 MB limit and approved image/PDF MIME types;
 - six bilingual units and eight bilingual evidence types;
-- foundation, in-kind shipment, foreign-key/RLS optimization, policy hardening, and authenticated-submission migrations applied.
+- foundation, in-kind shipment, foreign-key/RLS optimization, policy hardening, authenticated submission, monetary/beneficiary foundation, and new foreign-key optimization migrations applied.
 
 Database work must follow these rules:
 
@@ -90,7 +94,7 @@ Database work must follow these rules:
 9. Keep service-role keys, database passwords, and secrets outside source control and client bundles.
 10. Document the resulting schema and application integration boundary.
 
-The detailed reference is `docs/DATABASE.md`. The in-kind frontend now uses allow-listed magic-link access, deterministic private uploads, and the idempotent `submit_in_kind_shipment` RPC. Inventory receipt remains a distinct later workflow because accepted, damaged, warehouse, and verification quantities require physical inspection.
+The detailed reference is `docs/DATABASE.md`. The in-kind frontend uses allow-listed Magic Link access, deterministic private uploads, and the idempotent `submit_in_kind_shipment` RPC. The continuous monetary frontend uses the same access and evidence boundary with `submit_monetary_donation`. The protected `register_beneficiary` RPC and private tables are deployed; their dedicated interface follows as a separately reviewed module. Inventory receipt remains a distinct later workflow because accepted, damaged, warehouse, and verification quantities require physical inspection.
 
 ## Git and release rules
 
@@ -153,6 +157,6 @@ Merges to `main` publish automatically to `edificadigital.vercel.app` and `somos
 
 ---
 
-**Version:** 2.0
+**Version:** 2.1
 **Last updated:** 2026-07-19
 **Maintained by:** Product owners and project contributors

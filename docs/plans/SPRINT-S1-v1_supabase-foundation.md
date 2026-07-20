@@ -2,7 +2,7 @@
 
 **Code:** S1-DB
 **Status:** Complete
-**Owner:** Isaac Delgado, Yang (yangetze)
+**Owner:** Product owners
 **Created:** 2026-07-19
 **Last Updated:** 2026-07-19
 
@@ -94,7 +94,7 @@ All nine steps were completed on 2026-07-19.
 ## Completion evidence
 
 - Four migrations are present in Supabase history: foundation, shipment and inventory, RLS/foreign-key optimization, and policy hardening.
-- All 17 operational tables have RLS and explicit authenticated-user policies.
+- At this milestone, all 17 operational tables had RLS and explicit authenticated-user policies. The later monetary and beneficiary milestone expanded the deployed baseline to 18 public and 2 private RLS tables.
 - The private `attachments` bucket enforces the 20 MB and MIME allow-list rules.
 - A rollback-safe Germany-to-Venezuela container scenario verified 250 units of gluten-free food through receipt and inventory balance.
 - A shipment linked to a monetary donation was rejected as expected.

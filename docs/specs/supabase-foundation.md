@@ -51,7 +51,7 @@
 - The pre-migration existence query returns zero expected foundation tables.
 - The post-migration query returns twelve foundation tables.
 - The shipment migration subsequently adds five tables and one view.
-- Migration history records the five applied migration names.
+- The initial foundation delivery recorded five applied migration names. Current history contains seven after the monetary and beneficiary extensions.
 - Supabase security and performance advisors are reviewed after deployment.
 
 ## Advisor-driven optimization
@@ -67,6 +67,6 @@
 - The foundation migration created twelve tables.
 - The shipment migration added five tables and one security-invoker view.
 - Optimization migrations added the required foreign-key indexes and scalar authorization predicates.
-- All 17 operational tables have RLS and one active-operator policy.
-- The security advisor returns zero findings.
+- The initial 17 operational tables have RLS and one active-operator policy each. The current schema adds one public monetary table and two private beneficiary tables under the same authorization boundary.
+- The database security advisor reports no schema or RLS findings. The project Auth advisor reports leaked-password protection as disabled while the application uses passwordless Magic Link.
 - A rollback-safe functional scenario verified the complete container and inventory path without leaving test records.

@@ -1,0 +1,186 @@
+.monetary-shell {
+  background:
+    linear-gradient(180deg, rgba(242, 140, 40, .055), transparent 300px),
+    #f8f6fa;
+}
+
+.monetary-main { width: min(880px, calc(100% - 32px)); }
+
+.monetary-required {
+  margin-top: 15px;
+  display: block;
+  color: #6e6673;
+  font-size: 12px;
+}
+
+.monetary-form { display: grid; gap: 18px; }
+
+.monetary-section {
+  overflow: hidden;
+  border: 1px solid #ded8e2;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 7px 22px rgba(47, 30, 55, .035);
+}
+
+.monetary-section > header {
+  padding: 17px;
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  border-bottom: 1px solid #ece7ee;
+  background: #fdfcfd;
+}
+
+.monetary-section > header > span {
+  min-width: 31px;
+  height: 31px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #efe6f5;
+  color: var(--purple);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.monetary-section > header h2 {
+  margin: 0;
+  color: #342839;
+  font-size: 17px;
+  letter-spacing: -.02em;
+}
+
+.monetary-section > header p {
+  margin: 5px 0 0;
+  color: #746c78;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.monetary-grid {
+  padding: 18px 17px 20px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 17px;
+}
+
+.monetary-check {
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.monetary-check > input {
+  width: 1px;
+  height: 1px;
+  position: absolute;
+  opacity: 0;
+}
+
+.monetary-check > span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #4f4653;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.monetary-check i {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #c9c1cd;
+  border-radius: 6px;
+  background: #fff;
+  color: transparent;
+}
+
+.monetary-check i svg { width: 15px; }
+
+.monetary-check input:checked + span i {
+  border-color: var(--purple);
+  background: var(--purple);
+  color: #fff;
+}
+
+.monetary-check input:focus-visible + span i,
+.monetary-check input[aria-invalid="true"] + span i {
+  box-shadow: 0 0 0 3px rgba(91, 46, 145, .14);
+}
+
+.conversion-preview {
+  padding: 13px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-left: 3px solid var(--orange);
+  background: #fff8f0;
+}
+
+.conversion-preview div { display: grid; gap: 3px; }
+.conversion-preview span { color: #786a5b; font-size: 10px; font-weight: 750; text-transform: uppercase; letter-spacing: .05em; }
+.conversion-preview strong { color: #382d25; font-size: 17px; }
+
+.conversion-preview button {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid #e4b98d;
+  border-radius: 7px;
+  background: #fff;
+  color: #74420f;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.conversion-preview button:disabled { opacity: .48; cursor: default; }
+.conversion-preview button:focus-visible { box-shadow: 0 0 0 3px rgba(242, 140, 40, .18); }
+
+.monetary-evidence { margin: 18px 17px; }
+
+.verification-check {
+  margin: 6px 17px 0;
+  padding: 14px;
+  border: 1px solid #ded8e2;
+  border-radius: 8px;
+  background: #faf8fb;
+}
+
+.monetary-section > .field-error { margin: 7px 17px; }
+
+.monetary-message {
+  margin: 12px 17px 18px;
+  padding: 12px 14px;
+  border-left: 4px solid #b42318;
+  background: #fff1f0;
+  color: #8f1c14;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.monetary-submit {
+  padding: 7px 0 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.monetary-submit .intake-button { width: 100%; }
+
+@media (min-width: 680px) {
+  .monetary-grid { padding: 23px; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 19px; }
+  .monetary-grid .wide { grid-column: 1 / -1; }
+  .monetary-section > header { padding: 20px 23px; }
+  .monetary-evidence { margin: 23px; }
+  .verification-check { margin: 6px 23px 0; }
+  .monetary-section > .field-error { margin: 7px 23px; }
+  .monetary-message { margin: 12px 23px 23px; }
+  .monetary-submit .intake-button { width: auto; min-width: 220px; }
+}
+
