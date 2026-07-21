@@ -2,25 +2,52 @@ import { useCallback, useEffect, useState } from 'react'
 import { isSupabaseConfigured, supabase } from '../../lib/supabase.js'
 
 const initialStatus = isSupabaseConfigured ? 'loading' : 'configuration'
+const emptyIdentity = { email: '', userId: '', displayName: '', role: 'operator', message: '' }
 
 export function useOperatorAccess() {
-  const [state, setState] = useState({ status: initialStatus, email: '', message: '' })
+  const [state, setState] = useState({ status: initialStatus, ...emptyIdentity })
 
   const checkAccess = useCallback(async (session) => {
     if (!supabase || !session?.user) {
-      setState({ status: isSupabaseConfigured ? 'signed_out' : 'configuration', email: '', message: '' })
+      setState({ status: isSupabaseConfigured ? 'signed_out' : 'configuration', ...emptyIdentity })
+      return
+    }
+
+    const identity = {
+      email: session.user.email ?? '',
+      userId: session.user.id ?? '',
+    }
+
+    const { data: profile, error: profileError } = await supabase.rpc('current_operator_profile')
+
+    if (!profileError) {
+      setState({
+        status: profile?.authorized ? 'authorized' : 'restricted',
+        ...identity,
+        displayName: profile?.display_name ?? '',
+        role: profile?.role ?? 'operator',
+        message: '',
+      })
       return
     }
 
     const { data, error } = await supabase.rpc('current_operator_access')
     if (error) {
-      setState({ status: 'error', email: session.user.email ?? '', message: error.message })
+      setState({
+        status: 'error',
+        ...identity,
+        displayName: '',
+        role: 'operator',
+        message: error.message,
+      })
       return
     }
 
     setState({
       status: data ? 'authorized' : 'restricted',
-      email: session.user.email ?? '',
+      ...identity,
+      displayName: '',
+      role: 'operator',
       message: '',
     })
   }, [])
@@ -47,7 +74,7 @@ export function useOperatorAccess() {
 
   const requestMagicLink = async (email) => {
     if (!supabase) return { error: new Error('Supabase configuration is unavailable.') }
-    setState({ status: 'sending_link', email, message: '' })
+    setState({ status: 'sending_link', ...emptyIdentity, email })
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
@@ -57,14 +84,14 @@ export function useOperatorAccess() {
     })
 
     setState(error
-      ? { status: 'signed_out', email, message: error.message }
-      : { status: 'link_sent', email, message: '' })
+      ? { status: 'signed_out', ...emptyIdentity, email, message: error.message }
+      : { status: 'link_sent', ...emptyIdentity, email })
     return { error }
   }
 
   const signOut = async () => {
     if (supabase) await supabase.auth.signOut()
-    setState({ status: 'signed_out', email: '', message: '' })
+    setState({ status: 'signed_out', ...emptyIdentity })
   }
 
   return { ...state, requestMagicLink, signOut }
