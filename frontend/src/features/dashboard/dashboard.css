@@ -1,0 +1,65 @@
+:root { font-family: Manrope, system-ui, sans-serif; color: #15231f; background: #f4f7f5; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+a { color: inherit; text-decoration: none; }
+button, input { font: inherit; }
+.edifica-wordmark { display: inline-flex; font-size: 1.2rem; font-weight: 800; letter-spacing: -.04em; }
+.edifica-wordmark span { color: #3b8f72; }
+.edifica-wordmark.light { color: #fff; }
+.edifica-wordmark.light span { color: #79e2ba; }
+.edifica-login-shell { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: linear-gradient(145deg, #eef5f1, #fff); }
+.edifica-login-card { width: min(100%, 480px); background: white; border: 1px solid #dfe9e4; border-radius: 22px; padding: 36px; box-shadow: 0 22px 60px rgba(24, 64, 50, .12); }
+.edifica-login-card h1 { font-family: 'Source Serif 4', Georgia, serif; font-size: 2.2rem; line-height: 1.05; margin: 24px 0 12px; }
+.edifica-login-card p { color: #5b6d66; line-height: 1.6; }
+.edifica-login-card form { display: grid; gap: 10px; margin-top: 24px; }
+.edifica-login-card label { font-weight: 700; font-size: .9rem; }
+.edifica-login-card input { width: 100%; padding: 14px 16px; border: 1px solid #cddbd4; border-radius: 12px; outline: none; }
+.edifica-login-card input:focus { border-color: #3b8f72; box-shadow: 0 0 0 3px rgba(59,143,114,.12); }
+.edifica-primary-button { border: 0; border-radius: 12px; padding: 14px 18px; background: #173f33; color: white; font-weight: 800; cursor: pointer; }
+.edifica-primary-button:disabled { opacity: .55; cursor: wait; }
+.edifica-kicker { margin: 0; color: #3b8f72 !important; font-size: .75rem; font-weight: 800; letter-spacing: .16em; }
+.edifica-message { margin-top: 24px; border-radius: 12px; padding: 14px 16px; line-height: 1.5; }
+.edifica-message.success { background: #eaf7f0; color: #18573f; }
+.edifica-message.error, .edifica-empty.error { background: #fff1f0; color: #8f2f2f; }
+.edifica-message button { display: block; margin-top: 12px; border: 0; background: transparent; padding: 0; text-decoration: underline; cursor: pointer; }
+.edifica-form-error { color: #9a3434 !important; font-size: .85rem; }
+.edifica-dashboard-shell { min-height: 100vh; display: grid; grid-template-columns: 260px 1fr; }
+.edifica-sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; padding: 28px 22px; background: #102f27; color: #d9e7e1; }
+.edifica-sidebar nav { display: grid; gap: 6px; margin-top: 42px; }
+.edifica-sidebar nav a, .edifica-sidebar nav button { border: 0; border-radius: 10px; padding: 12px 14px; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.edifica-sidebar nav a:hover, .edifica-sidebar nav a.active { background: rgba(255,255,255,.1); color: #fff; }
+.edifica-sidebar nav button:disabled { opacity: .45; cursor: default; }
+.edifica-nav-section { margin: 24px 14px 4px; font-size: .67rem; font-weight: 800; letter-spacing: .14em; color: #88a59a; }
+.edifica-signout { margin-top: auto; border: 1px solid rgba(255,255,255,.22); border-radius: 10px; padding: 12px; background: transparent; color: #fff; cursor: pointer; }
+.edifica-dashboard-main { padding: 42px clamp(24px, 5vw, 72px); overflow: hidden; }
+.edifica-dashboard-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
+.edifica-dashboard-header h1, .edifica-section-heading h2 { font-family: 'Source Serif 4', Georgia, serif; margin: 8px 0 0; }
+.edifica-dashboard-header h1 { font-size: clamp(2rem, 4vw, 3.5rem); }
+.edifica-user-chip { max-width: 300px; padding: 10px 14px; border: 1px solid #d7e3dd; border-radius: 999px; background: #fff; color: #53675f; overflow: hidden; text-overflow: ellipsis; }
+.edifica-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 34px; }
+.edifica-metrics article { display: grid; gap: 12px; padding: 22px; border: 1px solid #dfe8e3; border-radius: 16px; background: #fff; }
+.edifica-metrics span { color: #677970; font-size: .88rem; }
+.edifica-metrics strong { font-size: 2.2rem; }
+.edifica-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 20px 0 34px; }
+.edifica-actions a { display: grid; gap: 8px; padding: 22px; border-radius: 16px; background: #173f33; color: #fff; }
+.edifica-actions a:last-child { background: #fff; color: #173f33; border: 1px solid #dfe8e3; }
+.edifica-actions span { opacity: .72; line-height: 1.45; font-size: .9rem; }
+.edifica-records { border: 1px solid #dfe8e3; border-radius: 18px; background: #fff; overflow: hidden; }
+.edifica-section-heading { display: flex; justify-content: space-between; align-items: center; padding: 24px; border-bottom: 1px solid #e7eeea; }
+.edifica-section-heading h2 { font-size: 1.65rem; }
+.edifica-section-heading > span { color: #6c7e76; font-size: .85rem; }
+.edifica-table-wrap { overflow-x: auto; }
+.edifica-records table { width: 100%; border-collapse: collapse; }
+.edifica-records th, .edifica-records td { padding: 16px 24px; text-align: left; border-bottom: 1px solid #edf1ef; white-space: nowrap; }
+.edifica-records th { color: #6f8179; font-size: .76rem; letter-spacing: .06em; text-transform: uppercase; }
+.edifica-status { display: inline-flex; padding: 6px 10px; border-radius: 999px; background: #edf3f0; color: #38574b; font-size: .78rem; font-weight: 700; }
+.edifica-status.verified, .edifica-status.closed { background: #e5f6ed; color: #1e6848; }
+.edifica-empty { margin: 0; padding: 36px 24px; color: #6b7d75; }
+@media (max-width: 860px) {
+  .edifica-dashboard-shell { grid-template-columns: 1fr; }
+  .edifica-sidebar { position: relative; height: auto; }
+  .edifica-sidebar nav { margin-top: 24px; }
+  .edifica-signout { margin-top: 24px; }
+  .edifica-metrics, .edifica-actions { grid-template-columns: 1fr; }
+  .edifica-dashboard-header { flex-direction: column; }
+}
