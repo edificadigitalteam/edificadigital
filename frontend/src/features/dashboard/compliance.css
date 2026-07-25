@@ -1,0 +1,146 @@
+.compliance-page { gap: 24px; }
+.compliance-header { align-items: center; }
+.compliance-print {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--ed-purple);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ed-purple);
+  font-weight: 800;
+  cursor: pointer;
+}
+.compliance-print:hover { background: var(--ed-purple); color: #fff; }
+.compliance-print:disabled { opacity: .45; cursor: default; }
+.compliance-selector {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 20px 24px;
+}
+.compliance-selector label { width: min(580px, 100%); display: grid; gap: 8px; font-size: .82rem; font-weight: 800; }
+.compliance-selector select {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 13px;
+  border: 1px solid var(--ed-line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ed-ink);
+  font: inherit;
+}
+.compliance-selector > div { display: grid; gap: 4px; text-align: right; }
+.compliance-selector > div strong { color: var(--ed-purple-dark); }
+.compliance-selector > div span { color: var(--ed-muted); font-size: .8rem; }
+.compliance-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.compliance-metrics article {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+  border: 1px solid var(--ed-line);
+  border-top: 4px solid var(--ed-purple);
+  border-radius: 16px;
+  background: #fff;
+}
+.compliance-metrics article:nth-child(2) { border-top-color: var(--ed-orange); }
+.compliance-metrics article:nth-child(3) { border-top-color: var(--ed-yellow); }
+.compliance-metrics article:nth-child(4) { border-top-color: #8d62bc; }
+.compliance-metrics span { color: var(--ed-muted); font-size: .78rem; font-weight: 700; }
+.compliance-metrics strong { overflow-wrap: anywhere; color: var(--ed-purple-dark); font-size: clamp(1.35rem, 2.3vw, 2rem); }
+.compliance-metrics small { color: var(--ed-muted); }
+.compliance-entry-card { overflow: visible; }
+.compliance-tabs { display: flex; gap: 4px; padding: 14px 18px 0; border-bottom: 1px solid var(--ed-line); }
+.compliance-tabs button {
+  padding: 12px 16px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--ed-muted);
+  font-weight: 800;
+  cursor: pointer;
+}
+.compliance-tabs button.active { border-bottom-color: var(--ed-orange); color: var(--ed-purple-dark); }
+.compliance-form-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 10px; }
+.compliance-form-actions > button:first-child {
+  border: 1px solid var(--ed-line);
+  border-radius: 10px;
+  padding: 12px 18px;
+  background: #fff;
+  color: var(--ed-muted);
+  font-weight: 800;
+  cursor: pointer;
+}
+.final-report-card { overflow: hidden; }
+.final-report-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px;
+  background: linear-gradient(125deg, #351653, #5b2e91 62%, #7343a8);
+  color: #fff;
+}
+.final-report-heading h2 { margin: 7px 0 4px; font-family: 'Source Serif 4', Georgia, serif; font-size: clamp(1.8rem, 3vw, 2.6rem); }
+.final-report-heading .edifica-kicker { color: #ffd166 !important; }
+.final-report-heading > div > span { color: rgba(255,255,255,.74); font-size: .84rem; }
+.final-report-score { min-width: 150px; display: grid; gap: 3px; text-align: right; }
+.final-report-score strong { font-size: 2.4rem; }
+.final-report-score span { color: rgba(255,255,255,.76); font-size: .76rem; }
+.final-report-project-data { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-bottom: 1px solid var(--ed-line); }
+.final-report-project-data > div { padding: 22px 24px; border-right: 1px solid var(--ed-line); }
+.final-report-project-data > div:last-child { border-right: 0; }
+.final-report-project-data span { color: var(--ed-purple); font-size: .7rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.final-report-project-data p { margin: 8px 0 0; color: var(--ed-muted); font-size: .86rem; line-height: 1.55; }
+.final-report-section + .final-report-section { border-top: 12px solid var(--ed-paper); }
+.compliance-table { width: 100%; border-collapse: collapse; }
+.compliance-table th,
+.compliance-table td { padding: 14px 18px; border-bottom: 1px solid var(--ed-line); text-align: left; vertical-align: middle; }
+.compliance-table th { color: var(--ed-muted); font-size: .68rem; letter-spacing: .07em; text-transform: uppercase; }
+.compliance-table td { color: var(--ed-muted); font-size: .82rem; }
+.compliance-table td:first-child { min-width: 210px; }
+.compliance-table td strong { display: block; color: var(--ed-ink); }
+.compliance-table td span { display: block; margin-top: 3px; font-size: .72rem; }
+.compliance-table button { border: 0; background: transparent; color: var(--ed-purple); font-weight: 800; cursor: pointer; }
+.compliance-progress { min-width: 120px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
+.compliance-progress::before { content: ''; grid-column: 1; grid-row: 1; height: 7px; border-radius: 999px; background: #eee8f3; }
+.compliance-progress > span { grid-column: 1; grid-row: 1; height: 7px; margin: 0; border-radius: 999px; background: linear-gradient(90deg, var(--ed-orange), var(--ed-yellow)); }
+.compliance-progress b { grid-column: 2; color: var(--ed-purple-dark); font-size: .72rem; }
+
+@media (max-width: 1000px) {
+  .compliance-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .final-report-project-data { grid-template-columns: 1fr; }
+  .final-report-project-data > div { border-right: 0; border-bottom: 1px solid var(--ed-line); }
+}
+
+@media (max-width: 760px) {
+  .compliance-selector,
+  .final-report-heading { align-items: stretch; flex-direction: column; }
+  .compliance-selector > div,
+  .final-report-score { text-align: left; }
+  .compliance-metrics { grid-template-columns: 1fr; }
+  .compliance-tabs { overflow-x: auto; }
+}
+
+@media print {
+  .edifica-sidebar,
+  .no-print,
+  .compliance-print,
+  .compliance-selector,
+  .compliance-header .operations-intro,
+  .operations-feedback { display: none !important; }
+  .edifica-dashboard-shell { display: block; background: #fff; }
+  .edifica-dashboard-main { padding: 0; overflow: visible; }
+  .compliance-page { display: block; }
+  .compliance-header { margin-bottom: 18px; }
+  .compliance-metrics { grid-template-columns: repeat(4, 1fr); margin-bottom: 18px; }
+  .final-report-card { border: 0; }
+  .final-report-heading { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .compliance-table th,
+  .compliance-table td { padding: 8px; }
+}
