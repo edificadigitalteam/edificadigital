@@ -1,6 +1,6 @@
 # AI Coding Agent Working Guide
 
-This guide applies to Claude, Codex, and any AI coding agent working in the Edifica Digital repository. Read `agents.md` first; its rules are binding.
+This guide applies to Claude, Codex, and any AI coding agent working in the Edifica Digital repository. Read `AGENTS.md` first; its rules are binding.
 
 ## Mission
 
@@ -167,7 +167,7 @@ The next operational workflow begins at physical receipt. It must collect wareho
 
 ## Canonical references
 
-- `agents.md` — binding repository workflow and product decisions
+- `AGENTS.md` — binding repository workflow and product decisions
 - `docs/ARCHITECTURE.md` — runtime and domain boundaries
 - `docs/DATABASE.md` — deployed schema and security baseline
 - `docs/adr/ADR-003-in-kind-shipment-inventory.md` — shipment model decision

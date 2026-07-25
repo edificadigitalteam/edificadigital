@@ -89,7 +89,7 @@ All nine steps were completed on 2026-07-19.
 - RLS is enabled on every operational table.
 - Security and performance advisors are reviewed after deployment.
 - Repository documentation identifies `edifydb` and the implemented schema accurately.
-- `agents.md` and `claude.md` reflect the latest product, database, bilingual, accessibility, and deployment decisions.
+- `AGENTS.md` and `CLAUDE.md` reflect the latest product, database, bilingual, accessibility, and deployment decisions.
 
 ## Completion evidence
 

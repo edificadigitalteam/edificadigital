@@ -8,7 +8,7 @@
 
 ## Overview
 
-Two feature requests to scope before implementation, per the plan-first rule in `agents.md`. This document is the plan — no code changes yet. Each part below needs the open questions answered before it's picked up as a Sprint task.
+Two feature requests to scope before implementation, per the plan-first rule in `AGENTS.md`. This document is the plan — no code changes yet. Each part below needs the open questions answered before it's picked up as a Sprint task.
 
 ## Objectives
 
