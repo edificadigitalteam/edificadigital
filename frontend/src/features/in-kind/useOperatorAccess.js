@@ -9,6 +9,8 @@ const emptyIdentity = {
   role: 'operator',
   organizationId: '',
   organizationName: '',
+  tenantHost: '',
+  tenantOrganizationId: '',
   message: '',
 }
 const demoFallbackUrl = 'https://edificadigital-git-feature-demo-acces-a82faf-yangetzes-projects.vercel.app'
@@ -19,6 +21,15 @@ function getAppRedirectUrl() {
   const baseUrl = configuredUrl || (isLegacyLocalhost ? demoFallbackUrl : window.location.origin)
   const normalizedBaseUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`
   return new URL('/app', normalizedBaseUrl).toString()
+}
+
+async function resolveCurrentTenant() {
+  if (!supabase) return null
+  const { data, error } = await supabase.rpc('resolve_tenant_host', {
+    host_input: window.location.hostname.toLowerCase(),
+  })
+  if (error) return null
+  return Array.isArray(data) ? data[0] ?? null : data ?? null
 }
 
 export function useOperatorAccess() {
@@ -35,19 +46,36 @@ export function useOperatorAccess() {
       userId: session.user.id ?? '',
     }
 
-    const { data: profile, error: profileError } = await supabase.rpc('current_operator_profile')
+    const [profileResponse, tenant] = await Promise.all([
+      supabase.rpc('current_operator_profile'),
+      resolveCurrentTenant(),
+    ])
+    const { data: profile, error: profileError } = profileResponse
 
     if (!profileError) {
       const authorized = profile?.authorized ?? profile?.active ?? false
+      const profileOrganizationId = profile?.organization_id ?? ''
+      const role = profile?.role ?? 'operator'
+      const tenantMismatch = Boolean(
+        tenant?.organization_id
+        && profileOrganizationId
+        && tenant.organization_id !== profileOrganizationId
+        && role !== 'super_admin'
+      )
+
       setState({
-        status: authorized ? 'authorized' : 'restricted',
+        status: authorized && !tenantMismatch ? 'authorized' : 'restricted',
         ...identity,
         email: profile?.email ?? identity.email,
         displayName: profile?.display_name ?? '',
-        role: profile?.role ?? 'operator',
-        organizationId: profile?.organization_id ?? '',
+        role,
+        organizationId: profileOrganizationId,
         organizationName: profile?.organization_name ?? '',
-        message: '',
+        tenantHost: tenant?.hostname ?? '',
+        tenantOrganizationId: tenant?.organization_id ?? '',
+        message: tenantMismatch
+          ? 'Este acceso pertenece a una organización diferente al tenant solicitado.'
+          : '',
       })
       return
     }
@@ -61,6 +89,8 @@ export function useOperatorAccess() {
         role: 'operator',
         organizationId: '',
         organizationName: '',
+        tenantHost: tenant?.hostname ?? '',
+        tenantOrganizationId: tenant?.organization_id ?? '',
         message: error.message,
       })
       return
@@ -73,6 +103,8 @@ export function useOperatorAccess() {
       role: 'operator',
       organizationId: '',
       organizationName: '',
+      tenantHost: tenant?.hostname ?? '',
+      tenantOrganizationId: tenant?.organization_id ?? '',
       message: '',
     })
   }, [])
