@@ -4,6 +4,10 @@ const ALLOWED_EVIDENCE_TYPES = new Set([
   'image/png',
   'image/webp',
   'application/pdf',
+  'text/csv',
+  'application/csv',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ])
 
 const countryCodes = {
@@ -55,8 +59,28 @@ export function createSubmissionReference(draft) {
   return `INK-${country}-${arrival}-${suffix}`
 }
 
+function buildConsolidatedItems(draft) {
+  if (Array.isArray(draft.items) && draft.items.length) return draft.items
+
+  return [{
+    itemCode: '',
+    description: draft.contentsSummary?.trim() || 'Carga consolidada según manifiesto adjunto',
+    category: 'other',
+    declaredQuantity: Number(draft.packageCount || 1),
+    unit: draft.packageUnit || 'lot',
+    referenceValue: draft.referenceValue || '',
+    referenceCurrency: draft.referenceCurrency || 'USD',
+    dietaryAttributes: [],
+    allergens: '',
+    lotCode: '',
+    expiryDate: '',
+    notes: `Categorías declaradas: ${(draft.categories ?? []).join(', ') || 'sin clasificación previa'}`,
+  }]
+}
+
 export function buildSubmissionPayload(draft, attachments = []) {
   const senderContact = nullable(draft.senderContact)
+  const items = buildConsolidatedItems(draft)
 
   return {
     submission_key: draft.submissionId,
@@ -84,7 +108,7 @@ export function buildSubmissionPayload(draft, attachments = []) {
       customs_reference: nullable(draft.customsReference),
       notes: nullable(draft.notes),
     },
-    items: draft.items.map((item) => ({
+    items: items.map((item) => ({
       item_code: nullable(item.itemCode),
       description: item.description.trim(),
       category: item.category,
@@ -165,9 +189,33 @@ export async function submitInKindShipment({ client, draft, evidence = [] }) {
 
   if (response.error) throw new SubmissionError('record', response.error)
 
+  const shipmentUpdate = await client
+    .from('shipment')
+    .update({
+      shipment_scope: draft.shipmentScope || 'international',
+      category_codes: draft.categories ?? [],
+      contents_summary: nullable(draft.contentsSummary),
+      declared_package_count: draft.packageCount === '' ? null : Number(draft.packageCount),
+      package_unit_code: draft.packageUnit || 'lot',
+    })
+    .eq('id', response.data.shipment_id)
+
+  if (shipmentUpdate.error) throw new SubmissionError('record', shipmentUpdate.error)
+
+  if (draft.projectId || draft.organizationId) {
+    const donationUpdate = await client
+      .from('donation')
+      .update({
+        project_id: draft.projectId || null,
+        organization_id: draft.organizationId || null,
+      })
+      .eq('id', response.data.donation_id)
+
+    if (donationUpdate.error) throw new SubmissionError('record', donationUpdate.error)
+  }
+
   return {
     ...response.data,
     evidence_count: attachments.length,
   }
 }
-
