@@ -5,34 +5,39 @@ import DonationDetailModal from './DonationDetailModal.jsx'
 import DonationEditModal from './DonationEditModal.jsx'
 import OperatorAdminPanel from './OperatorAdminPanel.jsx'
 import OrganizationAdminPanel from './OrganizationAdminPanel.jsx'
+import ProjectCompliancePanel from './ProjectCompliancePanel.jsx'
 import ProjectsPanel from './ProjectsPanel.jsx'
 import VolunteerPanel from './VolunteerPanel.jsx'
 import './dashboard.css'
+import './dashboard-extensions.css'
+import './portal-shell.css'
 
-const typeLabels = {
-  monetary: 'Monetaria',
-  in_kind: 'En especies',
-  mixed: 'Mixta',
+const typeLabels = { monetary: 'Monetaria', in_kind: 'En especies', mixed: 'Mixta' }
+const statusLabels = { draft: 'Borrador', announced: 'Anunciada', received: 'Recibida', verified: 'Verificada', closed: 'Cerrada' }
+const roleLabels = { operator: 'Operador', admin: 'Administrador', super_admin: 'Superadministrador' }
+
+const iconPaths = {
+  home: 'M3 10.5 12 3l9 7.5M5.5 9v11h13V9M9 20v-6h6v6',
+  money: 'M4 6h16v12H4zM8 10h.01M16 14h.01M12 9v6m2-4.5c-.5-.8-1.3-1.2-2.2-1.2-1.2 0-2 .6-2 1.5 0 2.2 4.2 1.1 4.2 3.3 0 .9-.8 1.6-2.1 1.6-.9 0-1.8-.4-2.4-1.2',
+  package: 'm4 7 8-4 8 4-8 4-8-4Zm0 0v10l8 4 8-4V7m-8 4v10',
+  people: 'M16 20v-1.5a4.5 4.5 0 0 0-4.5-4.5h-5A4.5 4.5 0 0 0 2 18.5V20m7-9a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8-1a3 3 0 1 0 0-6m5 16v-1.5a4 4 0 0 0-3-3.9',
+  project: 'M4 5h16v15H4zM8 5V3h8v2M8 10h8M8 14h5',
+  report: 'M5 3h11l3 3v15H5zM15 3v4h4M9 17v-3m3 3v-6m3 6V9',
+  users: 'M4 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 2 2 2 3-4',
+  organization: 'M4 21V7l8-4 8 4v14M8 10h2m4 0h2m-8 4h2m4 0h2m-5 7v-4h2v4',
 }
 
-const statusLabels = {
-  draft: 'Borrador',
-  announced: 'Anunciada',
-  received: 'Recibida',
-  verified: 'Verificada',
-  closed: 'Cerrada',
+function PortalIcon({ name }) {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d={iconPaths[name]} /></svg>
 }
 
-const roleLabels = {
-  operator: 'Operador',
-  admin: 'Administrador',
-  super_admin: 'Superadministrador',
+function NavLink({ active, href, icon, children }) {
+  return <a className={active ? 'active' : ''} href={href}><span className="portal-nav-icon"><PortalIcon name={icon} /></span><span>{children}</span></a>
 }
 
 function LoginCard({ access }) {
   const [email, setEmail] = useState(access.email ?? '')
   const busy = access.status === 'loading' || access.status === 'sending_link'
-
   const submit = async (event) => {
     event.preventDefault()
     if (email.trim()) await access.requestMagicLink(email.trim().toLowerCase())
@@ -45,7 +50,6 @@ function LoginCard({ access }) {
         <p className="edifica-kicker">ACCESO AL SISTEMA</p>
         <h1>Ingresa al panel de Edifica</h1>
         <p>Usa el correo habilitado por el administrador. Recibirás un enlace seguro para iniciar sesión.</p>
-
         {access.status === 'link_sent' ? (
           <div className="edifica-message success">Revisa tu correo. El enlace de acceso fue enviado a <strong>{access.email}</strong>.</div>
         ) : access.status === 'restricted' ? (
@@ -83,12 +87,14 @@ function DashboardHome({ access }) {
   const loadDonations = useCallback(async () => {
     if (!supabase || !access.userId) return
     setLoading(true)
-    const { data, error: queryError } = await supabase
+    let request = supabase
       .from('donation')
       .select('id, donation_type, status, reference_code, received_at, created_at, donor:actor(name)')
-      .eq('created_by', access.userId)
       .order('created_at', { ascending: false })
       .limit(50)
+
+    if (access.role !== 'super_admin' && access.organizationId) request = request.eq('organization_id', access.organizationId)
+    const { data, error: queryError } = await request
 
     if (queryError) {
       setError(queryError.message)
@@ -98,11 +104,9 @@ function DashboardHome({ access }) {
       setDonations(data ?? [])
     }
     setLoading(false)
-  }, [access.userId])
+  }, [access.organizationId, access.role, access.userId])
 
-  useEffect(() => {
-    loadDonations()
-  }, [loadDonations])
+  useEffect(() => { loadDonations() }, [loadDonations])
 
   useEffect(() => {
     if (!selectedId) return undefined
@@ -215,8 +219,8 @@ function DashboardHome({ access }) {
       </section>
 
       <section className="edifica-records" id="registros">
-        <div className="edifica-section-heading"><div><p className="edifica-kicker">HISTORIAL</p><h2>Mis registros</h2></div><span>{donations.length} registros</span></div>
-        {loading ? <p className="edifica-empty">Cargando registros…</p> : error ? <p className="edifica-empty error">No se pudo cargar el listado: {error}</p> : donations.length === 0 ? <p className="edifica-empty">Todavía no has registrado donaciones.</p> : (
+        <div className="edifica-section-heading"><div><p className="edifica-kicker">ACTIVIDAD RECIENTE</p><h2>Registros de la organización</h2></div><span>{donations.length} registros</span></div>
+        {loading ? <p className="edifica-empty">Cargando registros…</p> : error ? <p className="edifica-empty error">No se pudo cargar el listado: {error}</p> : donations.length === 0 ? <p className="edifica-empty">Todavía no existen donaciones registradas.</p> : (
           <div className="edifica-table-wrap"><table><thead><tr><th>Fecha</th><th>Referencia</th><th>Tipo</th><th>Donante</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{donations.map((donation) => (
             <tr key={donation.id} onClick={() => openDonation(donation.id, 'detail')}>
               <td>{formatDate(donation.received_at ?? donation.created_at)}</td>
@@ -244,41 +248,56 @@ export default function DashboardApp() {
   const path = window.location.pathname
   const operatorsPage = path.startsWith('/app/admin/operators')
   const organizationsPage = path.startsWith('/app/admin/organizations')
+  const compliancePage = path.startsWith('/app/compliance')
   const projectsPage = path.startsWith('/app/projects')
   const volunteersPage = path.startsWith('/app/volunteers')
   const canAdmin = access.role === 'admin' || access.role === 'super_admin'
-  const homePage = !operatorsPage && !organizationsPage && !projectsPage && !volunteersPage
+  const homePage = !operatorsPage && !organizationsPage && !projectsPage && !volunteersPage && !compliancePage
 
   if (access.status !== 'authorized') return <LoginCard access={access} />
 
   let page = <DashboardHome access={access} />
   if (projectsPage) page = <ProjectsPanel access={access} />
+  if (compliancePage) page = <ProjectCompliancePanel access={access} />
   if (volunteersPage) page = <VolunteerPanel access={access} />
   if (operatorsPage && canAdmin) page = <OperatorAdminPanel access={access} />
   if (organizationsPage && canAdmin) page = <OrganizationAdminPanel access={access} />
 
   return (
-    <div className="edifica-dashboard-shell">
-      <aside className="edifica-sidebar">
-        <a className="edifica-wordmark" href="/app">edifica<span>digital</span></a>
-        <nav className="edifica-primary-nav">
-          <a className={homePage ? 'active' : ''} href="/app">Resumen</a>
-          <a href="/donations/monetary/new">Nueva donación monetaria</a>
-          <a href="/donations/in-kind/new">Nueva donación en especies</a>
-          <a className={volunteersPage ? 'active' : ''} href="/app/volunteers">Nuevo voluntario</a>
-          <a className={projectsPage ? 'active' : ''} href="/app/projects">Proyectos</a>
-          {homePage && <a href="#registros">Mis registros</a>}
+    <div className="edifica-dashboard-shell portal-dashboard-shell">
+      <aside className="edifica-sidebar portal-sidebar">
+        <div className="portal-brand-block">
+          <a className="edifica-wordmark" href="/app">edifica<span>digital</span></a>
+          <small>PORTAL DE GESTIÓN</small>
+        </div>
+
+        <div className="portal-tenant-card">
+          <span>ORGANIZACIÓN ACTIVA</span>
+          <strong>{access.organizationName || 'Administración general'}</strong>
+          <small>{roleLabels[access.role] ?? access.role}</small>
+        </div>
+
+        <nav className="edifica-primary-nav portal-primary-nav">
+          <span className="portal-nav-section">OPERACIÓN</span>
+          <NavLink active={homePage} href="/app" icon="home">Resumen</NavLink>
+          <NavLink href="/donations/monetary/new" icon="money">Donación monetaria</NavLink>
+          <NavLink href="/donations/in-kind/new" icon="package">Donación en especies</NavLink>
+          <NavLink active={volunteersPage} href="/app/volunteers" icon="people">Voluntariado</NavLink>
+
+          <span className="portal-nav-section portal-management-section">GESTIÓN Y CUMPLIMIENTO</span>
+          <NavLink active={projectsPage} href="/app/projects" icon="project">Proyectos</NavLink>
+          <NavLink active={compliancePage} href="/app/compliance" icon="report">Resultados e informes</NavLink>
         </nav>
 
-        <div className="edifica-sidebar-footer">
+        <div className="edifica-sidebar-footer portal-sidebar-footer">
           {canAdmin && (
-            <nav className="edifica-admin-nav" aria-label="Administración">
-              <span className="edifica-nav-section">ADMINISTRACIÓN</span>
-              <a className={operatorsPage ? 'active' : ''} href="/app/admin/operators">Personas habilitadas</a>
-              <a className={organizationsPage ? 'active' : ''} href="/app/admin/organizations">Organizaciones</a>
+            <nav className="edifica-admin-nav portal-admin-nav" aria-label="Administración">
+              <span className="portal-nav-section">ADMINISTRACIÓN</span>
+              <NavLink active={operatorsPage} href="/app/admin/operators" icon="users">Personas habilitadas</NavLink>
+              <NavLink active={organizationsPage} href="/app/admin/organizations" icon="organization">Organizaciones y hosts</NavLink>
             </nav>
           )}
-          <button className="edifica-signout" type="button" onClick={access.signOut}>Cerrar sesión</button>
+          <div className="portal-user-footer"><div><strong>{access.displayName || access.email}</strong><span>{access.email}</span></div><button className="edifica-signout" type="button" onClick={access.signOut}>Cerrar sesión</button></div>
         </div>
       </aside>
 
