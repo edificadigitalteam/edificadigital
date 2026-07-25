@@ -9,6 +9,7 @@ const ALLOWED_EVIDENCE_TYPES = new Set([
   'application/vnd.ms-excel',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ])
+const ALLOWED_EVIDENCE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'pdf', 'csv', 'xls', 'xlsx'])
 
 const countryCodes = {
   alemania: 'DE',
@@ -37,6 +38,16 @@ const nullable = (value) => {
 }
 
 const isEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(value ?? '')
+
+const normalizeAttachmentType = (type) => {
+  const aliases = {
+    manifest_spreadsheet: 'packing_list',
+    inspection_evidence: 'inspection',
+    customs_document: 'customs',
+    donation_receipt: 'receipt',
+  }
+  return aliases[type] ?? type
+}
 
 export class SubmissionError extends Error {
   constructor(stage, cause) {
@@ -131,7 +142,10 @@ export function buildSubmissionPayload(draft, attachments = []) {
 
 export function validateEvidence(file) {
   const errors = {}
-  if (!ALLOWED_EVIDENCE_TYPES.has(file?.type)) errors.type = 'unsupported'
+  const extension = String(file?.name ?? '').split('.').pop()?.toLowerCase()
+  const supportedType = ALLOWED_EVIDENCE_TYPES.has(file?.type)
+  const supportedExtension = ALLOWED_EVIDENCE_EXTENSIONS.has(extension)
+  if (!supportedType && !supportedExtension) errors.type = 'unsupported'
   if (Number(file?.size) > MAX_EVIDENCE_SIZE) errors.size = 'too_large'
   return errors
 }
@@ -169,17 +183,17 @@ export async function submitInKindShipment({ client, draft, evidence = [] }) {
     const path = createEvidencePath(userResponse.data.user.id, draft.submissionId, entry)
     const upload = await client.storage.from('attachments').upload(path, entry.file, {
       cacheControl: '3600',
-      contentType: entry.file.type,
+      contentType: entry.file.type || undefined,
       upsert: true,
     })
 
     if (upload.error) throw new SubmissionError('evidence_upload', upload.error)
 
     attachments.push({
-      attachment_type: entry.type,
+      attachment_type: normalizeAttachmentType(entry.type),
       storage_path: upload.data?.path ?? path,
       file_name: entry.file.name,
-      notes: null,
+      notes: entry.type === 'manifest_spreadsheet' ? 'Manifiesto detallado adjunto.' : null,
     })
   }
 
