@@ -2,7 +2,15 @@ import { useCallback, useEffect, useState } from 'react'
 import { isSupabaseConfigured, supabase } from '../../lib/supabase.js'
 
 const initialStatus = isSupabaseConfigured ? 'loading' : 'configuration'
-const emptyIdentity = { email: '', userId: '', displayName: '', role: 'operator', message: '' }
+const emptyIdentity = {
+  email: '',
+  userId: '',
+  displayName: '',
+  role: 'operator',
+  organizationId: '',
+  organizationName: '',
+  message: '',
+}
 const demoFallbackUrl = 'https://edificadigital-git-feature-demo-acces-a82faf-yangetzes-projects.vercel.app'
 
 function getAppRedirectUrl() {
@@ -37,6 +45,8 @@ export function useOperatorAccess() {
         email: profile?.email ?? identity.email,
         displayName: profile?.display_name ?? '',
         role: profile?.role ?? 'operator',
+        organizationId: profile?.organization_id ?? '',
+        organizationName: profile?.organization_name ?? '',
         message: '',
       })
       return
@@ -49,6 +59,8 @@ export function useOperatorAccess() {
         ...identity,
         displayName: '',
         role: 'operator',
+        organizationId: '',
+        organizationName: '',
         message: error.message,
       })
       return
@@ -59,6 +71,8 @@ export function useOperatorAccess() {
       ...identity,
       displayName: '',
       role: 'operator',
+      organizationId: '',
+      organizationName: '',
       message: '',
     })
   }, [])
