@@ -3,6 +3,15 @@ import { isSupabaseConfigured, supabase } from '../../lib/supabase.js'
 
 const initialStatus = isSupabaseConfigured ? 'loading' : 'configuration'
 const emptyIdentity = { email: '', userId: '', displayName: '', role: 'operator', message: '' }
+const demoFallbackUrl = 'https://edificadigital-git-feature-demo-acces-a82faf-yangetzes-projects.vercel.app'
+
+function getAppRedirectUrl() {
+  const configuredUrl = import.meta.env.VITE_APP_URL?.trim()
+  const isLegacyLocalhost = window.location.hostname === 'localhost' && window.location.port === '3000'
+  const baseUrl = configuredUrl || (isLegacyLocalhost ? demoFallbackUrl : window.location.origin)
+  const normalizedBaseUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`
+  return new URL('/app', normalizedBaseUrl).toString()
+}
 
 export function useOperatorAccess() {
   const [state, setState] = useState({ status: initialStatus, ...emptyIdentity })
@@ -21,9 +30,11 @@ export function useOperatorAccess() {
     const { data: profile, error: profileError } = await supabase.rpc('current_operator_profile')
 
     if (!profileError) {
+      const authorized = profile?.authorized ?? profile?.active ?? false
       setState({
-        status: profile?.authorized ? 'authorized' : 'restricted',
+        status: authorized ? 'authorized' : 'restricted',
         ...identity,
+        email: profile?.email ?? identity.email,
         displayName: profile?.display_name ?? '',
         role: profile?.role ?? 'operator',
         message: '',
@@ -75,10 +86,11 @@ export function useOperatorAccess() {
   const requestMagicLink = async (email) => {
     if (!supabase) return { error: new Error('Supabase configuration is unavailable.') }
     setState({ status: 'sending_link', ...emptyIdentity, email })
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: new URL(window.location.pathname, window.location.origin).toString(),
+        emailRedirectTo: getAppRedirectUrl(),
         shouldCreateUser: true,
       },
     })
