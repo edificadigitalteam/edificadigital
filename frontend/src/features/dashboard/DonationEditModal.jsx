@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
 
 const paymentMethods = {
@@ -28,7 +28,9 @@ function toLocalDateTime(value) {
 
 export default function DonationEditModal({ donation, onClose, onSaved }) {
   const firstDetail = donation.details?.[0]
+  const [projects, setProjects] = useState([])
   const [form, setForm] = useState(() => ({
+    project_id: donation.project_id ?? '',
     status: donation.status ?? 'received',
     received_at: toLocalDateTime(donation.received_at),
     notes: donation.notes ?? '',
@@ -70,6 +72,13 @@ export default function DonationEditModal({ donation, onClose, onSaved }) {
   const isMonetary = donation.donation_type === 'monetary'
   const categories = useMemo(() => form.category_codes ?? [], [form.category_codes])
 
+  useEffect(() => {
+    if (!supabase) return
+    let query = supabase.from('project').select('id, code, name').order('name')
+    if (donation.organization_id) query = query.eq('organization_id', donation.organization_id)
+    query.then(({ data }) => setProjects(data ?? []))
+  }, [donation.organization_id])
+
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value }))
   const toggleCategory = (category) => update('category_codes', categories.includes(category)
     ? categories.filter((item) => item !== category)
@@ -83,6 +92,7 @@ export default function DonationEditModal({ donation, onClose, onSaved }) {
 
     const payload = {
       id: donation.id,
+      project_id: form.project_id || null,
       status: form.status,
       received_at: form.received_at ? new Date(form.received_at).toISOString() : null,
       notes: form.notes,
@@ -130,11 +140,8 @@ export default function DonationEditModal({ donation, onClose, onSaved }) {
     }
 
     const { error: requestError } = await supabase.rpc('update_donation_record', { payload })
-    if (requestError) {
-      setError(requestError.message)
-    } else {
-      await onSaved()
-    }
+    if (requestError) setError(requestError.message)
+    else await onSaved()
     setSaving(false)
   }
 
@@ -150,6 +157,7 @@ export default function DonationEditModal({ donation, onClose, onSaved }) {
 
         <form className="edifica-edit-form" onSubmit={save}>
           <section><h3>Información general</h3><div className="edifica-edit-grid">
+            <label className="wide"><span>Proyecto relacionado</span><select value={form.project_id} onChange={(event) => update('project_id', event.target.value)}><option value="">Sin proyecto específico</option>{projects.map((project) => <option key={project.id} value={project.id}>{project.code} · {project.name}</option>)}</select></label>
             <label><span>Estado</span><select value={form.status} onChange={(event) => update('status', event.target.value)}><option value="draft">Borrador</option><option value="announced">Anunciada</option><option value="received">Recibida</option><option value="verified">Verificada</option><option value="closed">Cerrada</option></select></label>
             <label><span>Fecha de recepción</span><input type="datetime-local" value={form.received_at} onChange={(event) => update('received_at', event.target.value)} /></label>
             <label className="wide"><span>Observaciones</span><textarea value={form.notes} onChange={(event) => update('notes', event.target.value)} /></label>
