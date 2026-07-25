@@ -123,5 +123,17 @@ export async function submitMonetaryDonation({ client, draft, evidence = [] }) {
 
   if (response.error) throw new MonetarySubmissionError('record', response.error)
 
+  if (draft.projectId || draft.organizationId) {
+    const donationUpdate = await client
+      .from('donation')
+      .update({
+        project_id: draft.projectId || null,
+        organization_id: draft.organizationId || null,
+      })
+      .eq('id', response.data.donation_id)
+
+    if (donationUpdate.error) throw new MonetarySubmissionError('record', donationUpdate.error)
+  }
+
   return { ...response.data, evidence_count: attachments.length }
 }
