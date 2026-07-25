@@ -1,0 +1,19 @@
+.unified-monetary-shell .monetary-form { gap: 22px; }
+.unified-monetary-section .intake-field { display: grid; gap: 8px; }
+.unified-monetary-section .field-label { color: #2b2330; font-size: .86rem; font-weight: 800; }
+.unified-monetary-section input,
+.unified-monetary-section select,
+.unified-monetary-section textarea { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid #ddd7e2; border-radius: 11px; background: #fff; color: #201a26; font: inherit; outline: none; }
+.unified-monetary-section textarea { min-height: 105px; resize: vertical; }
+.unified-monetary-section input:focus,
+.unified-monetary-section select:focus,
+.unified-monetary-section textarea:focus { border-color: #5b2e91; box-shadow: 0 0 0 3px rgba(91, 46, 145, .1); }
+.unified-monetary-section input:read-only { background: #f6f2f8; color: #6d6672; }
+.unified-calculation { align-self: end; min-height: 48px; display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 9px 14px; border-left: 4px solid #ffd166; border-radius: 9px; background: #fff9e9; }
+.unified-calculation span { color: #6d6672; font-size: .7rem; font-weight: 800; }
+.unified-calculation strong { color: #341550; font-size: .94rem; }
+.unified-confirmation { margin-top: 18px; }
+@media (max-width: 720px) {
+  .unified-monetary-shell .intake-header { align-items: flex-start; }
+  .unified-monetary-shell .intake-header-actions { flex-wrap: wrap; justify-content: flex-end; }
+}
