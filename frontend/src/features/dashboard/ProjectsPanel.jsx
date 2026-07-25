@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
 import './operations.css'
+import './project-portal.css'
 
 const emptyForm = {
   id: '',
@@ -34,10 +35,19 @@ function formatMoney(amount, currency) {
   return new Intl.NumberFormat('es-ES', { style: 'currency', currency: currency || 'USD' }).format(Number(amount))
 }
 
+function formatDate(value) {
+  if (!value) return '—'
+  return new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium' }).format(new Date(`${value}T00:00:00`))
+}
+
 export default function ProjectsPanel({ access }) {
   const [projects, setProjects] = useState([])
   const [organizations, setOrganizations] = useState([])
   const [form, setForm] = useState({ ...emptyForm, organization_id: access.organizationId || '' })
+  const [formOpen, setFormOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [organizationFilter, setOrganizationFilter] = useState('all')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -45,6 +55,18 @@ export default function ProjectsPanel({ access }) {
 
   const canManage = access.role === 'admin' || access.role === 'super_admin'
   const activeCount = useMemo(() => projects.filter((item) => ['approved', 'active'].includes(item.status)).length, [projects])
+
+  const filteredProjects = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    return projects.filter((project) => {
+      const matchesSearch = !query || [project.code, project.name, project.funding_partner, project.organization?.name]
+        .filter(Boolean)
+        .some((value) => value.toLowerCase().includes(query))
+      const matchesStatus = statusFilter === 'all' || project.status === statusFilter
+      const matchesOrganization = organizationFilter === 'all' || project.organization_id === organizationFilter
+      return matchesSearch && matchesStatus && matchesOrganization
+    })
+  }, [organizationFilter, projects, search, statusFilter])
 
   const load = useCallback(async () => {
     if (!supabase) return
@@ -81,14 +103,21 @@ export default function ProjectsPanel({ access }) {
     setLoading(false)
   }, [access.organizationId, canManage])
 
-  useEffect(() => {
-    load()
-  }, [load])
+  useEffect(() => { load() }, [load])
 
   const reset = () => {
     setForm({ ...emptyForm, organization_id: access.organizationId || organizations[0]?.id || '' })
     setError('')
     setMessage('')
+    setFormOpen(false)
+  }
+
+  const startNew = () => {
+    setForm({ ...emptyForm, organization_id: access.organizationId || organizations[0]?.id || '' })
+    setError('')
+    setMessage('')
+    setFormOpen(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const edit = (project) => {
@@ -108,6 +137,9 @@ export default function ProjectsPanel({ access }) {
       reporting_requirements: project.reporting_requirements ?? '',
       notes: project.notes ?? '',
     })
+    setFormOpen(true)
+    setError('')
+    setMessage('')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -138,6 +170,7 @@ export default function ProjectsPanel({ access }) {
       reporting_requirements: form.reporting_requirements.trim() || null,
       notes: form.notes.trim() || null,
       created_by: access.userId,
+      updated_by: access.userId,
     }
 
     const request = form.id
@@ -148,59 +181,101 @@ export default function ProjectsPanel({ access }) {
     if (requestError) {
       setError(requestError.message)
     } else {
-      setMessage(form.id ? 'Proyecto actualizado.' : 'Proyecto registrado.')
-      reset()
+      setMessage(form.id ? 'Proyecto actualizado correctamente.' : 'Proyecto registrado correctamente.')
+      setForm({ ...emptyForm, organization_id: access.organizationId || organizations[0]?.id || '' })
+      setFormOpen(false)
       await load()
     }
     setSaving(false)
   }
 
   return (
-    <div className="operations-page">
-      <header className="edifica-dashboard-header">
+    <div className="operations-page project-portal-page">
+      <header className="edifica-dashboard-header project-portal-header">
         <div>
           <p className="edifica-kicker">CUMPLIMIENTO Y TRAZABILIDAD</p>
           <h1>Proyectos financiados</h1>
-          <p className="operations-intro">Registra los proyectos aprobados por aliados internacionales y concentra su presupuesto, objetivos, resultados, donaciones, facturas, comprobantes e informes.</p>
+          <p className="operations-intro">Administra la cartera de proyectos, sus financiadores, presupuesto, objetivos y exigencias de cumplimiento desde una vista institucional.</p>
         </div>
-        <div className="operations-summary"><strong>{activeCount}</strong><span>proyectos activos</span></div>
+        <div className="project-header-actions">
+          <div className="operations-summary"><strong>{activeCount}</strong><span>proyectos activos</span></div>
+          {canManage && <button className="project-new-button" type="button" onClick={startNew}>＋ Nuevo proyecto</button>}
+        </div>
       </header>
 
       {!access.organizationId && access.role !== 'super_admin' && (
-        <p className="operations-empty-note">Tu usuario necesita una organización asignada para utilizar este módulo. Un superadministrador puede asociarla desde Personas habilitadas.</p>
+        <p className="operations-empty-note">Tu usuario necesita una organización asignada. Un superadministrador puede asociarla desde Personas habilitadas.</p>
       )}
 
-      {canManage && (
-        <section className="operations-card">
-          <div className="operations-card-heading"><div><p className="edifica-kicker">{form.id ? 'EDITAR PROYECTO' : 'NUEVO PROYECTO'}</p><h2>{form.id ? 'Actualizar proyecto' : 'Cargar proyecto'}</h2></div>{form.id && <button type="button" onClick={reset}>Cancelar edición</button>}</div>
-          <form className="operations-form" onSubmit={save}>
-            <label><span>Organización usuaria</span><select value={form.organization_id} onChange={(event) => setForm((current) => ({ ...current, organization_id: event.target.value }))} disabled={access.role !== 'super_admin'} required><option value="">Seleccionar</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>
-            <label><span>Código del proyecto</span><input value={form.code} onChange={(event) => setForm((current) => ({ ...current, code: event.target.value }))} placeholder="AGUA-2026-01" required /></label>
-            <label className="wide"><span>Nombre del proyecto</span><input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} required /></label>
-            <label className="wide"><span>Aliado u organización financiadora</span><input value={form.funding_partner} onChange={(event) => setForm((current) => ({ ...current, funding_partner: event.target.value }))} placeholder="Nombre de la organización internacional" required /></label>
-            <label><span>Estado</span><select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-            <label><span>Moneda del presupuesto</span><select value={form.currency} onChange={(event) => setForm((current) => ({ ...current, currency: event.target.value }))}><option value="USD">USD</option><option value="EUR">EUR</option><option value="VES">VES</option></select></label>
-            <label><span>Fecha de inicio</span><input type="date" value={form.start_date} onChange={(event) => setForm((current) => ({ ...current, start_date: event.target.value }))} /></label>
-            <label><span>Fecha de cierre</span><input type="date" value={form.end_date} onChange={(event) => setForm((current) => ({ ...current, end_date: event.target.value }))} /></label>
-            <label><span>Presupuesto aprobado</span><input type="number" min="0" step="0.01" value={form.approved_budget} onChange={(event) => setForm((current) => ({ ...current, approved_budget: event.target.value }))} /></label>
-            <label className="wide"><span>Objetivo</span><textarea value={form.objective} onChange={(event) => setForm((current) => ({ ...current, objective: event.target.value }))} required /></label>
-            <label className="wide"><span>Resultados esperados</span><textarea value={form.expected_results} onChange={(event) => setForm((current) => ({ ...current, expected_results: event.target.value }))} /></label>
-            <label className="wide"><span>Exigencias de reporte y cumplimiento</span><textarea value={form.reporting_requirements} onChange={(event) => setForm((current) => ({ ...current, reporting_requirements: event.target.value }))} placeholder="Frecuencia, formatos, indicadores y evidencias requeridas" /></label>
-            <label className="wide"><span>Observaciones</span><textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} /></label>
-            <button className="edifica-primary-button" type="submit" disabled={saving}>{saving ? 'Guardando…' : form.id ? 'Guardar cambios' : 'Registrar proyecto'}</button>
+      {formOpen && canManage && (
+        <section className="project-form-portal">
+          <div className="project-form-breadcrumb"><button type="button" onClick={reset}>Proyectos</button><span>/</span><strong>{form.id ? 'Editar' : 'Crear'}</strong></div>
+          <form onSubmit={save}>
+            <section className="project-form-section">
+              <header><div><span>01</span><h2>Identificación del proyecto</h2></div><p>Datos de la organización responsable y del aliado financiador.</p></header>
+              <div className="project-form-grid">
+                <label><span>Organización usuaria</span><select value={form.organization_id} onChange={(event) => setForm((current) => ({ ...current, organization_id: event.target.value }))} disabled={access.role !== 'super_admin'} required><option value="">Seleccionar</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>
+                <label><span>Código del proyecto</span><input value={form.code} onChange={(event) => setForm((current) => ({ ...current, code: event.target.value }))} placeholder="AGUA-2026-01" required /></label>
+                <label className="wide"><span>Nombre del proyecto</span><input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Proyecto de agua y salud" required /></label>
+                <label className="wide"><span>Aliado u organización financiadora</span><input value={form.funding_partner} onChange={(event) => setForm((current) => ({ ...current, funding_partner: event.target.value }))} placeholder="Nombre de la organización internacional" required /></label>
+              </div>
+            </section>
+
+            <section className="project-form-section">
+              <header><div><span>02</span><h2>Financiamiento y vigencia</h2></div><p>Presupuesto aprobado, moneda, fechas y situación operativa.</p></header>
+              <div className="project-form-grid three-columns">
+                <label><span>Estado</span><select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                <label><span>Moneda</span><select value={form.currency} onChange={(event) => setForm((current) => ({ ...current, currency: event.target.value }))}><option value="USD">USD</option><option value="EUR">EUR</option><option value="VES">VES</option></select></label>
+                <label><span>Presupuesto aprobado</span><input type="number" min="0" step="0.01" value={form.approved_budget} onChange={(event) => setForm((current) => ({ ...current, approved_budget: event.target.value }))} /></label>
+                <label><span>Fecha de inicio</span><input type="date" value={form.start_date} onChange={(event) => setForm((current) => ({ ...current, start_date: event.target.value }))} /></label>
+                <label><span>Fecha de cierre</span><input type="date" value={form.end_date} onChange={(event) => setForm((current) => ({ ...current, end_date: event.target.value }))} /></label>
+              </div>
+            </section>
+
+            <section className="project-form-section">
+              <header><div><span>03</span><h2>Compromisos de cumplimiento</h2></div><p>Base narrativa para cotejar lo aprobado frente a la ejecución final.</p></header>
+              <div className="project-form-grid">
+                <label className="wide"><span>Objetivo</span><textarea value={form.objective} onChange={(event) => setForm((current) => ({ ...current, objective: event.target.value }))} required /></label>
+                <label className="wide"><span>Resultados esperados</span><textarea value={form.expected_results} onChange={(event) => setForm((current) => ({ ...current, expected_results: event.target.value }))} placeholder="Metas cuantitativas, productos y personas previstas" /></label>
+                <label className="wide"><span>Exigencias de reporte</span><textarea value={form.reporting_requirements} onChange={(event) => setForm((current) => ({ ...current, reporting_requirements: event.target.value }))} placeholder="Frecuencia, formatos, indicadores, facturas y evidencias requeridas" /></label>
+                <label className="wide"><span>Observaciones</span><textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} /></label>
+              </div>
+            </section>
+
+            {error && <p className="operations-feedback error">{error}</p>}
+            <div className="project-form-actions"><button type="button" onClick={reset}>Cancelar</button><button className="edifica-primary-button" type="submit" disabled={saving}>{saving ? 'Guardando…' : form.id ? 'Guardar cambios' : 'Registrar proyecto'}</button></div>
           </form>
-          {message && <p className="operations-feedback success">{message}</p>}
-          {error && <p className="operations-feedback error">{error}</p>}
         </section>
       )}
 
-      <section className="operations-card">
-        <div className="edifica-section-heading"><div><p className="edifica-kicker">CARTERA</p><h2>Proyectos de la organización</h2></div><span>{projects.length} proyectos</span></div>
-        <p className="operations-empty-note">La base ya contempla gastos, facturas, recibos, presupuestos e informes por proyecto. La siguiente pantalla será el expediente detallado de cada proyecto.</p>
-        {loading ? <p className="edifica-empty">Cargando proyectos…</p> : projects.length === 0 ? <p className="edifica-empty">Todavía no existen proyectos registrados.</p> : (
-          <div className="edifica-table-wrap"><table className="operations-table"><thead><tr><th>Proyecto</th><th>Financiador</th><th>Presupuesto</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{projects.map((project) => (
-            <tr key={project.id}><td><strong>{project.name}</strong><span>{project.code} · {project.organization?.name ?? 'Organización'}</span></td><td>{project.funding_partner}</td><td className="project-budget">{formatMoney(project.approved_budget, project.currency)}</td><td><span className={`project-status ${project.status}`}>{statusLabels[project.status] ?? project.status}</span></td><td>{canManage ? <button type="button" onClick={() => edit(project)}>Editar</button> : 'Consultar'}</td></tr>
-          ))}</tbody></table></div>
+      {message && <p className="operations-feedback success">{message}</p>}
+      {!formOpen && error && <p className="operations-feedback error">{error}</p>}
+
+      <section className="project-filter-bar operations-card">
+        <label className="project-search"><span className="sr-only">Buscar proyecto</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por código, proyecto, organización o financiador" /></label>
+        <label><span className="sr-only">Estado</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">Todos los estados</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+        {access.role === 'super_admin' && <label><span className="sr-only">Organización</span><select value={organizationFilter} onChange={(event) => setOrganizationFilter(event.target.value)}><option value="all">Todas las organizaciones</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
+        <button type="button" onClick={() => { setSearch(''); setStatusFilter('all'); setOrganizationFilter('all') }}>Limpiar</button>
+      </section>
+
+      <section className="project-list-card operations-card">
+        <div className="project-list-heading"><div><p className="edifica-kicker">CARTERA DE PROYECTOS</p><h2>Proyectos registrados</h2></div>{canManage && <button type="button" onClick={startNew}>＋ Nuevo proyecto</button>}</div>
+        {loading ? <p className="edifica-empty">Cargando proyectos…</p> : filteredProjects.length === 0 ? <p className="edifica-empty">No existen proyectos que coincidan con los filtros.</p> : (
+          <div className="edifica-table-wrap">
+            <table className="project-portal-table">
+              <thead><tr><th>Proyecto</th><th>Organización / financiador</th><th>Vigencia</th><th>Presupuesto</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody>{filteredProjects.map((project) => (
+                <tr key={project.id}>
+                  <td><strong>{project.name}</strong><span>{project.code}</span></td>
+                  <td><strong>{project.organization?.name ?? 'Organización'}</strong><span>{project.funding_partner}</span></td>
+                  <td><span>{formatDate(project.start_date)}</span><small>hasta {formatDate(project.end_date)}</small></td>
+                  <td className="project-budget">{formatMoney(project.approved_budget, project.currency)}</td>
+                  <td><span className={`project-status ${project.status}`}>{statusLabels[project.status] ?? project.status}</span></td>
+                  <td><div className="project-row-actions"><a href={`/app/compliance?project=${project.id}`}>Cumplimiento</a>{canManage && <button type="button" onClick={() => edit(project)}>Editar</button>}</div></td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
         )}
       </section>
     </div>
