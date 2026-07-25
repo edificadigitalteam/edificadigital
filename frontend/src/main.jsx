@@ -15,22 +15,37 @@ function OperationalNavigationGuard() {
   useEffect(() => {
     if (!isOperationalForm) return undefined
 
-    const rewriteLinks = () => {
+    const rewriteVisibleLinks = () => {
       document.querySelectorAll('a[href="/"]').forEach((link) => {
         link.setAttribute('href', '/app')
       })
 
       document.querySelectorAll('.intake-back-home').forEach((link) => {
+        if (link.dataset.panelLinkFixed === 'true') return
         const isEnglish = document.documentElement.lang === 'en'
         const icon = link.querySelector('svg')
         link.replaceChildren(...(icon ? [icon] : []), document.createTextNode(isEnglish ? ' Back to dashboard' : ' Volver al panel'))
+        link.dataset.panelLinkFixed = 'true'
       })
     }
 
-    rewriteLinks()
-    const observer = new MutationObserver(rewriteLinks)
-    observer.observe(document.body, { childList: true, subtree: true })
-    return () => observer.disconnect()
+    const redirectRootLinks = (event) => {
+      const link = event.target.closest?.('a[href="/"]')
+      if (!link) return
+      event.preventDefault()
+      window.location.assign('/app')
+    }
+
+    rewriteVisibleLinks()
+    const immediate = window.setTimeout(rewriteVisibleLinks, 0)
+    const afterRender = window.setTimeout(rewriteVisibleLinks, 250)
+    document.addEventListener('click', redirectRootLinks, true)
+
+    return () => {
+      window.clearTimeout(immediate)
+      window.clearTimeout(afterRender)
+      document.removeEventListener('click', redirectRootLinks, true)
+    }
   }, [])
 
   return null
