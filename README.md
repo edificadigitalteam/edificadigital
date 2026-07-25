@@ -72,8 +72,8 @@ The current frontend baseline contains 34 passing Vitest tests. Database behavio
 - [Database reference](docs/DATABASE.md)
 - [Design system](docs/DESIGN.md)
 - [Plans](docs/plans/INDEX.md)
-- [Agent rules](agents.md)
-- [AI coding guide](claude.md)
+- [Agent rules](AGENTS.md)
+- [AI coding guide](CLAUDE.md)
 
 ## Delivery rules
 

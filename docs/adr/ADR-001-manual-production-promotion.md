@@ -32,7 +32,7 @@ None of these were implemented — this needs real research (ideally testing aga
 ## Consequences of Reverting to Auto-Tracking
 
 - Reliable: matches Vercel's normal, well-tested behavior — no more surprise orphaning.
-- Every push to `main` (including direct pushes, not just reviewed PRs) goes live on `somosedificadigital.com` immediately. This is a real tradeoff: the branch protection rules in `agents.md` (no direct commits to `main`, PR review required) are now the *only* thing standing between a bad change and the live production domain.
+- Every push to `main` (including direct pushes, not just reviewed PRs) goes live on `somosedificadigital.com` immediately. This is a real tradeoff: the branch protection rules in `AGENTS.md` (no direct commits to `main`, PR review required) are now the *only* thing standing between a bad change and the live production domain.
 - The `manual-domain-promotion-only` branch is no longer load-bearing but is harmless to leave in the repo.
 
 ## Related
