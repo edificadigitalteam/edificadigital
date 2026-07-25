@@ -45,12 +45,14 @@ const createUuid = () => {
 export const createInitialMonetaryDraft = () => ({
   submissionId: createUuid(),
   donationType: 'monetary',
+  organizationId: '',
+  projectId: '',
   donorName: '',
-  donorType: 'person',
+  donorType: 'organization',
   donorContact: '',
   isAnonymous: false,
   receivedAt: '',
-  paymentMethod: 'cash',
+  paymentMethod: 'bank_transfer',
   originAmount: '',
   originCurrency: 'USD',
   usdBaseAmount: '',
@@ -97,25 +99,16 @@ export function validateMonetaryDraft(draft, language = 'es') {
     if (!draft.receiverAccountLabel?.trim()) errors.receiverAccountLabel = copy.receiverAccountLabel
   }
 
-  if (
-    isPositive(draft.originAmount)
-    && isPositive(draft.exchangeRateToUsd)
-    && isPositive(draft.usdBaseAmount)
-  ) {
+  if (isPositive(draft.originAmount) && isPositive(draft.exchangeRateToUsd) && isPositive(draft.usdBaseAmount)) {
     const calculated = Number(draft.originAmount) * Number(draft.exchangeRateToUsd)
-    if (Math.abs(calculated - Number(draft.usdBaseAmount)) > 0.02) {
-      errors.usdBaseAmount = copy.conversion
-    }
+    if (Math.abs(calculated - Number(draft.usdBaseAmount)) > 0.02) errors.usdBaseAmount = copy.conversion
     if (
       draft.originCurrency === 'USD'
       && (Number(draft.exchangeRateToUsd) !== 1 || Math.abs(Number(draft.originAmount) - Number(draft.usdBaseAmount)) > 0.01)
-    ) {
-      errors.usdBaseAmount = copy.conversion
-    }
+    ) errors.usdBaseAmount = copy.conversion
   }
 
   if (!draft.verificationAccepted) errors.verificationAccepted = copy.verificationAccepted
 
   return { valid: Object.keys(errors).length === 0, errors }
 }
-
