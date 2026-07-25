@@ -21,6 +21,25 @@ const paymentMethodLabels = {
   other: 'Otro',
 }
 
+const categoryLabels = {
+  food: 'Alimentos',
+  clothing: 'Ropa',
+  hygiene: 'Higiene',
+  medical: 'Medicinas e insumos médicos',
+  household: 'Hogar',
+  other: 'Otros',
+}
+
+const transportLabels = {
+  sea: 'Marítimo',
+  air: 'Aéreo',
+}
+
+const scopeLabels = {
+  national: 'Nacional',
+  international: 'Internacional',
+}
+
 function formatDate(value, includeTime = false) {
   if (!value) return 'Sin fecha'
   return new Intl.DateTimeFormat('es-VE', includeTime
@@ -34,12 +53,7 @@ function formatNumber(value, maximumFractionDigits = 3) {
 }
 
 function DetailField({ label, children }) {
-  return (
-    <div className="edifica-detail-field">
-      <span>{label}</span>
-      <strong>{children || '—'}</strong>
-    </div>
-  )
+  return <div className="edifica-detail-field"><span>{label}</span><strong>{children || '—'}</strong></div>
 }
 
 export default function DonationDetailModal({ donation, loading, error, onClose }) {
@@ -49,18 +63,11 @@ export default function DonationDetailModal({ donation, loading, error, onClose 
     }}>
       <section className="edifica-modal" role="dialog" aria-modal="true" aria-labelledby="donation-detail-title">
         <header className="edifica-modal-header">
-          <div>
-            <p className="edifica-kicker">DETALLE DE LA DONACIÓN</p>
-            <h2 id="donation-detail-title">{donation?.reference_code ?? 'Registro de Edifica'}</h2>
-          </div>
+          <div><p className="edifica-kicker">DETALLE DE LA DONACIÓN</p><h2 id="donation-detail-title">{donation?.reference_code ?? 'Registro de Edifica'}</h2></div>
           <button className="edifica-modal-close" type="button" onClick={onClose} aria-label="Cerrar detalle">×</button>
         </header>
 
-        {loading ? (
-          <p className="edifica-modal-state">Cargando información…</p>
-        ) : error ? (
-          <p className="edifica-modal-state error">{error}</p>
-        ) : donation ? (
+        {loading ? <p className="edifica-modal-state">Cargando información…</p> : error ? <p className="edifica-modal-state error">{error}</p> : donation ? (
           <div className="edifica-modal-content">
             <section className="edifica-detail-section">
               <h3>Información general</h3>
@@ -69,6 +76,7 @@ export default function DonationDetailModal({ donation, loading, error, onClose 
                 <DetailField label="Estado">{statusLabels[donation.status] ?? donation.status}</DetailField>
                 <DetailField label="Fecha de registro">{formatDate(donation.created_at, true)}</DetailField>
                 <DetailField label="Fecha de recepción">{formatDate(donation.received_at, true)}</DetailField>
+                <DetailField label="Proyecto relacionado">{donation.project ? `${donation.project.code} · ${donation.project.name}` : 'Sin proyecto específico'}</DetailField>
               </div>
             </section>
 
@@ -83,7 +91,7 @@ export default function DonationDetailModal({ donation, loading, error, onClose 
             </section>
 
             <section className="edifica-detail-section">
-              <h3>{donation.donation_type === 'monetary' ? 'Información monetaria' : 'Artículos registrados'}</h3>
+              <h3>{donation.donation_type === 'monetary' ? 'Información monetaria' : 'Carga registrada'}</h3>
               <div className="edifica-detail-items">
                 {donation.details?.map((detail, index) => (
                   <article key={detail.id}>
@@ -104,7 +112,7 @@ export default function DonationDetailModal({ donation, loading, error, onClose 
                         <strong>{detail.item_description}</strong>
                         <p>{formatNumber(detail.quantity)} {detail.unit?.abbreviation ?? detail.unit?.name_es ?? ''}</p>
                         <dl>
-                          <div><dt>Categoría</dt><dd>{detail.category ?? '—'}</dd></div>
+                          <div><dt>Categoría</dt><dd>{categoryLabels[detail.category] ?? detail.category ?? 'Carga consolidada'}</dd></div>
                           <div><dt>Código</dt><dd>{detail.item_code ?? '—'}</dd></div>
                           <div><dt>Vencimiento</dt><dd>{formatDate(detail.expiry_date)}</dd></div>
                           <div><dt>Valor referencial</dt><dd>{detail.reference_value ? `${formatNumber(detail.reference_value, 2)} ${detail.reference_currency ?? ''}` : '—'}</dd></div>
@@ -120,22 +128,21 @@ export default function DonationDetailModal({ donation, loading, error, onClose 
               <section className="edifica-detail-section">
                 <h3>Información del envío</h3>
                 <div className="edifica-detail-grid">
+                  <DetailField label="Alcance">{scopeLabels[donation.shipment.shipment_scope] ?? donation.shipment.shipment_scope}</DetailField>
+                  <DetailField label="Transporte">{transportLabels[donation.shipment.transport_mode] ?? donation.shipment.transport_mode}</DetailField>
                   <DetailField label="Origen">{[donation.shipment.origin_city, donation.shipment.origin_country].filter(Boolean).join(', ')}</DetailField>
                   <DetailField label="Destino">{[donation.shipment.destination_city, donation.shipment.destination_country].filter(Boolean).join(', ')}</DetailField>
-                  <DetailField label="Transportista">{donation.shipment.carrier_name}</DetailField>
                   <DetailField label="Seguimiento">{donation.shipment.tracking_number ?? donation.shipment.container_number}</DetailField>
                   <DetailField label="Salida">{formatDate(donation.shipment.departure_date)}</DetailField>
                   <DetailField label="Llegada estimada">{formatDate(donation.shipment.estimated_arrival)}</DetailField>
+                  <DetailField label="Cantidad declarada">{donation.shipment.declared_package_count ? `${formatNumber(donation.shipment.declared_package_count)} ${donation.shipment.package_unit_code ?? ''}` : '—'}</DetailField>
+                  <DetailField label="Categorías">{(donation.shipment.category_codes ?? []).map((code) => categoryLabels[code] ?? code).join(', ')}</DetailField>
                 </div>
+                {donation.shipment.contents_summary && <p className="edifica-detail-notes edifica-shipment-summary"><strong>Resumen del contenido:</strong> {donation.shipment.contents_summary}</p>}
               </section>
             )}
 
-            {donation.notes && (
-              <section className="edifica-detail-section">
-                <h3>Observaciones</h3>
-                <p className="edifica-detail-notes">{donation.notes}</p>
-              </section>
-            )}
+            {donation.notes && <section className="edifica-detail-section"><h3>Observaciones</h3><p className="edifica-detail-notes">{donation.notes}</p></section>}
           </div>
         ) : null}
       </section>
