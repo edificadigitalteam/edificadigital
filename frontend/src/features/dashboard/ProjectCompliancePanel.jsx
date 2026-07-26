@@ -53,6 +53,20 @@ const expenseStatusLabels = {
   rejected: 'Rechazado',
 }
 
+const donationTypeLabels = {
+  monetary: 'Monetaria',
+  in_kind: 'En especies',
+  mixed: 'Mixta',
+}
+
+const donationStatusLabels = {
+  draft: 'Borrador',
+  announced: 'Anunciada',
+  received: 'Recibida',
+  verified: 'Verificada',
+  closed: 'Cerrada',
+}
+
 function formatMoney(amount, currency = 'USD') {
   return new Intl.NumberFormat('es-ES', {
     style: 'currency',
@@ -63,6 +77,17 @@ function formatMoney(amount, currency = 'USD') {
 
 function formatNumber(value) {
   return new Intl.NumberFormat('es-ES', { maximumFractionDigits: 3 }).format(Number(value || 0))
+}
+
+function formatDate(value) {
+  if (!value) return '—'
+  return new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium' }).format(new Date(value))
+}
+
+function formatBreakdown(values) {
+  const entries = Object.entries(values ?? {}).filter(([, amount]) => Number(amount) !== 0)
+  if (!entries.length) return '—'
+  return entries.map(([currency, amount]) => formatMoney(amount, currency)).join(' · ')
 }
 
 function percentage(value, target) {
@@ -96,8 +121,26 @@ function validateEvidence(file) {
   return ''
 }
 
+function donationValue(donation) {
+  if (donation.donation_type === 'monetary') {
+    return {
+      primary: formatMoney(donation.amount, donation.currency || 'USD'),
+      secondary: donation.usd_base_amount && donation.currency !== 'USD' ? `${formatMoney(donation.usd_base_amount, 'USD')} base USD` : '',
+    }
+  }
+  const value = donation.in_kind_reference_value && donation.in_kind_reference_currency
+    ? formatMoney(donation.in_kind_reference_value, donation.in_kind_reference_currency)
+    : 'Valor referencial pendiente'
+  return {
+    primary: donation.contents_summary || 'Carga en especies',
+    secondary: [donation.package_count ? `${formatNumber(donation.package_count)} ${donation.package_unit || 'unidades'}` : '', value].filter(Boolean).join(' · '),
+  }
+}
+
 export default function ProjectCompliancePanel({ access }) {
-  const queryProject = new URLSearchParams(window.location.search).get('project') ?? ''
+  const query = new URLSearchParams(window.location.search)
+  const queryProject = query.get('project') ?? ''
+  const querySection = query.get('section') ?? ''
   const evidenceInputId = useId()
   const [projects, setProjects] = useState([])
   const [units, setUnits] = useState([])
@@ -106,15 +149,18 @@ export default function ProjectCompliancePanel({ access }) {
   const [expenses, setExpenses] = useState([])
   const [evidences, setEvidences] = useState([])
   const [summary, setSummary] = useState(null)
+  const [funding, setFunding] = useState(null)
   const [evidenceFiles, setEvidenceFiles] = useState([])
   const [outputForm, setOutputForm] = useState(emptyOutput)
   const [expenseForm, setExpenseForm] = useState(createEmptyExpense)
-  const [activeForm, setActiveForm] = useState('output')
+  const [activeForm, setActiveForm] = useState(querySection === 'beneficiary' ? 'beneficiary' : 'output')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [enablingBeneficiaries, setEnablingBeneficiaries] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
+  const canManageProject = access.role === 'admin' || access.role === 'super_admin'
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId) ?? null,
     [projects, selectedProjectId],
@@ -137,7 +183,7 @@ export default function ProjectCompliancePanel({ access }) {
     const [projectResponse, unitResponse] = await Promise.all([
       supabase
         .from('project')
-        .select('id, organization_id, code, name, funding_partner, status, start_date, end_date, approved_budget, currency, objective, expected_results, reporting_requirements, beneficiary_detail_enabled, organization:organization(name)')
+        .select('id, organization_id, code, name, funding_partner_actor_id, funding_partner, status, start_date, end_date, approved_budget, currency, objective, expected_results, reporting_requirements, beneficiary_detail_enabled, organization:organization(name)')
         .order('created_at', { ascending: false }),
       supabase
         .from('unit_of_measure')
@@ -170,12 +216,13 @@ export default function ProjectCompliancePanel({ access }) {
       setExpenses([])
       setEvidences([])
       setSummary(null)
+      setFunding(null)
       return
     }
 
     setLoading(true)
     setError('')
-    const [outputResponse, expenseResponse, summaryResponse] = await Promise.all([
+    const [outputResponse, expenseResponse, summaryResponse, fundingResponse] = await Promise.all([
       supabase
         .from('project_output')
         .select('id, organization_id, project_id, name, unit_of_measure_id, unit_label, target_quantity, produced_quantity, delivered_quantity, beneficiary_count, status, notes, created_at, updated_at, unit:unit_of_measure(id, code, name_es, name_en, abbreviation)')
@@ -187,10 +234,11 @@ export default function ProjectCompliancePanel({ access }) {
         .eq('project_id', projectId)
         .order('expense_date', { ascending: false }),
       supabase.rpc('project_compliance_summary', { target_project_id: projectId }),
+      supabase.rpc('project_funding_reconciliation', { target_project_id: projectId }),
     ])
 
-    if (outputResponse.error || expenseResponse.error || summaryResponse.error) {
-      setError(outputResponse.error?.message ?? expenseResponse.error?.message ?? summaryResponse.error?.message ?? 'No fue posible cargar la ejecución.')
+    if (outputResponse.error || expenseResponse.error || summaryResponse.error || fundingResponse.error) {
+      setError(outputResponse.error?.message ?? expenseResponse.error?.message ?? summaryResponse.error?.message ?? fundingResponse.error?.message ?? 'No fue posible cargar la ejecución.')
       setLoading(false)
       return
     }
@@ -218,6 +266,7 @@ export default function ProjectCompliancePanel({ access }) {
     setExpenses(expenseResponse.data ?? [])
     setEvidences(nextEvidences)
     setSummary(summaryResponse.data ?? null)
+    setFunding(fundingResponse.data ?? null)
     setLoading(false)
   }, [])
 
@@ -293,7 +342,6 @@ export default function ProjectCompliancePanel({ access }) {
         upsert: false,
       })
       if (upload.error) throw upload.error
-
       const { error: recordError } = await supabase.from('project_output_evidence').insert({
         organization_id: selectedProject.organization_id,
         project_id: selectedProject.id,
@@ -368,7 +416,6 @@ export default function ProjectCompliancePanel({ access }) {
     setSaving(true)
     setError('')
     setMessage('')
-
     const payload = {
       project_id: selectedProject.id,
       expense_date: expenseForm.expense_date,
@@ -382,20 +429,34 @@ export default function ProjectCompliancePanel({ access }) {
       status: expenseForm.status,
       created_by: access.userId,
     }
-
     const request = expenseForm.id
       ? supabase.from('project_expense').update(payload).eq('id', expenseForm.id)
       : supabase.from('project_expense').insert(payload)
     const { error: requestError } = await request
-
-    if (requestError) {
-      setError(requestError.message)
-    } else {
+    if (requestError) setError(requestError.message)
+    else {
       setMessage(expenseForm.id ? 'Inversión actualizada.' : 'Inversión ejecutada registrada.')
       setExpenseForm(createEmptyExpense())
       await loadExecution(selectedProject.id)
     }
     setSaving(false)
+  }
+
+  const enableBeneficiaryRegistry = async () => {
+    if (!supabase || !selectedProject || !canManageProject || enablingBeneficiaries) return
+    setEnablingBeneficiaries(true)
+    setError('')
+    const { error: requestError } = await supabase
+      .from('project')
+      .update({ beneficiary_detail_enabled: true, updated_by: access.userId })
+      .eq('id', selectedProject.id)
+    if (requestError) setError(requestError.message)
+    else {
+      setMessage('El registro individual de personas beneficiadas quedó activado para este proyecto.')
+      await loadProjects()
+      setActiveForm('beneficiary')
+    }
+    setEnablingBeneficiaries(false)
   }
 
   const fallbackInvestment = useMemo(() => expenses
@@ -412,15 +473,15 @@ export default function ProjectCompliancePanel({ access }) {
   const beneficiaries = Number(summary?.beneficiary_count ?? fallbackBeneficiaries)
   const averageCompliance = Number(summary?.compliance_percent ?? fallbackCompliance)
   const budgetCompliance = Number(summary?.budget_percent ?? percentage(investment, selectedProject?.approved_budget))
+  const linkedDonations = Array.isArray(funding?.donations) ? funding.donations : []
+  const receivedProjectCurrency = Number(funding?.received_project_currency ?? 0)
+  const executedAmount = Number(funding?.executed_amount ?? investment)
+  const availableBalance = Number(funding?.balance_after_execution ?? receivedProjectCurrency - executedAmount)
 
   return (
     <div className="operations-page compliance-page">
       <header className="edifica-dashboard-header compliance-header">
-        <div>
-          <p className="edifica-kicker">CUMPLIMIENTO DEL PROYECTO</p>
-          <h1>Ejecución e informe final</h1>
-          <p className="operations-intro">Registra los avances, las entregas, las personas beneficiadas, la inversión y los soportes requeridos por el aliado o donante.</p>
-        </div>
+        <div><p className="edifica-kicker">CUMPLIMIENTO DEL PROYECTO</p><h1>Ejecución e informe final</h1><p className="operations-intro">Coteja lo aprobado, lo recibido y lo ejecutado; registra avances, personas beneficiadas, inversiones y evidencias.</p></div>
         <button className="compliance-print" type="button" onClick={() => window.print()} disabled={!selectedProject}>Imprimir informe</button>
       </header>
 
@@ -432,22 +493,26 @@ export default function ProjectCompliancePanel({ access }) {
       {error && <p className="operations-feedback error">{error}</p>}
       {message && <p className="operations-feedback success">{message}</p>}
 
-      {!selectedProject ? (
-        <section className="operations-card"><p className="edifica-empty">Crea o selecciona un proyecto para registrar su ejecución.</p></section>
-      ) : (
+      {!selectedProject ? <section className="operations-card"><p className="edifica-empty">Crea o selecciona un proyecto para registrar su ejecución.</p></section> : (
         <>
           <section className="compliance-metrics print-summary">
-            <article><span>Presupuesto aprobado</span><strong>{formatMoney(selectedProject.approved_budget, selectedProject.currency)}</strong><small>{selectedProject.currency}</small></article>
+            <article><span>Monto aprobado u otorgado</span><strong>{formatMoney(selectedProject.approved_budget, selectedProject.currency)}</strong><small>{selectedProject.currency}</small></article>
+            <article><span>Donaciones recibidas</span><strong>{formatMoney(receivedProjectCurrency, selectedProject.currency)}</strong><small>{funding?.received_usd ? `${formatMoney(funding.received_usd, 'USD')} base USD` : `${linkedDonations.length} registros asociados`}</small></article>
             <article><span>Inversión ejecutada</span><strong>{formatMoney(investment, selectedProject.currency)}</strong><small>{budgetCompliance}% del presupuesto</small></article>
             <article><span>Cumplimiento físico</span><strong>{averageCompliance}%</strong><small>Promedio de metas entregadas</small></article>
             <article><span>Personas beneficiadas</span><strong>{formatNumber(beneficiaries)}</strong><small>{selectedProject.beneficiary_detail_enabled ? 'Según registro individual' : 'Según avances reportados'}</small></article>
+          </section>
+
+          <section className="beneficiary-access-card no-print">
+            <div><p className="edifica-kicker">PERSONAS BENEFICIADAS</p><h2>{selectedProject.beneficiary_detail_enabled ? 'Registro individual disponible' : 'Registro individual opcional'}</h2><p>{selectedProject.beneficiary_detail_enabled ? 'Puedes cargar, consultar y editar a las personas vinculadas con este proyecto.' : 'Actívalo cuando el aliado o donante solicite información detallada por persona.'}</p></div>
+            {selectedProject.beneficiary_detail_enabled ? <button type="button" onClick={() => setActiveForm('beneficiary')}>Abrir registro</button> : canManageProject ? <button type="button" onClick={enableBeneficiaryRegistry} disabled={enablingBeneficiaries}>{enablingBeneficiaries ? 'Activando…' : 'Activar registro individual'}</button> : <span>Requiere un administrador</span>}
           </section>
 
           <section className="operations-card compliance-entry-card no-print">
             <div className="compliance-tabs">
               <button className={activeForm === 'output' ? 'active' : ''} type="button" onClick={() => setActiveForm('output')}>Avances y entregas</button>
               <button className={activeForm === 'expense' ? 'active' : ''} type="button" onClick={() => setActiveForm('expense')}>Inversión ejecutada</button>
-              {selectedProject.beneficiary_detail_enabled && <button className={activeForm === 'beneficiary' ? 'active' : ''} type="button" onClick={() => setActiveForm('beneficiary')}>Personas beneficiadas</button>}
+              <button className={activeForm === 'beneficiary' ? 'active' : ''} type="button" onClick={() => setActiveForm('beneficiary')}>Personas beneficiadas</button>
             </div>
 
             {activeForm === 'output' && (
@@ -479,12 +544,29 @@ export default function ProjectCompliancePanel({ access }) {
               </form>
             )}
 
-            {activeForm === 'beneficiary' && selectedProject.beneficiary_detail_enabled && <ProjectBeneficiariesPanel project={selectedProject} onChanged={() => loadExecution(selectedProject.id)} />}
+            {activeForm === 'beneficiary' && (selectedProject.beneficiary_detail_enabled
+              ? <ProjectBeneficiariesPanel project={selectedProject} onChanged={() => loadExecution(selectedProject.id)} />
+              : <div className="beneficiary-disabled-state"><strong>Registro individual desactivado</strong><p>El proyecto usa actualmente cifras agregadas. Un administrador puede activarlo desde esta pantalla o desde la edición del proyecto.</p>{canManageProject && <button type="button" onClick={enableBeneficiaryRegistry} disabled={enablingBeneficiaries}>{enablingBeneficiaries ? 'Activando…' : 'Activar ahora'}</button>}</div>)}
           </section>
 
           <section className="operations-card final-report-card">
             <div className="final-report-heading"><div><p className="edifica-kicker">INFORME DE CUMPLIMIENTO</p><h2>{selectedProject.name}</h2><span>{selectedProject.code} · {selectedProject.funding_partner}</span></div><div className="final-report-score"><strong>{averageCompliance}%</strong><span>cumplimiento físico</span></div></div>
             <div className="final-report-project-data"><div><span>Objetivo</span><p>{selectedProject.objective}</p></div><div><span>Resultados esperados</span><p>{selectedProject.expected_results || 'Pendiente de definir'}</p></div><div><span>Exigencias de reporte</span><p>{selectedProject.reporting_requirements || 'Según convenio del proyecto'}</p></div></div>
+
+            <div className="final-report-section funding-reconciliation-section">
+              <div className="edifica-section-heading"><div><p className="edifica-kicker">COTEJO FINANCIERO</p><h2>Otorgado, recibido y ejecutado</h2></div><span>{linkedDonations.length} donaciones asociadas</span></div>
+              <div className="funding-comparison-grid">
+                <article><span>Aprobado u otorgado</span><strong>{formatMoney(selectedProject.approved_budget, selectedProject.currency)}</strong><small>Presupuesto del proyecto</small></article>
+                <article><span>Recibido</span><strong>{formatMoney(receivedProjectCurrency, selectedProject.currency)}</strong><small>{formatBreakdown(funding?.received_by_currency)}</small></article>
+                <article><span>Ejecutado</span><strong>{formatMoney(executedAmount, selectedProject.currency)}</strong><small>Gastos válidos registrados</small></article>
+                <article className={availableBalance < 0 ? 'negative' : ''}><span>Saldo frente a lo recibido</span><strong>{formatMoney(availableBalance, selectedProject.currency)}</strong><small>{availableBalance < 0 ? 'Ejecución superior a los fondos asociados' : 'Disponible según registros asociados'}</small></article>
+              </div>
+              {Object.keys(funding?.in_kind_reference_by_currency ?? {}).length > 0 && <p className="funding-in-kind-note"><strong>Valor referencial de donaciones en especies:</strong> {formatBreakdown(funding.in_kind_reference_by_currency)}</p>}
+              {linkedDonations.length === 0 ? <p className="edifica-empty">Todavía faltan donaciones asociadas a este proyecto.</p> : (
+                <div className="edifica-table-wrap"><table className="compliance-table funding-donations-table"><thead><tr><th>Fecha</th><th>Referencia</th><th>Aliado o donante</th><th>Tipo y estado</th><th>Valor recibido</th></tr></thead><tbody>{linkedDonations.map((donation) => { const value = donationValue(donation); return <tr key={donation.id}><td>{formatDate(donation.received_at || donation.created_at)}</td><td>{donation.reference_code || '—'}</td><td><strong>{donation.donor_name}</strong></td><td><strong>{donationTypeLabels[donation.donation_type] ?? donation.donation_type}</strong><span>{donationStatusLabels[donation.status] ?? donation.status}</span></td><td><strong>{value.primary}</strong>{value.secondary && <span>{value.secondary}</span>}</td></tr> })}</tbody></table></div>
+              )}
+            </div>
+
             <div className="final-report-section"><div className="edifica-section-heading"><div><p className="edifica-kicker">EJECUCIÓN FÍSICA</p><h2>Metas y avances</h2></div><span>{outputs.length} indicadores</span></div>{loading ? <p className="edifica-empty">Cargando ejecución…</p> : outputs.length === 0 ? <p className="edifica-empty">Todavía faltan avances y entregas por registrar.</p> : <div className="edifica-table-wrap"><table className="compliance-table"><thead><tr><th>Actividad / producto</th><th>Meta</th><th>Armado</th><th>Entregado</th><th>Cumplimiento</th><th>Beneficiarios</th><th>Evidencias</th><th className="no-print">Acción</th></tr></thead><tbody>{outputs.map((output) => { const progress = percentage(output.delivered_quantity, output.target_quantity); const outputEvidence = evidenceByOutput.get(output.id) ?? []; const unitLabel = output.unit?.abbreviation || output.unit_label; return <tr key={output.id}><td><strong>{output.name}</strong><span>{unitLabel} · {outputStatusLabels[output.status]}</span></td><td>{formatNumber(output.target_quantity)}</td><td>{formatNumber(output.produced_quantity)}</td><td>{formatNumber(output.delivered_quantity)}</td><td><div className="compliance-progress"><span style={{ width: `${Math.min(progress, 100)}%` }} /><b>{progress}%</b></div></td><td>{selectedProject.beneficiary_detail_enabled ? 'Ver registro' : formatNumber(output.beneficiary_count)}</td><td><strong>{outputEvidence.length}</strong></td><td className="no-print"><button type="button" onClick={() => editOutput(output)}>Editar</button></td></tr> })}</tbody></table></div>}</div>
             {evidences.length > 0 && <div className="final-report-section evidence-report-section"><div className="edifica-section-heading"><div><p className="edifica-kicker">SOPORTES MULTIMEDIA</p><h2>Evidencias de ejecución</h2></div><span>{evidences.length} archivos</span></div><div className="evidence-report-grid">{outputs.map((output) => { const outputEvidence = evidenceByOutput.get(output.id) ?? []; if (!outputEvidence.length) return null; return <article key={output.id}><header><strong>{output.name}</strong><span>{outputEvidence.length} evidencias</span></header><div>{outputEvidence.map((evidence) => <figure key={evidence.id} className={`evidence-preview ${evidence.evidence_type}`}>{evidence.evidence_type === 'image' && evidence.signed_url ? <img src={evidence.signed_url} alt={evidence.caption || evidence.file_name} /> : null}{evidence.evidence_type === 'video' && evidence.signed_url ? <video controls preload="metadata" src={evidence.signed_url} /> : null}{evidence.evidence_type === 'document' ? <a href={evidence.signed_url} target="_blank" rel="noreferrer"><span>PDF</span></a> : null}<figcaption>{evidence.file_name}</figcaption></figure>)}</div></article> })}</div></div>}
             <div className="final-report-section"><div className="edifica-section-heading"><div><p className="edifica-kicker">EJECUCIÓN FINANCIERA</p><h2>Inversión y comprobantes</h2></div><span>{formatMoney(investment, selectedProject.currency)}</span></div>{expenses.length === 0 ? <p className="edifica-empty">Todavía faltan inversiones o gastos por registrar.</p> : <div className="edifica-table-wrap"><table className="compliance-table"><thead><tr><th>Fecha</th><th>Proveedor / concepto</th><th>Factura</th><th>Estado</th><th>Monto</th><th className="no-print">Acción</th></tr></thead><tbody>{expenses.map((expense) => <tr key={expense.id}><td>{expense.expense_date}</td><td><strong>{expense.supplier_name}</strong><span>{expense.category} · {expense.description}</span></td><td>{expense.invoice_number || '—'}</td><td>{expenseStatusLabels[expense.status]}</td><td><strong>{formatMoney(expense.amount, expense.currency)}</strong></td><td className="no-print"><button type="button" onClick={() => editExpense(expense)}>Editar</button></td></tr>)}</tbody></table></div>}</div>
