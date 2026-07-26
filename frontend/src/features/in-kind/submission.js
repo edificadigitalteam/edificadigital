@@ -1,35 +1,18 @@
 const MAX_EVIDENCE_SIZE = 20 * 1024 * 1024
 const ALLOWED_EVIDENCE_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'application/pdf',
-  'text/csv',
-  'application/csv',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'text/csv', 'application/csv',
+  'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ])
 const ALLOWED_EVIDENCE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'pdf', 'csv', 'xls', 'xlsx'])
 
 const countryCodes = {
-  alemania: 'DE',
-  germany: 'DE',
-  venezuela: 'VE',
-  spain: 'ES',
-  españa: 'ES',
-  'united states': 'US',
-  'estados unidos': 'US',
+  alemania: 'DE', germany: 'DE', venezuela: 'VE', spain: 'ES', españa: 'ES',
+  'united states': 'US', 'estados unidos': 'US',
 }
 
 const normalizeCountryCode = (country) => {
   const normalized = country?.trim().toLocaleLowerCase('es') ?? ''
-  return countryCodes[normalized] ?? normalized
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z]/g, '')
-    .slice(0, 2)
-    .toUpperCase()
-    .padEnd(2, 'X')
+  return countryCodes[normalized] ?? normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, '').slice(0, 2).toUpperCase().padEnd(2, 'X')
 }
 
 const nullable = (value) => {
@@ -37,17 +20,9 @@ const nullable = (value) => {
   return normalized === '' || normalized === undefined ? null : normalized
 }
 
-const isEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(value ?? '')
-
-const normalizeAttachmentType = (type) => {
-  const aliases = {
-    manifest_spreadsheet: 'packing_list',
-    inspection_evidence: 'inspection',
-    customs_document: 'customs',
-    donation_receipt: 'receipt',
-  }
-  return aliases[type] ?? type
-}
+const normalizeAttachmentType = (type) => ({
+  manifest_spreadsheet: 'packing_list', inspection_evidence: 'inspection', customs_document: 'customs', donation_receipt: 'receipt',
+}[type] ?? type)
 
 export class SubmissionError extends Error {
   constructor(stage, cause) {
@@ -61,18 +36,12 @@ export class SubmissionError extends Error {
 export function createSubmissionReference(draft) {
   const country = normalizeCountryCode(draft.originCountry)
   const arrival = draft.estimatedArrival?.replaceAll('-', '') || '00000000'
-  const suffix = String(draft.submissionId ?? '')
-    .replace(/[^a-z0-9]/gi, '')
-    .slice(0, 8)
-    .toUpperCase()
-    .padEnd(8, '0')
-
+  const suffix = String(draft.submissionId ?? '').replace(/[^a-z0-9]/gi, '').slice(0, 8).toUpperCase().padEnd(8, '0')
   return `INK-${country}-${arrival}-${suffix}`
 }
 
 function buildConsolidatedItems(draft) {
   if (Array.isArray(draft.items) && draft.items.length) return draft.items
-
   return [{
     itemCode: '',
     description: draft.contentsSummary?.trim() || 'Carga consolidada según manifiesto adjunto',
@@ -81,27 +50,23 @@ function buildConsolidatedItems(draft) {
     unit: draft.packageUnit || 'lot',
     referenceValue: draft.referenceValue || '',
     referenceCurrency: draft.referenceCurrency || 'USD',
-    dietaryAttributes: [],
-    allergens: '',
-    lotCode: '',
-    expiryDate: '',
+    dietaryAttributes: [], allergens: '', lotCode: '', expiryDate: '',
     notes: `Categorías declaradas: ${(draft.categories ?? []).join(', ') || 'sin clasificación previa'}`,
   }]
 }
 
 export function buildSubmissionPayload(draft, attachments = []) {
-  const senderContact = nullable(draft.senderContact)
+  const anonymous = draft.donorType === 'anonymous'
   const items = buildConsolidatedItems(draft)
-
   return {
     submission_key: draft.submissionId,
     reference_code: createSubmissionReference(draft),
     sender: {
-      name: draft.senderName.trim(),
-      email: senderContact && isEmail(senderContact) ? senderContact.toLowerCase() : null,
-      phone: senderContact && !isEmail(senderContact) ? senderContact : null,
-      country: nullable(draft.originCountry),
-      is_organization: draft.senderType === 'organization',
+      name: anonymous ? 'Donante anónimo' : draft.donorName.trim(),
+      email: anonymous ? null : nullable(draft.donorEmail)?.toLowerCase() ?? null,
+      phone: anonymous ? null : nullable(draft.donorPhone),
+      country: anonymous ? null : nullable(draft.donorCountry || draft.originCountry),
+      is_organization: draft.donorType === 'organization',
     },
     shipment: {
       transport_mode: draft.transportMode,
@@ -120,21 +85,12 @@ export function buildSubmissionPayload(draft, attachments = []) {
       notes: nullable(draft.notes),
     },
     items: items.map((item) => ({
-      item_code: nullable(item.itemCode),
-      description: item.description.trim(),
-      category: item.category,
-      declared_quantity: Number(item.declaredQuantity),
-      unit_code: item.unit,
+      item_code: nullable(item.itemCode), description: item.description.trim(), category: item.category,
+      declared_quantity: Number(item.declaredQuantity), unit_code: item.unit,
       reference_value: item.referenceValue === '' ? null : Number(item.referenceValue),
       reference_currency: item.referenceValue === '' ? null : item.referenceCurrency,
-      valuation_method: nullable(item.valuationMethod),
-      valuation_source: nullable(item.valuationSource),
-      valued_at: nullable(item.valuedAt),
-      dietary_attributes: item.dietaryAttributes ?? [],
-      allergens: nullable(item.allergens),
-      lot_code: nullable(item.lotCode),
-      expiry_date: nullable(item.expiryDate),
-      notes: nullable(item.notes),
+      valuation_method: nullable(item.valuationMethod), valuation_source: nullable(item.valuationSource), valued_at: nullable(item.valuedAt),
+      dietary_attributes: item.dietaryAttributes ?? [], allergens: nullable(item.allergens), lot_code: nullable(item.lotCode), expiry_date: nullable(item.expiryDate), notes: nullable(item.notes),
     })),
     attachments,
   }
@@ -143,9 +99,7 @@ export function buildSubmissionPayload(draft, attachments = []) {
 export function validateEvidence(file) {
   const errors = {}
   const extension = String(file?.name ?? '').split('.').pop()?.toLowerCase()
-  const supportedType = ALLOWED_EVIDENCE_TYPES.has(file?.type)
-  const supportedExtension = ALLOWED_EVIDENCE_EXTENSIONS.has(extension)
-  if (!supportedType && !supportedExtension) errors.type = 'unsupported'
+  if (!ALLOWED_EVIDENCE_TYPES.has(file?.type) && !ALLOWED_EVIDENCE_EXTENSIONS.has(extension)) errors.type = 'unsupported'
   if (Number(file?.size) > MAX_EVIDENCE_SIZE) errors.size = 'too_large'
   return errors
 }
@@ -153,14 +107,7 @@ export function validateEvidence(file) {
 const sanitizeFileName = (name) => {
   const lastDot = name.lastIndexOf('.')
   const extension = lastDot >= 0 ? name.slice(lastDot).toLowerCase() : ''
-  const base = (lastDot >= 0 ? name.slice(0, lastDot) : name)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 80) || 'evidence'
-
+  const base = (lastDot >= 0 ? name.slice(0, lastDot) : name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80) || 'evidence'
   return `${base}${extension.replace(/[^.a-z0-9]/g, '')}`
 }
 
@@ -171,65 +118,42 @@ export function createEvidencePath(userId, submissionId, evidence) {
 
 export async function submitInKindShipment({ client, draft, evidence = [] }) {
   const userResponse = await client.auth.getUser()
-  if (userResponse.error || !userResponse.data?.user) {
-    throw new SubmissionError('authentication', userResponse.error)
-  }
-
+  if (userResponse.error || !userResponse.data?.user) throw new SubmissionError('authentication', userResponse.error)
   const invalidEvidence = evidence.find(({ file }) => Object.keys(validateEvidence(file)).length)
   if (invalidEvidence) throw new SubmissionError('evidence_validation')
 
   const attachments = []
   for (const entry of evidence) {
     const path = createEvidencePath(userResponse.data.user.id, draft.submissionId, entry)
-    const upload = await client.storage.from('attachments').upload(path, entry.file, {
-      cacheControl: '3600',
-      contentType: entry.file.type || undefined,
-      upsert: true,
-    })
-
+    const upload = await client.storage.from('attachments').upload(path, entry.file, { cacheControl: '3600', contentType: entry.file.type || undefined, upsert: true })
     if (upload.error) throw new SubmissionError('evidence_upload', upload.error)
-
-    attachments.push({
-      attachment_type: normalizeAttachmentType(entry.type),
-      storage_path: upload.data?.path ?? path,
-      file_name: entry.file.name,
-      notes: entry.type === 'manifest_spreadsheet' ? 'Manifiesto detallado adjunto.' : null,
-    })
+    attachments.push({ attachment_type: normalizeAttachmentType(entry.type), storage_path: upload.data?.path ?? path, file_name: entry.file.name, notes: entry.type === 'manifest_spreadsheet' ? 'Manifiesto detallado adjunto.' : null })
   }
 
-  const response = await client.rpc('submit_in_kind_shipment', {
-    payload: buildSubmissionPayload(draft, attachments),
-  })
-
+  const response = await client.rpc('submit_in_kind_shipment', { payload: buildSubmissionPayload(draft, attachments) })
   if (response.error) throw new SubmissionError('record', response.error)
 
-  const shipmentUpdate = await client
-    .from('shipment')
-    .update({
-      shipment_scope: draft.shipmentScope || 'international',
-      category_codes: draft.categories ?? [],
-      contents_summary: nullable(draft.contentsSummary),
-      declared_package_count: draft.packageCount === '' ? null : Number(draft.packageCount),
-      package_unit_code: draft.packageUnit || 'lot',
-    })
-    .eq('id', response.data.shipment_id)
-
+  const shipmentUpdate = await client.from('shipment').update({
+    shipment_scope: draft.shipmentScope || 'international', category_codes: draft.categories ?? [],
+    contents_summary: nullable(draft.contentsSummary), declared_package_count: draft.packageCount === '' ? null : Number(draft.packageCount),
+    package_unit_code: draft.packageUnit || 'lot',
+  }).eq('id', response.data.shipment_id)
   if (shipmentUpdate.error) throw new SubmissionError('record', shipmentUpdate.error)
 
-  if (draft.projectId || draft.organizationId) {
-    const donationUpdate = await client
-      .from('donation')
-      .update({
-        project_id: draft.projectId || null,
-        organization_id: draft.organizationId || null,
-      })
-      .eq('id', response.data.donation_id)
+  const donationUpdate = await client.from('donation').update({ project_id: draft.projectId || null, organization_id: draft.organizationId || null }).eq('id', response.data.donation_id)
+  if (donationUpdate.error) throw new SubmissionError('record', donationUpdate.error)
 
-    if (donationUpdate.error) throw new SubmissionError('record', donationUpdate.error)
-  }
+  const { data: donationActor, error: actorLookupError } = await client.from('donation').select('actor_id').eq('id', response.data.donation_id).single()
+  if (actorLookupError) throw new SubmissionError('record', actorLookupError)
+  const anonymous = draft.donorType === 'anonymous'
+  const actorUpdate = await client.from('actor').update({
+    email: anonymous ? null : nullable(draft.donorEmail)?.toLowerCase() ?? null,
+    phone: anonymous ? null : nullable(draft.donorPhone),
+    country: anonymous ? null : nullable(draft.donorCountry || draft.originCountry),
+    is_organization: draft.donorType === 'organization',
+    is_anonymous: anonymous,
+  }).eq('id', donationActor.actor_id)
+  if (actorUpdate.error) throw new SubmissionError('record', actorUpdate.error)
 
-  return {
-    ...response.data,
-    evidence_count: attachments.length,
-  }
+  return { ...response.data, evidence_count: attachments.length }
 }
