@@ -51,6 +51,16 @@ For urgent work, compress feedback loops while preserving the order above.
 - Avoid generic AI-page motifs, excessive gradients, ornamental grids, floating cards without purpose, and filler metrics.
 - Use respectful plain language suited to people with varied cognitive and digital literacy.
 
+### SEO and AI discoverability
+
+- Treat search and AI-answer-engine discoverability as an ongoing requirement for every public-facing page, on the same footing as accessibility and bilingual parity — not a one-time fix. See `docs/adr/ADR-005-seo-and-ai-discoverability.md` for the full decision record.
+- Every public route ships a static (non-JS-dependent) `<title>`, meta description, canonical link, Open Graph/Twitter Card tags, and JSON-LD structured data in addition to any client-side language-toggle behavior. Crawlers that never execute JavaScript must still see correct content.
+- The canonical production domain for SEO artifacts is `somosedificadigital.com`, never the Vercel alias.
+- `robots.txt` allows all crawlers, including AI/answer-engine crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot, and similar), and blocks only the authenticated application surface (`/app`). AI crawlers are not specially blocked or allow-listed beyond that.
+- `public/llms.txt` is a maintained bilingual summary, kept factually in sync with the public copy whenever that copy changes.
+- FAQ-style or answer-oriented public copy ships with a matching `FAQPage` JSON-LD block covering the same questions — structured data must never claim more than what is visibly rendered.
+- SSR or prerendering stays deferred by default; reconsider only with real indexing data, not preemptively.
+
 ### Donations, shipments, and budgets
 
 - Donations may be `monetary`, `in_kind`, or `mixed`.
@@ -153,10 +163,11 @@ Merges to `main` publish automatically to `edificadigital.vercel.app` and `somos
 - [ ] Relevant tests, lint, and production build pass.
 - [ ] Accessibility and responsive states were checked.
 - [ ] Existing design language is preserved.
+- [ ] Public-facing changes preserve the SEO baseline: static meta/OG/canonical/JSON-LD, and `robots.txt`/`sitemap.xml`/`llms.txt` still accurate (see `docs/adr/ADR-005-seo-and-ai-discoverability.md`).
 - [ ] The PR is focused and ready for human review.
 
 ---
 
-**Version:** 2.1
-**Last updated:** 2026-07-19
+**Version:** 2.2
+**Last updated:** 2026-07-26
 **Maintained by:** Product owners and project contributors

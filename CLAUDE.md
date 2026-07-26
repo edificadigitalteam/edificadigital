@@ -135,6 +135,19 @@ Use application-facing publishable credentials only in the client. Service-role 
 - Public and international reports use aggregate impact data.
 - Archive operational beneficiary history instead of deleting it.
 
+## SEO and AI discoverability
+
+Good search and AI-answer-engine discoverability is a standing requirement for every public-facing page, not a one-time landing-page fix. Full decision record: `docs/adr/ADR-005-seo-and-ai-discoverability.md`.
+
+- The public site (`/`, `/donations/*`) is a client-rendered SPA with no server-side rendering. Search engines mostly execute JavaScript; social link-preview bots (WhatsApp, LinkedIn, X, iMessage) and most AI-answer-engine crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot) mostly do not. Ship a static, correct baseline in `index.html` — title, meta description, canonical link, Open Graph/Twitter Card tags, JSON-LD — for every public route, not only a client-side `useEffect` correction.
+- Canonical production domain for SEO artifacts: `somosedificadigital.com`.
+- `robots.txt` allows every crawler, including AI crawlers, on public content, and disallows only the authenticated app (`/app`, `/app/*`). Do not special-case AI bots beyond that boundary.
+- `frontend/public/llms.txt` is a maintained bilingual summary (modules, plans, contact) — update it whenever the public copy it summarizes changes.
+- Any FAQ-style or answer-oriented public copy ships with a matching `FAQPage` JSON-LD block. Structured data must exactly match visible content — never more, never stale.
+- Confirmed target keywords: "software para iglesias", "software para donaciones", "software de trazabilidad de donaciones". Update meta copy and JSON-LD together if positioning changes.
+- SSR/prerendering is a deferred, not rejected, option — revisit only with real organic-indexing data.
+- Icons (`favicon.svg`, `favicon.ico` fallback, `apple-touch-icon`) are a discoverability requirement, verify they resolve, don't assume `index.html` already wires them.
+
 ## Interface guidance
 
 - Preserve the established typography, color, spacing, and component system.
@@ -172,6 +185,7 @@ The next operational workflow begins at physical receipt. It must collect wareho
 - `docs/DATABASE.md` — deployed schema and security baseline
 - `docs/adr/ADR-003-in-kind-shipment-inventory.md` — shipment model decision
 - `docs/adr/ADR-004-protected-beneficiary-identity.md` — protected beneficiary data boundary
+- `docs/adr/ADR-005-seo-and-ai-discoverability.md` — SEO and AI-discoverability baseline for public pages
 - `docs/plans/` — implementation order and delivery status
 - `docs/specs/` — executable behavior descriptions
 
@@ -179,5 +193,5 @@ When code and documentation differ, verify deployed behavior and update both in 
 
 ---
 
-**Version:** 2.1
-**Last updated:** 2026-07-19
+**Version:** 2.2
+**Last updated:** 2026-07-26
