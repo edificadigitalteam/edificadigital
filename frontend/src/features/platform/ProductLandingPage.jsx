@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Analytics } from '@vercel/analytics/react'
+import { Analytics, track } from '@vercel/analytics/react'
 import { buildPublicContactUrl } from '../../contact.js'
 import './product-landing.css'
 
@@ -222,6 +222,7 @@ export default function ProductLandingPage() {
   }, [language, text])
 
   const close = () => setMenuOpen(false)
+  const trackCta = (name, props) => track(name, { language, ...props })
 
   return (
     <div className="product-site">
@@ -248,8 +249,8 @@ export default function ProductLandingPage() {
             <h1>{text.hero.title}</h1>
             <p className="product-hero-lead">{text.hero.lead}</p>
             <div className="product-hero-actions">
-              <a href="#contacto" className="product-button primary">{text.hero.primary} <Arrow /></a>
-              <a href="#modulos" className="product-text-link">{text.hero.secondary} ↓</a>
+              <a href="#contacto" className="product-button primary" onClick={() => trackCta('hero_primary_click')}>{text.hero.primary} <Arrow /></a>
+              <a href="#modulos" className="product-text-link" onClick={() => trackCta('hero_secondary_click')}>{text.hero.secondary} ↓</a>
             </div>
             <div className="product-hero-note"><strong>ED</strong><p>{text.hero.note}</p></div>
           </div>
@@ -291,7 +292,7 @@ export default function ProductLandingPage() {
 
         <section className="product-section product-plans" id="planes">
           <div className="product-section-heading compact"><p className="product-kicker"><span />{text.plans.kicker}</p><h2>{text.plans.title}</h2><p>{text.plans.intro}</p></div>
-          <div className="plan-grid">{text.plans.items.map(([name, description, features], index) => <article className={index === 1 ? 'featured' : ''} key={name}><span>0{index + 1}</span><h3>{name}</h3><p>{description}</p><ul>{features.map((feature) => <li key={feature}><Check />{feature}</li>)}</ul><a href="#contacto">{text.plans.cta} <Arrow /></a></article>)}</div>
+          <div className="plan-grid">{text.plans.items.map(([name, description, features], index) => <article className={index === 1 ? 'featured' : ''} key={name}><span>0{index + 1}</span><h3>{name}</h3><p>{description}</p><ul>{features.map((feature) => <li key={feature}><Check />{feature}</li>)}</ul><a href="#contacto" onClick={() => trackCta('plan_cta_click', { plan: name })}>{text.plans.cta} <Arrow /></a></article>)}</div>
         </section>
 
         <section className="product-section product-faq" id="faq">
@@ -299,7 +300,7 @@ export default function ProductLandingPage() {
           <div className="faq-list">{text.faq.items.map(([question, answer]) => <details key={question}><summary>{question}<Arrow /></summary><p>{answer}</p></details>)}</div>
         </section>
 
-        <section className="product-closing" id="contacto"><div><p>{text.closing.kicker}</p><h2>{text.closing.title}</h2><span>{text.closing.text}</span></div><a href={contactUrl} target="_blank" rel="noreferrer">{text.closing.cta} <Arrow /></a></section>
+        <section className="product-closing" id="contacto"><div><p>{text.closing.kicker}</p><h2>{text.closing.title}</h2><span>{text.closing.text}</span></div><a href={contactUrl} target="_blank" rel="noreferrer" onClick={() => trackCta('contact_whatsapp_click')}>{text.closing.cta} <Arrow /></a></section>
       </main>
 
       <footer className="product-footer"><Brand footer /><p>{text.footer}</p><span>© 2026 Edifica Digital</span></footer>

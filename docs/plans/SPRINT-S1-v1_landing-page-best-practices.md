@@ -4,7 +4,7 @@
 **Status:** In Progress
 **Owner:** Isaac Delgado, Yang (yangetze)
 **Created:** 2026-07-26
-**Last Updated:** 2026-07-26 (Block 3 implemented: robots.txt, sitemap.xml, llms.txt, FAQ — see Verification)
+**Last Updated:** 2026-07-26 (Block 4 implemented: CTA analytics events, landing-scoped font weight trim — all plan objectives implemented, PR #30 open for review)
 
 ## Overview
 
@@ -19,8 +19,8 @@ This supersedes **Part 1 (SEO)** of `ROADMAP-R-v1_seo-and-offline-modules.md`: t
 - [x] Add canonical `<link>` (domain: `somosedificadigital.com`), `apple-touch-icon`/`favicon.ico` fallback — `robots.txt`/`sitemap.xml` moved to the AI/answer-engine block below (robots.txt references the sitemap, so they ship together)
 - [x] Add JSON-LD `Organization` structured data (aligned with target keywords: "software para iglesias", "software para donaciones", "software de trazabilidad de donaciones")
 - [x] Accessibility: skip link, `prefers-reduced-motion` support, visible `:focus-visible` states, `aria-label` on icon-only controls
-- [ ] Reduce Google Fonts payload (currently 5 weights across 2 families, external render-blocking request — also found: `Manrope` is loaded in `index.html` but never used; the site actually renders with `Inter`, loaded separately via a `@import` inside `product-landing.css`)
-- [ ] Track CTA clicks (hero primary/secondary, plans, closing WhatsApp link) as custom Vercel Analytics events
+- [x] Reduce Google Fonts payload on the landing page — **correction to an earlier note in this plan:** `Manrope` (loaded globally in `index.html`) is not actually unused — it's the primary font for the rest of the app (`src/index.css`, dashboard, in-kind flow); the landing page just overrides it locally via `product-landing.css`'s own `@import` for `Inter`. Since `index.html`'s font `<link>` is shared by every route, trimming it is out of scope here (would risk the dashboard's typography for a landing-only plan). The safe, landing-scoped fix is trimming `product-landing.css`'s own `@import` to the weights actually used.
+- [x] Track CTA clicks (hero primary/secondary, plans, closing WhatsApp link) as custom Vercel Analytics events
 - [x] Decide SSR/prerendering timing — approved: deferred (see below)
 - [x] AI/answer-engine visibility (GEO/AEO): `llms.txt`, an FAQ section with quotable answers, `sitemap.xml`, and an explicit `robots.txt` policy for AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot)
 
@@ -35,8 +35,8 @@ Reviewed: `frontend/src/features/platform/ProductLandingPage.jsx`, `frontend/src
 | Icons | ✅ Fixed. `apple-touch-icon.png` (180×180) and `favicon.ico` (PNG-in-ICO container) added, both generated from the existing `favicon.svg` mark; `index.html` now links all three (`favicon.svg`, `favicon.ico`, `apple-touch-icon.png`) — previously there was no `<link rel="icon">` at all, so the tab icon wasn't wired up. |
 | Accessibility | ✅ Fixed. Skip link added (first focusable element, jumps to `<main id="main-content">`), `@media (prefers-reduced-motion: reduce)` added (note: the stylesheet had no `transition`/`animation` at all before this, so this is future-proofing, not a fix to an existing motion problem), `:focus-visible` outline added for links/buttons, and `aria-label`s added to the hamburger menu button (previously had zero accessible name) and the language toggle. |
 | Legal | No Privacy Policy or Terms link anywhere on the landing or footer, despite the platform handling donor/beneficiary data. Confirmed: no such content exists yet — **deferred to its own plan**, out of scope here. |
-| Performance | 5 font weights across 2 families loaded from `fonts.googleapis.com`, render-blocking. |
-| Analytics | `@vercel/analytics` only tracks pageviews; no event tracking on CTAs, so landing conversion can't be measured. |
+| Performance | ✅ Fixed (landing-scoped). `product-landing.css`'s own `@import` trimmed to the weights actually used (Inter: dropped unused 500; Source Serif 4: dropped unused 600, since every heading using it renders at weight 700). The global `index.html` font `<link>` (Manrope, used by the rest of the app) is untouched — out of scope for a landing-only plan. |
+| Analytics | ✅ Fixed. `track()` from `@vercel/analytics/react` now fires on the 4 CTAs (hero primary/secondary, each plan card, the closing WhatsApp link), each tagged with the active `language`. |
 | Rendering | Pure client-rendered SPA (confirmed: `index.html` `<div id="root">` is empty, all content injected by `main.jsx`/React). Affects crawler reliability and perceived load speed — does not, by itself, block the Open Graph/meta fix above. |
 | AI/answer-engine visibility | ✅ Fixed. `llms.txt` published with the approved bilingual summary; `robots.txt` allows all crawlers and disallows only `/app`/`/app/*`, with a `Sitemap:` pointer; `sitemap.xml` lists the public routes; an 8-question bilingual FAQ section (`#faq`, `<details>/<summary>`) was added to the landing, matched by a static `FAQPage` JSON-LD block in `index.html`. |
 
@@ -131,6 +131,14 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 - `pnpm test`: 65 total tests, 52 pass (all new ones), same 13 pre-existing unrelated failures. `pnpm lint`/`pnpm build`: clean, same pre-existing warnings, build succeeds; `dist/` carries `robots.txt`, `sitemap.xml`, and `llms.txt` correctly (Vite copies `public/` as-is).
 - Not yet verified live: real crawler behavior against `robots.txt`/`sitemap.xml`/`llms.txt` and a Google Rich Results / FAQPage validator pass — both recommended once deployed to production.
 
+### Block 4 (analytics + font cleanup) — verification results, 2026-07-26
+
+- Added `frontend/src/features/platform/ProductLandingPage.analytics.test.js` and `frontend/src/features/platform/product-landing.fonts.test.js` first (Red): asserts `track()` is imported and wired to the 4 CTAs with the expected event names/props, and that the `@import` in `product-landing.css` requests exactly the weights used. Confirmed failing before implementation.
+- Analytics: `track()` from `@vercel/analytics/react` fires on hero primary/secondary, each plan card's CTA (tagged with `{ plan: name }`), and the closing WhatsApp link — all tagged with `{ language }`. Anchor navigation is untouched (fire-and-forget, no `preventDefault`).
+- Fonts: traced actual usage before cutting anything — every Source Serif 4 heading in `product-landing.css` renders at weight 700 (either explicit or via the UA default `h2`/`h3` bold), so the family only needs weight 700, not 600. Inter's used weights are 400 (body default), 700/800/900 (explicit), and 650/850 (nav/some CTAs) which the browser nearest-matches to 600/700 and 800/900 respectively — dropping the unused 500 doesn't change either match (ties are equidistant from 500 either way). Trimmed the `@import` from 6+2=8 requested font-file variants down to 5+1=6, with zero visual change (confirmed via `pnpm build` + `vite preview` + headless-Chromium screenshot comparison).
+- **Scope correction:** the plan originally suspected `Manrope` (loaded globally in `index.html`) was dead weight. That's wrong outside the landing page — `src/index.css` and most of the dashboard/in-kind CSS use `Manrope` as their primary font. `index.html`'s font `<link>` is shared by every route in this SPA, so it was left untouched; only `product-landing.css`'s own landing-scoped `@import` was trimmed. This finding was corrected in the Objectives/Findings sections above before implementing, to avoid a plan describing a fix that was never actually safe to make.
+- `pnpm test`: 67 total tests, 54 pass (all new ones), same 13 pre-existing unrelated failures. `pnpm lint`/`pnpm build`: clean, same pre-existing warnings, build succeeds.
+
 ## Checklist
 
 - [x] Static meta/OG/canonical/icons in `index.html`
@@ -138,14 +146,14 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 - [x] JSON-LD `Organization`
 - [x] Skip link + `prefers-reduced-motion` + `:focus-visible`
 - [x] `aria-label`s on menu/language buttons
-- [ ] Font weight reduction
-- [ ] CTA event tracking
+- [x] Font weight reduction (landing-scoped)
+- [x] CTA event tracking
 - [x] `llms.txt` (bilingual summary)
 - [x] `robots.txt` written: allow all public content, `Disallow: /app` and `/app/*` only
 - [x] FAQ section with bilingual, self-contained Q&A copy
 - [x] `pnpm test && pnpm lint && pnpm build` green
-- [ ] Docs updated (`ROADMAP-R-v1` marked superseded for Part 1) — done for the plan itself; still need a final pass once all blocks ship
-- [ ] PR opened with before/after screenshots — draft PR open (#30), screenshots pending a live preview verification pass
+- [x] Docs updated (`ROADMAP-R-v1` marked superseded for Part 1)
+- [ ] PR opened with before/after screenshots — draft PR open (#30); a live-preview screenshot/link-preview pass is still recommended once reviewed
 
 ## Draft Content: FAQ and `llms.txt` (pending product-owner review)
 
