@@ -30,8 +30,17 @@ const translations = new Map(Object.entries({
   'PANEL OPERATIVO': 'OPERATIONS DASHBOARD',
   'Resumen de operaciones': 'Operations overview',
   'Total registrado': 'Total records',
-  'Donaciones monetarias': 'Monetary donations',
-  'Donaciones en especies': 'In-kind donations',
+  'Donaciones de la organización': 'Organization donations',
+  'Fondos recibidos': 'Funds received',
+  'Base consolidada en USD': 'Consolidated USD base',
+  'Inversión ejecutada': 'Executed investment',
+  'Gastos reportados o verificados': 'Reported or verified expenses',
+  'Cumplimiento físico': 'Physical completion',
+  'Promedio de metas entregadas': 'Average delivery against targets',
+  'Personas beneficiadas': 'People reached',
+  'Registros agregados o nominales': 'Aggregate or individual records',
+  'Tipos de donación': 'Donation types',
+  'Monetarias / en especies': 'Monetary / in-kind',
   'Registrar donación monetaria': 'Register monetary donation',
   'Divisas, transferencias, efectivo y comprobantes.': 'Currencies, transfers, cash, and payment evidence.',
   'Registrar donación en especies': 'Register in-kind donation',
@@ -49,6 +58,7 @@ const translations = new Map(Object.entries({
   'Referencia': 'Reference',
   'Tipo': 'Type',
   'Donante': 'Donor',
+  'Donante o aliado': 'Donor or partner',
   'Estado': 'Status',
   'Acciones': 'Actions',
   'Ver': 'View',
@@ -64,22 +74,21 @@ const translations = new Map(Object.entries({
   'Operador': 'Operator',
   'Administrador': 'Administrator',
   'Superadministrador': 'Super administrator',
+
   'CUMPLIMIENTO DEL PROYECTO': 'PROJECT COMPLIANCE',
   'Ejecución e informe final': 'Execution and final report',
-  'Registra los avances del proyecto, las entregas, las personas beneficiadas, la inversión y los soportes requeridos por el aliado financiador.': 'Record project progress, deliveries, beneficiaries, investment, and the evidence required by the funding partner.',
+  'Registra los avances, las entregas, las personas beneficiadas, la inversión y los soportes requeridos por el aliado o donante.': 'Record progress, deliveries, beneficiaries, investment, and the evidence required by the donor or partner.',
   'Imprimir informe': 'Print report',
   'Proyecto': 'Project',
   'Seleccionar proyecto': 'Select project',
   'Crea o selecciona un proyecto para registrar su ejecución.': 'Create or select a project to record its execution.',
   'Presupuesto aprobado': 'Approved budget',
-  'Inversión ejecutada': 'Executed investment',
-  'Cumplimiento físico': 'Delivery completion',
-  'Personas beneficiadas': 'People reached',
-  'Promedio de metas entregadas': 'Average delivery against targets',
   'Según avances reportados': 'Based on reported progress',
+  'Según registro individual': 'Based on individual records',
   'Avances y entregas': 'Progress and deliveries',
-  'Resultado o producto': 'Activity or deliverable',
+  'Actividad o producto': 'Activity or deliverable',
   'Unidad de medida': 'Unit of measure',
+  'Seleccionar unidad': 'Select unit',
   'Planificado': 'Planned',
   'En ejecución': 'In progress',
   'Completado': 'Completed',
@@ -109,13 +118,13 @@ const translations = new Map(Object.entries({
   'Reportado': 'Reported',
   'Rechazado': 'Rejected',
   'INFORME DE CUMPLIMIENTO': 'COMPLIANCE REPORT',
-  'cumplimiento físico': 'delivery completion',
+  'cumplimiento físico': 'physical completion',
   'Objetivo': 'Objective',
   'Resultados esperados': 'Expected results',
   'Exigencias de reporte': 'Reporting requirements',
   'Pendiente de definir': 'Pending definition',
   'Según convenio del proyecto': 'According to the project agreement',
-  'EJECUCIÓN FÍSICA': 'DELIVERY EXECUTION',
+  'EJECUCIÓN FÍSICA': 'PHYSICAL EXECUTION',
   'Metas y avances': 'Targets and progress',
   'Todavía faltan avances y entregas por registrar.': 'Progress and deliveries still need to be recorded.',
   'Actividad / producto': 'Activity / deliverable',
@@ -126,39 +135,90 @@ const translations = new Map(Object.entries({
   'Beneficiarios': 'Beneficiaries',
   'Evidencias': 'Evidence',
   'Acción': 'Action',
+  'Ver registro': 'View registry',
+  'SOPORTES MULTIMEDIA': 'MULTIMEDIA EVIDENCE',
+  'Evidencias de ejecución': 'Execution evidence',
   'EJECUCIÓN FINANCIERA': 'FINANCIAL EXECUTION',
   'Inversión y comprobantes': 'Investment and supporting documents',
   'Todavía faltan inversiones o gastos por registrar.': 'Investments or expenses still need to be recorded.',
   'Proveedor / concepto': 'Supplier / description',
   'Factura': 'Invoice',
+
+  'REGISTRO NOMINAL OPCIONAL': 'OPTIONAL INDIVIDUAL REGISTRY',
+  'Este proyecto exige detalle individual. Registra únicamente los datos solicitados por el convenio y conserva la aceptación del aviso de privacidad.': 'This project requires individual detail. Record only the data requested by the agreement and retain privacy notice acknowledgement.',
+  'Nombre completo *': 'Full name *',
+  'Documento o identificación': 'Document or identification',
+  'País': 'Country',
+  'Ciudad, comunidad o zona': 'City, community, or area',
+  'Rango de edad': 'Age range',
+  'Sexo': 'Sex',
+  'Personas representadas': 'People represented',
+  'Beneficio, servicio o entrega recibida': 'Benefit, service, or delivery received',
+  'Registro activo': 'Active record',
+  'Confirmo que la persona fue informada sobre el uso y resguardo de sus datos.': 'I confirm that the person was informed about the use and protection of their data.',
+  'Registrar persona': 'Register person',
+  'Persona beneficiaria registrada.': 'Beneficiary registered.',
+  'Persona beneficiaria actualizada.': 'Beneficiary updated.',
+  'Cargando personas beneficiadas…': 'Loading beneficiaries…',
+  'Todavía no existen personas registradas para este proyecto.': 'There are no people registered for this project yet.',
+  'Persona': 'Person',
+  'Contacto': 'Contact',
+  'Ubicación': 'Location',
+  'Beneficio': 'Benefit',
+  'Sin identificación': 'No identification',
+  'Sin especificar': 'Unspecified',
+  '0 a 5 años': '0 to 5 years',
+  '6 a 12 años': '6 to 12 years',
+  '13 a 17 años': '13 to 17 years',
+  '18 a 59 años': '18 to 59 years',
+  '60 años o más': '60 years or older',
+  'Femenino': 'Female',
+  'Masculino': 'Male',
+  'Intersexual': 'Intersex',
+  'Prefiere no indicar': 'Prefer not to say',
+
   'CUMPLIMIENTO Y TRAZABILIDAD': 'COMPLIANCE AND TRACEABILITY',
   'Proyectos financiados': 'Funded projects',
+  'Administra la cartera de proyectos, sus aliados o donantes, presupuesto, objetivos y exigencias de cumplimiento desde una vista institucional.': 'Manage the project portfolio, donors or partners, budgets, objectives, and compliance requirements from an institutional view.',
   'Nuevo proyecto': 'New project',
-  'Buscar por código, proyecto o aliado financiador': 'Search by code, project, or funding partner',
+  'proyectos activos': 'active projects',
+  'Buscar por código, proyecto, organización o aliado/donante': 'Search by code, project, organization, or donor/partner',
   'Todos los estados': 'All statuses',
   'Todas las organizaciones': 'All organizations',
-  'Buscar': 'Search',
   'CARTERA DE PROYECTOS': 'PROJECT PORTFOLIO',
-  'Proyecto / código': 'Project / code',
-  'Organización / financiador': 'Organization / funding partner',
+  'Proyectos registrados': 'Registered projects',
+  'Organización / aliado o donante': 'Organization / donor or partner',
   'Vigencia': 'Term',
   'Presupuesto': 'Budget',
-  'Cancelar edición': 'Cancel editing',
+  'Registro nominal': 'Individual registry',
+  'hasta': 'through',
+  'Por definir': 'To be defined',
+  'Crear': 'Create',
   'IDENTIFICACIÓN DEL PROYECTO': 'PROJECT IDENTIFICATION',
+  'Identificación del proyecto': 'Project identification',
+  'Datos de la organización responsable y del aliado o donante que financia.': 'Information about the responsible organization and the donor or partner providing funding.',
   'Organización usuaria': 'Client organization',
   'Código del proyecto': 'Project code',
   'Nombre del proyecto': 'Project name',
-  'Aliado u organización financiadora': 'Funding partner or organization',
-  'FINANCIAMIENTO Y VIGENCIA': 'FUNDING AND TERM',
-  'Moneda del presupuesto': 'Budget currency',
+  'Aliado o donante financiador': 'Funding donor or partner',
+  'Financiamiento y vigencia': 'Funding and term',
+  'Presupuesto aprobado, moneda, fechas y situación operativa.': 'Approved budget, currency, dates, and operating status.',
+  'Moneda': 'Currency',
   'Fecha de inicio': 'Start date',
   'Fecha de cierre': 'End date',
-  'COMPROMISOS DE CUMPLIMIENTO': 'COMPLIANCE COMMITMENTS',
-  'Exigencias de reporte y cumplimiento': 'Reporting and compliance requirements',
-  'Observaciones': 'Notes',
+  'Compromisos de cumplimiento': 'Compliance commitments',
+  'Base narrativa y nivel de detalle requerido para cotejar lo aprobado frente a la ejecución final.': 'Narrative basis and level of detail required to compare approval with final execution.',
+  'Este proyecto requiere registrar individualmente a las personas beneficiadas.': 'This project requires individual beneficiary records.',
+  'Activa esta opción únicamente cuando el aliado o donante solicite datos nominales. Los demás proyectos conservarán cifras agregadas.': 'Enable this option when the donor or partner requests individual data. Other projects will retain aggregate figures.',
   'Registrar proyecto': 'Register project',
-  'Proyecto registrado.': 'Project registered.',
-  'Proyecto actualizado.': 'Project updated.',
+  'Proyecto registrado correctamente.': 'Project registered successfully.',
+  'Proyecto actualizado correctamente.': 'Project updated successfully.',
+  'En planificación': 'Planning',
+  'Presentado': 'Submitted',
+  'Aprobado': 'Approved',
+  'Pausado': 'Paused',
+  'Cancelado': 'Cancelled',
+
   'ADMINISTRACIÓN MULTITENANT': 'MULTITENANT ADMINISTRATION',
   'organizaciones activas': 'active organizations',
   'EDITAR ORGANIZACIÓN': 'EDIT ORGANIZATION',
@@ -169,8 +229,6 @@ const translations = new Map(Object.entries({
   'Código del tenant': 'Tenant code',
   'Razón social': 'Legal name',
   'RIF / identificación fiscal': 'Tax identification',
-  'País': 'Country',
-  'Ciudad': 'City',
   'Correo de contacto': 'Contact email',
   'Teléfono': 'Phone',
   'Suscripción': 'Subscription',
@@ -187,7 +245,6 @@ const translations = new Map(Object.entries({
   'Asociar host': 'Link host',
   'CUENTAS': 'ACCOUNTS',
   'Organizaciones registradas': 'Registered organizations',
-  'Ubicación': 'Location',
   'ENRUTAMIENTO': 'ROUTING',
   'Hosts registrados': 'Registered hosts',
   'Principal': 'Primary',
@@ -200,6 +257,7 @@ const translations = new Map(Object.entries({
   'Pago pendiente': 'Past due',
   'Suspendida': 'Suspended',
   'Cancelada': 'Cancelled',
+
   'Agrega usuarios, asígnalos a una organización y administra su nivel de acceso dentro de Edifica.': 'Add users, assign them to an organization, and manage their access level in Edifica.',
   'accesos activos': 'active access records',
   'EDITAR ACCESO': 'EDIT ACCESS',
@@ -214,13 +272,13 @@ const translations = new Map(Object.entries({
   'Habilitar persona': 'Authorize user',
   'DIRECTORIO': 'DIRECTORY',
   'Usuarios del sistema': 'System users',
-  'Persona': 'User',
   'Actualizado': 'Updated',
   'Suspendido': 'Suspended',
   'Suspender': 'Suspend',
   'Reactivar': 'Reactivate',
   'Cargando personas habilitadas…': 'Loading authorized users…',
   'Todavía no existen personas habilitadas.': 'There are no authorized users yet.',
+
   'REGISTRO DE VOLUNTARIADO': 'VOLUNTEER REGISTRATION',
   'Voluntarios': 'Volunteers',
   'Voluntario general': 'General volunteer',
@@ -242,15 +300,19 @@ const patterns = [
   [/^(\d+) registros$/, '$1 records'],
   [/^(\d+) proyectos$/, '$1 projects'],
   [/^(\d+) proyectos activos$/, '$1 active projects'],
-  [/^(\d+) personas$/, '$1 users'],
+  [/^(\d+) personas$/, '$1 people'],
+  [/^(\d+) activas$/, '$1 active'],
   [/^(\d+) hosts$/, '$1 hosts'],
   [/^(\d+) indicadores$/, '$1 indicators'],
+  [/^(\d+) archivos$/, '$1 files'],
+  [/^(\d+) evidencias$/, '$1 evidence files'],
   [/^(\d+)% del presupuesto$/, '$1% of budget'],
   [/^Monto \(([^)]+)\)$/, 'Amount ($1)'],
+  [/^hasta (.+)$/, 'through $1'],
 ]
 
-const originalTexts = new WeakMap()
-const originalAttributes = new WeakMap()
+const textState = new WeakMap()
+const attributeState = new WeakMap()
 const translatedAttributes = ['placeholder', 'title', 'aria-label']
 
 function translateValue(value) {
@@ -262,6 +324,7 @@ function translateValue(value) {
   const exact = translations.get(text)
   if (exact) return `${prefix}${exact}${suffix}`
   for (const [pattern, replacement] of patterns) {
+    pattern.lastIndex = 0
     if (pattern.test(text)) return `${prefix}${text.replace(pattern, replacement)}${suffix}`
   }
   return value
@@ -278,25 +341,31 @@ function applyLanguage(root, language) {
   let node = walker.nextNode()
   while (node) {
     if (!shouldSkip(node)) {
-      if (!originalTexts.has(node)) originalTexts.set(node, node.nodeValue)
-      const original = originalTexts.get(node)
-      const next = language === 'en' ? translateValue(original) : original
-      if (node.nodeValue !== next) node.nodeValue = next
+      const current = node.nodeValue
+      let state = textState.get(node)
+      if (!state || current !== state.applied) state = { source: current, applied: current }
+      const next = language === 'en' ? translateValue(state.source) : state.source
+      state.applied = next
+      textState.set(node, state)
+      if (current !== next) node.nodeValue = next
     }
     node = walker.nextNode()
   }
 
   root.querySelectorAll?.('*').forEach((element) => {
     if (element.closest('[data-no-translate]')) return
-    if (!originalAttributes.has(element)) originalAttributes.set(element, {})
-    const originals = originalAttributes.get(element)
+    const states = attributeState.get(element) ?? {}
     translatedAttributes.forEach((attribute) => {
       if (!element.hasAttribute(attribute)) return
-      if (!(attribute in originals)) originals[attribute] = element.getAttribute(attribute)
-      const original = originals[attribute]
-      const next = language === 'en' ? translateValue(original) : original
-      if (element.getAttribute(attribute) !== next) element.setAttribute(attribute, next)
+      const current = element.getAttribute(attribute)
+      let state = states[attribute]
+      if (!state || current !== state.applied) state = { source: current, applied: current }
+      const next = language === 'en' ? translateValue(state.source) : state.source
+      state.applied = next
+      states[attribute] = state
+      if (current !== next) element.setAttribute(attribute, next)
     })
+    attributeState.set(element, states)
   })
 }
 
@@ -312,28 +381,26 @@ export default function GlobalLanguageController() {
     if (!isPortal) return undefined
     document.documentElement.lang = language
     window.localStorage.setItem(LANGUAGE_KEY, language)
-    applyLanguage(document.getElementById('root'), language)
+    const root = document.getElementById('root')
+    applyLanguage(root, language)
 
+    let frame = 0
     const observer = new MutationObserver(() => {
-      window.requestAnimationFrame(() => applyLanguage(document.getElementById('root'), language))
+      window.cancelAnimationFrame(frame)
+      frame = window.requestAnimationFrame(() => applyLanguage(root, language))
     })
-    observer.observe(document.getElementById('root'), { childList: true, subtree: true, characterData: true })
-    return () => observer.disconnect()
+    observer.observe(root, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: translatedAttributes })
+    return () => {
+      window.cancelAnimationFrame(frame)
+      observer.disconnect()
+    }
   }, [isPortal, language])
 
   if (!isPortal) return null
 
   return (
-    <button
-      className="global-language-control"
-      type="button"
-      onClick={() => setLanguage((current) => current === 'es' ? 'en' : 'es')}
-      aria-label={language === 'es' ? 'Change language to English' : 'Cambiar idioma a español'}
-      data-no-translate
-    >
-      <span className={language === 'es' ? 'active' : ''}>ES</span>
-      <i>/</i>
-      <span className={language === 'en' ? 'active' : ''}>EN</span>
+    <button className="global-language-control" type="button" onClick={() => setLanguage((current) => current === 'es' ? 'en' : 'es')} aria-label={language === 'es' ? 'Change language to English' : 'Cambiar idioma a español'} data-no-translate>
+      <span className={language === 'es' ? 'active' : ''}>ES</span><i>/</i><span className={language === 'en' ? 'active' : ''}>EN</span>
     </button>
   )
 }
