@@ -17,35 +17,35 @@ function OperationalNavigationGuard() {
     if (!isOperationalForm) return undefined
 
     const rewriteVisibleLinks = () => {
-      document.querySelectorAll('a[href="/"]').forEach((link) => {
-        link.setAttribute('href', '/app')
+      document.querySelectorAll('a[href="/"], a[href="/app"]').forEach((link) => {
+        link.setAttribute('href', '/app/donations')
       })
 
       document.querySelectorAll('.intake-back-home').forEach((link) => {
         if (link.dataset.panelLinkFixed === 'true') return
         const isEnglish = document.documentElement.lang === 'en'
         const icon = link.querySelector('svg')
-        link.replaceChildren(...(icon ? [icon] : []), document.createTextNode(isEnglish ? ' Back to dashboard' : ' Volver al panel'))
+        link.replaceChildren(...(icon ? [icon] : []), document.createTextNode(isEnglish ? ' Back to Donations' : ' Volver a Donaciones'))
         link.dataset.panelLinkFixed = 'true'
       })
     }
 
-    const redirectRootLinks = (event) => {
-      const link = event.target.closest?.('a[href="/"]')
+    const redirectModuleLinks = (event) => {
+      const link = event.target.closest?.('a[href="/"], a[href="/app"]')
       if (!link) return
       event.preventDefault()
-      window.location.assign('/app')
+      window.location.assign('/app/donations')
     }
 
     rewriteVisibleLinks()
     const immediate = window.setTimeout(rewriteVisibleLinks, 0)
     const afterRender = window.setTimeout(rewriteVisibleLinks, 250)
-    document.addEventListener('click', redirectRootLinks, true)
+    document.addEventListener('click', redirectModuleLinks, true)
 
     return () => {
       window.clearTimeout(immediate)
       window.clearTimeout(afterRender)
-      document.removeEventListener('click', redirectRootLinks, true)
+      document.removeEventListener('click', redirectModuleLinks, true)
     }
   }, [])
 
@@ -57,7 +57,7 @@ function PublicLoginGuard() {
     if (isDashboard || isOperationalForm) return undefined
 
     const openLogin = (event) => {
-      const link = event.target.closest?.('a.nav-cta[href="/app"]')
+      const link = event.target.closest?.('a.product-login[href="/app"], a.nav-cta[href="/app"]')
       if (!link) return
       event.preventDefault()
       window.location.assign(`/app?login=1&t=${Date.now()}`)
