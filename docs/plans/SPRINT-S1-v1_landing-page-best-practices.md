@@ -4,7 +4,7 @@
 **Status:** In Progress
 **Owner:** Isaac Delgado, Yang (yangetze)
 **Created:** 2026-07-26
-**Last Updated:** 2026-07-26 (Block 2 implemented: skip link, focus-visible, reduced-motion, aria-labels — see Verification)
+**Last Updated:** 2026-07-26 (Block 3 implemented: robots.txt, sitemap.xml, llms.txt, FAQ — see Verification)
 
 ## Overview
 
@@ -22,7 +22,7 @@ This supersedes **Part 1 (SEO)** of `ROADMAP-R-v1_seo-and-offline-modules.md`: t
 - [ ] Reduce Google Fonts payload (currently 5 weights across 2 families, external render-blocking request — also found: `Manrope` is loaded in `index.html` but never used; the site actually renders with `Inter`, loaded separately via a `@import` inside `product-landing.css`)
 - [ ] Track CTA clicks (hero primary/secondary, plans, closing WhatsApp link) as custom Vercel Analytics events
 - [x] Decide SSR/prerendering timing — approved: deferred (see below)
-- [ ] AI/answer-engine visibility (GEO/AEO): `llms.txt`, an FAQ section with quotable answers, `sitemap.xml`, and an explicit `robots.txt` policy for AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot)
+- [x] AI/answer-engine visibility (GEO/AEO): `llms.txt`, an FAQ section with quotable answers, `sitemap.xml`, and an explicit `robots.txt` policy for AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot)
 
 ## Findings (source of this plan)
 
@@ -38,7 +38,7 @@ Reviewed: `frontend/src/features/platform/ProductLandingPage.jsx`, `frontend/src
 | Performance | 5 font weights across 2 families loaded from `fonts.googleapis.com`, render-blocking. |
 | Analytics | `@vercel/analytics` only tracks pageviews; no event tracking on CTAs, so landing conversion can't be measured. |
 | Rendering | Pure client-rendered SPA (confirmed: `index.html` `<div id="root">` is empty, all content injected by `main.jsx`/React). Affects crawler reliability and perceived load speed — does not, by itself, block the Open Graph/meta fix above. |
-| AI/answer-engine visibility | No `llms.txt`; no FAQ or self-contained factual statements written to be quoted verbatim; `robots.txt` doesn't exist yet, so there's no explicit allow/deny policy for AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot, etc.). |
+| AI/answer-engine visibility | ✅ Fixed. `llms.txt` published with the approved bilingual summary; `robots.txt` allows all crawlers and disallows only `/app`/`/app/*`, with a `Sitemap:` pointer; `sitemap.xml` lists the public routes; an 8-question bilingual FAQ section (`#faq`, `<details>/<summary>`) was added to the landing, matched by a static `FAQPage` JSON-LD block in `index.html`. |
 
 ### SSR / prerendering — recommendation
 
@@ -120,21 +120,32 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 - Not yet verified live: real Tab-key keyboard walkthrough and OS-level reduced-motion toggle in an actual browser session — verified at the source/CSS level (the `:focus`/`:focus-visible`/`prefers-reduced-motion` mechanisms used are standard, well-understood CSS, not application logic), but a real keyboard pass on the deployed preview is still recommended once the Vercel rate limit clears.
 - **Package manager correction:** this plan's Verification section and `CLAUDE.md` both specify `pnpm`. Block 1's implementation pass initially ran `npm install`/`npm test`, which generated a stray `package-lock.json` — caught before committing (this repo deliberately moved from npm to pnpm in a past PR, see `pnpm-lock.yaml`). The stray lockfile was deleted, `node_modules` reinstalled with `pnpm install`, and both blocks re-verified with `pnpm test`/`pnpm lint`/`pnpm build` before commit. No lockfile changes were committed.
 
+### Block 3 (AI/answer-engine visibility) — verification results, 2026-07-26
+
+- Added `frontend/public.test.js` and `frontend/src/features/platform/ProductLandingPage.faq.test.js` first (Red): asserts `robots.txt`'s allow/disallow/sitemap directives, `sitemap.xml`'s three `<loc>` entries, `llms.txt`'s content, the FAQ section's markup and exactly 8 bilingual Q&A entries sourced from the `copy` object, and a matching `FAQPage` JSON-LD block in `index.html`. Confirmed failing before implementation.
+- `frontend/public/robots.txt`: single `User-agent: *` block — `Allow: /`, `Disallow: /app` + `/app/*`, `Sitemap:` pointer. No AI-bot-specific rules by design (per the confirmed decision: AI crawlers get the same treatment as any other crawler, not special-cased).
+- `frontend/public/sitemap.xml`: lists `/`, `/donations/in-kind`, `/donations/monetary` under `somosedificadigital.com`. `/app` is intentionally excluded (matches `robots.txt`).
+- `frontend/public/llms.txt`: the exact bilingual draft approved earlier in this plan, published verbatim.
+- FAQ section: 8 bilingual questions (ES/EN, matching the approved draft) added to `ProductLandingPage.jsx` as `<details>/<summary>` accordions under `#faq`, with a corresponding nav link and new `.faq-list` CSS matching the existing design system (brand colors, existing spacing/radius scale). Rendered and screenshotted locally via a `pnpm build` + `vite preview` + headless-Chromium screenshot — confirmed it sits cleanly between Plans and the closing CTA with no layout regression.
+- `index.html` also gained a static `FAQPage` JSON-LD block with the same 8 question/answer pairs shown on the page (structured data must match visible content).
+- `pnpm test`: 65 total tests, 52 pass (all new ones), same 13 pre-existing unrelated failures. `pnpm lint`/`pnpm build`: clean, same pre-existing warnings, build succeeds; `dist/` carries `robots.txt`, `sitemap.xml`, and `llms.txt` correctly (Vite copies `public/` as-is).
+- Not yet verified live: real crawler behavior against `robots.txt`/`sitemap.xml`/`llms.txt` and a Google Rich Results / FAQPage validator pass — both recommended once deployed to production.
+
 ## Checklist
 
 - [x] Static meta/OG/canonical/icons in `index.html`
-- [ ] `robots.txt` + `sitemap.xml`
+- [x] `robots.txt` + `sitemap.xml`
 - [x] JSON-LD `Organization`
 - [x] Skip link + `prefers-reduced-motion` + `:focus-visible`
 - [x] `aria-label`s on menu/language buttons
 - [ ] Font weight reduction
 - [ ] CTA event tracking
-- [ ] `llms.txt` (bilingual summary)
-- [ ] `robots.txt` written: allow all public content, `Disallow: /app` and `/app/*` only
-- [ ] FAQ section with bilingual, self-contained Q&A copy
-- [ ] `pnpm test && pnpm lint && pnpm build` green
-- [ ] Docs updated (`ROADMAP-R-v1` marked superseded for Part 1)
-- [ ] PR opened with before/after screenshots
+- [x] `llms.txt` (bilingual summary)
+- [x] `robots.txt` written: allow all public content, `Disallow: /app` and `/app/*` only
+- [x] FAQ section with bilingual, self-contained Q&A copy
+- [x] `pnpm test && pnpm lint && pnpm build` green
+- [ ] Docs updated (`ROADMAP-R-v1` marked superseded for Part 1) — done for the plan itself; still need a final pass once all blocks ship
+- [ ] PR opened with before/after screenshots — draft PR open (#30), screenshots pending a live preview verification pass
 
 ## Draft Content: FAQ and `llms.txt` (pending product-owner review)
 

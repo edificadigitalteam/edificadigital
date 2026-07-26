@@ -148,6 +148,15 @@
 .plan-grid > article > p { color: var(--product-muted); line-height: 1.65; }
 .plan-grid a { display: inline-flex; align-items: center; gap: 8px; width: fit-content; margin-top: 26px; color: var(--product-purple); font-size: .82rem; font-weight: 900; }
 
+.product-faq { background: #fff; }
+.faq-list { display: grid; gap: 12px; max-width: 900px; }
+.faq-list details { border: 1px solid var(--product-line); border-radius: 14px; padding: 20px 22px; background: var(--product-bg); }
+.faq-list summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: var(--product-purple-dark); font-weight: 800; font-size: 1.02rem; cursor: pointer; list-style: none; }
+.faq-list summary::-webkit-details-marker { display: none; }
+.faq-list summary svg { flex: 0 0 18px; color: var(--product-orange); transition: transform .2s ease; }
+.faq-list details[open] summary svg { transform: rotate(90deg); }
+.faq-list details p { margin: 14px 0 0; color: var(--product-muted); line-height: 1.65; }
+
 .product-closing { display: flex; align-items: center; justify-content: space-between; gap: 50px; margin: 0 clamp(24px, 6vw, 105px) clamp(60px, 7vw, 100px); padding: clamp(40px, 5vw, 70px); border-radius: 26px; background: var(--product-purple); color: #fff; }
 .product-closing > div { max-width: 760px; }
 .product-closing p { margin: 0 0 12px; color: var(--product-yellow); font-size: .72rem; font-weight: 900; letter-spacing: .14em; }
