@@ -4,7 +4,7 @@
 **Status:** Draft
 **Owner:** Isaac Delgado, Yang (yangetze)
 **Created:** 2026-07-26
-**Last Updated:** 2026-07-26 (added AI/answer-engine visibility scope; resolved OG-image and Privacy/Terms open questions)
+**Last Updated:** 2026-07-26 (added AI/answer-engine visibility scope; resolved OG-image, Privacy/Terms, and robots.txt AI-crawler open questions)
 
 ## Overview
 
@@ -49,7 +49,7 @@ Full SSR (migrating to Next.js/Remix) is not warranted for one public marketing 
 "SEO para IAs" — más formalmente **GEO (Generative Engine Optimization)** o **AEO (Answer Engine Optimization)** — es optimizar el contenido para que asistentes de IA (ChatGPT, Claude, Perplexity, Gemini, Copilot) lo puedan leer, citar o usar como respuesta cuando alguien les pregunta sobre el tema. No es un campo separado del SEO tradicional; comparte la misma restricción técnica ya identificada arriba:
 
 - Los crawlers que alimentan estos asistentes (`GPTBot`, `ClaudeBot`/`anthropic-ai`, `PerplexityBot`, `Google-Extended`, `CCBot` de Common Crawl) **generalmente no ejecutan JavaScript**, igual que los bots de vista previa social. Si el contenido solo existe después de que React lo renderiza, es invisible para ellos — el mismo problema que motiva el fix de meta/OG estáticos, no uno nuevo.
-- Estos crawlers sí respetan `robots.txt`, así que el archivo que ya está planeado (objetivo de SEO) debe incluir una decisión explícita: ¿se permite que estos bots indexen/citen el contenido, o se bloquean? Hoy no hay ninguna directiva — es una decisión pendiente, no un default neutral.
+- Estos crawlers sí respetan `robots.txt`. **Decisión confirmada:** se permite el acceso a todo el contenido público (landing, `/donations/in-kind`, `/donations/monetary`); solo se bloquea `/app` y `/app/*` — el dashboard autenticado — igual que se bloquearía para cualquier otro crawler, no como una postura anti-IA.
 - Un archivo **`llms.txt`** (estándar emergente, análogo a `robots.txt` pero pensado para dar a un LLM un resumen limpio en Markdown del sitio: qué es Edifica, sus módulos, planes y a quién sirve) en la raíz del sitio facilita que estos asistentes tengan un resumen correcto y citable, sin depender de que rendericen el HTML final.
 - El contenido mismo se beneficia de frases autocontenidas y citables ("Edifica es un software modular para iglesias y organizaciones cristianas que centraliza donaciones, administración eclesial y productos digitales") y de una sección de **preguntas frecuentes** con pares pregunta/respuesta directos — ayuda tanto a snippets destacados de Google como a que un asistente de IA cite la respuesta correcta en vez de inventar una.
 
@@ -70,7 +70,7 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 - `frontend/src/features/platform/product-landing.css` — `prefers-reduced-motion`, `:focus-visible` states, skip-link styling
 - `frontend/index.html` — font `<link>` weight reduction
 - `frontend/public/llms.txt` (new) — bilingual plain-text/Markdown summary of Edifica for AI assistants
-- `frontend/public/robots.txt` — explicit allow/deny rules for AI crawlers (`GPTBot`, `ClaudeBot`, `PerplexityBot`, `Google-Extended`, `CCBot`), not just traditional search engines
+- `frontend/public/robots.txt` — allow all crawlers (including `GPTBot`, `ClaudeBot`, `PerplexityBot`, `Google-Extended`, `CCBot`) on public content; `Disallow: /app` and `/app/*` only, matching the authenticated-dashboard boundary already used in `frontend/src/main.jsx`
 - `frontend/src/features/platform/ProductLandingPage.jsx` — FAQ section with self-contained, quotable Q&A copy (bilingual)
 
 ## Open Questions (need a decision before implementing)
@@ -81,7 +81,7 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 - [ ] Confirm canonical production domain for the `<link rel="canonical">` and `sitemap.xml`: `somosedificadigital.com`?
 - [ ] Any target keywords or reference sites to align meta copy/JSON-LD with?
 - [ ] Approve deferring SSR/prerendering to Phase 2 (recommended above)?
-- [ ] Allow or block AI-training/answer crawlers (`GPTBot`, `ClaudeBot`, `PerplexityBot`, `Google-Extended`, `CCBot`) in `robots.txt`? This is a business call, not a technical default — allowing them increases the chance Edifica gets cited by AI assistants; blocking them opts out of AI training/citation entirely.
+- [x] AI-training/answer crawlers (`GPTBot`, `ClaudeBot`, `PerplexityBot`, `Google-Extended`, `CCBot`) in `robots.txt` — confirmed: **allow** on all public content (landing, `/donations/in-kind`, `/donations/monetary`). **Disallow only `/app` and `/app/*`** (the authenticated dashboard, per `frontend/src/main.jsx`'s `isDashboard` check) — same boundary as anything else that shouldn't be crawled, not a blanket AI opt-out.
 - [ ] Who drafts the FAQ questions/answers and the `llms.txt` summary — product owners or can this plan propose a first draft from existing landing copy for review?
 
 ## Risks & Mitigation
@@ -110,7 +110,7 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 - [ ] Font weight reduction
 - [ ] CTA event tracking
 - [ ] `llms.txt` (bilingual summary)
-- [ ] `robots.txt` AI-crawler policy decided and written
+- [ ] `robots.txt` written: allow all public content, `Disallow: /app` and `/app/*` only
 - [ ] FAQ section with bilingual, self-contained Q&A copy
 - [ ] `pnpm test && pnpm lint && pnpm build` green
 - [ ] Docs updated (`ROADMAP-R-v1` marked superseded for Part 1)
