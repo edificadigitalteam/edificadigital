@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
-import { Analytics } from '@vercel/analytics/react'
+import { Analytics, track } from '@vercel/analytics/react'
 import { buildPublicContactUrl } from '../../contact.js'
 import './product-landing.css'
 
 const copy = {
   es: {
-    metaTitle: 'Edifica | Software para iglesias y organizaciones cristianas',
-    metaDescription: 'Edifica reúne gestión de donaciones, administración eclesial y productos digitales en una plataforma modular para iglesias y organizaciones cristianas.',
-    nav: { modules: 'Módulos', ecosystem: 'Ecosistema', resources: 'Recursos', plans: 'Planes', contact: 'Solicitar presentación', login: 'Iniciar sesión' },
+    metaTitle: 'Edifica Digital | Software para iglesias',
+    metaDescription: 'Edifica es un software modular para iglesias y organizaciones cristianas, con donaciones trazables, administración eclesial y productos digitales en una sola plataforma.',
+    nav: {
+      modules: 'Módulos', ecosystem: 'Ecosistema', resources: 'Recursos', plans: 'Planes', faq: 'FAQ', contact: 'Solicitar presentación', login: 'Iniciar sesión',
+      skip: 'Saltar al contenido principal', openMenu: 'Abrir menú', closeMenu: 'Cerrar menú', switchLanguage: 'Switch to English',
+    },
     hero: {
       kicker: 'SOFTWARE MODULAR PARA ORGANIZACIONES CRISTIANAS',
       title: 'Administra, sirve y crece desde una sola plataforma.',
@@ -88,6 +91,20 @@ const copy = {
       ],
       cta: 'Solicitar propuesta',
     },
+    faq: {
+      kicker: 'PREGUNTAS FRECUENTES',
+      title: 'Lo que más preguntan sobre Edifica.',
+      items: [
+        ['¿Qué es Edifica Digital?', 'Edifica es un software modular para iglesias y organizaciones cristianas que reúne gestión de donaciones, administración eclesial y productos digitales de formación en una sola plataforma.'],
+        ['¿Para quién es Edifica?', 'Edifica está diseñado para iglesias y organizaciones cristianas que necesitan administrar donaciones, proyectos, beneficiarios y equipos de trabajo con orden e integridad, con los datos separados por organización.'],
+        ['¿Qué módulos incluye la plataforma?', 'Edifica tiene tres líneas conectadas: Donaciones y proyectos (disponible), que registra fondos y bienes, aliados, proyectos y evidencias; Iglesia (en desarrollo), para membresía, calendario y discipulado; y Productos digitales (catálogo inicial), con cursos, plantillas y recursos prácticos.'],
+        ['¿Qué hace el módulo de Donaciones y proyectos?', 'Registra donaciones monetarias y en especie, administra aliados y donantes, y da seguimiento a proyectos financiados y su ejecución.'],
+        ['¿Los datos de mi organización están separados de los de otras organizaciones?', 'Sí. Cada organización tiene su propia cuenta institucional: es propietaria de su espacio, su suscripción y sus datos, con usuarios y equipos que trabajan mediante accesos individuales y permisos definidos.'],
+        ['¿Qué planes de suscripción existen?', 'Edifica ofrece tres planes: Esencial (equipos pequeños que comienzan con un módulo principal), Organización (varios operadores y procesos activos, con módulos combinables) y Ecosistema (implementación amplia, con todos los módulos contratados y soporte prioritario).'],
+        ['¿Edifica está disponible en español e inglés?', 'Sí, la plataforma está disponible en español e inglés con un cambio de idioma persistente.'],
+        ['¿Cómo solicito una presentación de Edifica?', 'Se puede solicitar una presentación directamente desde el sitio, que conecta por WhatsApp con el equipo de Edifica.'],
+      ],
+    },
     closing: {
       kicker: 'EDIFICA',
       title: 'Una plataforma preparada para servir a quienes sirven.',
@@ -98,9 +115,12 @@ const copy = {
     footer: 'Software modular para iglesias y organizaciones cristianas.',
   },
   en: {
-    metaTitle: 'Edifica | Software for churches and Christian organizations',
-    metaDescription: 'Edifica brings donation management, church administration, and digital products together in a modular platform for churches and Christian organizations.',
-    nav: { modules: 'Modules', ecosystem: 'Ecosystem', resources: 'Resources', plans: 'Plans', contact: 'Request a presentation', login: 'Sign in' },
+    metaTitle: 'Edifica Digital | Software for churches',
+    metaDescription: 'Edifica is modular software for churches and Christian organizations, with traceable donations, church administration, and digital products in one platform.',
+    nav: {
+      modules: 'Modules', ecosystem: 'Ecosystem', resources: 'Resources', plans: 'Plans', faq: 'FAQ', contact: 'Request a presentation', login: 'Sign in',
+      skip: 'Skip to main content', openMenu: 'Open menu', closeMenu: 'Close menu', switchLanguage: 'Cambiar a español',
+    },
     hero: {
       kicker: 'MODULAR SOFTWARE FOR CHRISTIAN ORGANIZATIONS',
       title: 'Manage, serve, and grow from one platform.',
@@ -153,6 +173,20 @@ const copy = {
       ],
       cta: 'Request proposal',
     },
+    faq: {
+      kicker: 'FREQUENTLY ASKED QUESTIONS',
+      title: 'What people ask most about Edifica.',
+      items: [
+        ['What is Edifica Digital?', 'Edifica is modular software for churches and Christian organizations that brings donation management, church administration, and digital training products together in one platform.'],
+        ['Who is Edifica for?', 'Edifica is built for churches and Christian organizations that need to manage donations, projects, beneficiaries, and work teams with order and integrity, with each organization’s data kept separate.'],
+        ['What modules does the platform include?', 'Edifica has three connected lines: Donations and projects (available), which records funds and goods, partners, projects, and evidence; Church (in development), for membership, calendar, and discipleship; and Digital products (initial catalog), with courses, templates, and practical resources.'],
+        ['What does the Donations and projects module do?', 'It records monetary and in-kind donations, manages partners and donors, and tracks funded projects and their execution.'],
+        ['Is my organization’s data separate from other organizations’ data?', 'Yes. Each organization has its own institutional account: it owns its workspace, subscription, and data, with users and teams working through individual access and defined permissions.'],
+        ['What subscription plans exist?', 'Edifica offers three plans: Essential (small teams starting with one primary module), Organization (several operators and active processes, with combinable modules), and Ecosystem (broad implementation, all contracted modules, and priority support).'],
+        ['Is Edifica available in Spanish and English?', 'Yes, the platform is available in Spanish and English with a persistent language switch.'],
+        ['How do I request a presentation of Edifica?', 'A presentation can be requested directly from the site, which connects via WhatsApp with the Edifica team.'],
+      ],
+    },
     closing: {
       kicker: 'EDIFICA', title: 'A platform built to serve those who serve.',
       text: 'Explore the modular architecture, define your organization’s priority processes, and build an implementation plan.',
@@ -188,32 +222,35 @@ export default function ProductLandingPage() {
   }, [language, text])
 
   const close = () => setMenuOpen(false)
+  const trackCta = (name, props) => track(name, { language, ...props })
 
   return (
     <div className="product-site">
+      <a href="#main-content" className="skip-link">{text.nav.skip}</a>
       <header className="product-header">
         <Brand />
-        <button className="product-menu-button" type="button" aria-expanded={menuOpen} onClick={() => setMenuOpen((current) => !current)}><span /><span /></button>
+        <button className="product-menu-button" type="button" aria-expanded={menuOpen} aria-label={menuOpen ? text.nav.closeMenu : text.nav.openMenu} onClick={() => setMenuOpen((current) => !current)}><span /><span /></button>
         <nav className={menuOpen ? 'open' : ''}>
           <a href="#modulos" onClick={close}>{text.nav.modules}</a>
           <a href="#ecosistema" onClick={close}>{text.nav.ecosystem}</a>
           <a href="#recursos" onClick={close}>{text.nav.resources}</a>
           <a href="#planes" onClick={close}>{text.nav.plans}</a>
-          <button type="button" onClick={() => { setLanguage((current) => current === 'es' ? 'en' : 'es'); close() }}><b>{language.toUpperCase()}</b><span>/</span>{language === 'es' ? 'EN' : 'ES'}</button>
+          <a href="#faq" onClick={close}>{text.nav.faq}</a>
+          <button type="button" aria-label={text.nav.switchLanguage} onClick={() => { setLanguage((current) => current === 'es' ? 'en' : 'es'); close() }}><b>{language.toUpperCase()}</b><span>/</span>{language === 'es' ? 'EN' : 'ES'}</button>
           <a className="product-contact-link" href="#contacto" onClick={close}>{text.nav.contact}</a>
           <a className="product-login" href="/app">{text.nav.login} <Arrow /></a>
         </nav>
       </header>
 
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <section className="product-hero" id="inicio">
           <div className="product-hero-copy">
             <p className="product-kicker"><span />{text.hero.kicker}</p>
             <h1>{text.hero.title}</h1>
             <p className="product-hero-lead">{text.hero.lead}</p>
             <div className="product-hero-actions">
-              <a href="#contacto" className="product-button primary">{text.hero.primary} <Arrow /></a>
-              <a href="#modulos" className="product-text-link">{text.hero.secondary} ↓</a>
+              <a href="#contacto" className="product-button primary" onClick={() => trackCta('hero_primary_click')}>{text.hero.primary} <Arrow /></a>
+              <a href="#modulos" className="product-text-link" onClick={() => trackCta('hero_secondary_click')}>{text.hero.secondary} ↓</a>
             </div>
             <div className="product-hero-note"><strong>ED</strong><p>{text.hero.note}</p></div>
           </div>
@@ -255,10 +292,15 @@ export default function ProductLandingPage() {
 
         <section className="product-section product-plans" id="planes">
           <div className="product-section-heading compact"><p className="product-kicker"><span />{text.plans.kicker}</p><h2>{text.plans.title}</h2><p>{text.plans.intro}</p></div>
-          <div className="plan-grid">{text.plans.items.map(([name, description, features], index) => <article className={index === 1 ? 'featured' : ''} key={name}><span>0{index + 1}</span><h3>{name}</h3><p>{description}</p><ul>{features.map((feature) => <li key={feature}><Check />{feature}</li>)}</ul><a href="#contacto">{text.plans.cta} <Arrow /></a></article>)}</div>
+          <div className="plan-grid">{text.plans.items.map(([name, description, features], index) => <article className={index === 1 ? 'featured' : ''} key={name}><span>0{index + 1}</span><h3>{name}</h3><p>{description}</p><ul>{features.map((feature) => <li key={feature}><Check />{feature}</li>)}</ul><a href="#contacto" onClick={() => trackCta('plan_cta_click', { plan: name })}>{text.plans.cta} <Arrow /></a></article>)}</div>
         </section>
 
-        <section className="product-closing" id="contacto"><div><p>{text.closing.kicker}</p><h2>{text.closing.title}</h2><span>{text.closing.text}</span></div><a href={contactUrl} target="_blank" rel="noreferrer">{text.closing.cta} <Arrow /></a></section>
+        <section className="product-section product-faq" id="faq">
+          <div className="product-section-heading compact"><p className="product-kicker"><span />{text.faq.kicker}</p><h2>{text.faq.title}</h2></div>
+          <div className="faq-list">{text.faq.items.map(([question, answer]) => <details key={question}><summary>{question}<Arrow /></summary><p>{answer}</p></details>)}</div>
+        </section>
+
+        <section className="product-closing" id="contacto"><div><p>{text.closing.kicker}</p><h2>{text.closing.title}</h2><span>{text.closing.text}</span></div><a href={contactUrl} target="_blank" rel="noreferrer" onClick={() => trackCta('contact_whatsapp_click')}>{text.closing.cta} <Arrow /></a></section>
       </main>
 
       <footer className="product-footer"><Brand footer /><p>{text.footer}</p><span>© 2026 Edifica Digital</span></footer>

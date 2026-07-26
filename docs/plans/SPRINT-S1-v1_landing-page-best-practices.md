@@ -4,7 +4,7 @@
 **Status:** In Progress
 **Owner:** Isaac Delgado, Yang (yangetze)
 **Created:** 2026-07-26
-**Last Updated:** 2026-07-26 (FAQ/llms.txt draft approved as-is — all Open Questions resolved, plan ready for implementation)
+**Last Updated:** 2026-07-26 (Block 4 implemented: CTA analytics events, landing-scoped font weight trim — all plan objectives implemented, PR #30 open for review)
 
 ## Overview
 
@@ -14,15 +14,15 @@ This supersedes **Part 1 (SEO)** of `ROADMAP-R-v1_seo-and-offline-modules.md`: t
 
 ## Objectives
 
-- [ ] Fix static `<meta>` title/description in `frontend/index.html` to match real landing copy
-- [ ] Add Open Graph + Twitter Card tags and a social preview image
-- [ ] Add `robots.txt`, `sitemap.xml`, canonical `<link>` (domain: `somosedificadigital.com`), `apple-touch-icon`/`favicon.ico` fallback
-- [ ] Add JSON-LD `Organization` structured data (aligned with target keywords: "software para iglesias", "software para donaciones", "software de trazabilidad de donaciones")
-- [ ] Accessibility: skip link, `prefers-reduced-motion` support, visible `:focus-visible` states, `aria-label` on icon-only controls
-- [ ] Reduce Google Fonts payload (currently 5 weights across 2 families, external render-blocking request)
-- [ ] Track CTA clicks (hero primary/secondary, plans, closing WhatsApp link) as custom Vercel Analytics events
-- [ ] Decide SSR/prerendering timing (recommended: defer to Phase 2, see below)
-- [ ] AI/answer-engine visibility (GEO/AEO): `llms.txt`, an FAQ section with quotable answers, and an explicit `robots.txt` policy for AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot)
+- [x] Fix static `<meta>` title/description in `frontend/index.html` to match real landing copy
+- [x] Add Open Graph + Twitter Card tags and a social preview image
+- [x] Add canonical `<link>` (domain: `somosedificadigital.com`), `apple-touch-icon`/`favicon.ico` fallback — `robots.txt`/`sitemap.xml` moved to the AI/answer-engine block below (robots.txt references the sitemap, so they ship together)
+- [x] Add JSON-LD `Organization` structured data (aligned with target keywords: "software para iglesias", "software para donaciones", "software de trazabilidad de donaciones")
+- [x] Accessibility: skip link, `prefers-reduced-motion` support, visible `:focus-visible` states, `aria-label` on icon-only controls
+- [x] Reduce Google Fonts payload on the landing page — **correction to an earlier note in this plan:** `Manrope` (loaded globally in `index.html`) is not actually unused — it's the primary font for the rest of the app (`src/index.css`, dashboard, in-kind flow); the landing page just overrides it locally via `product-landing.css`'s own `@import` for `Inter`. Since `index.html`'s font `<link>` is shared by every route, trimming it is out of scope here (would risk the dashboard's typography for a landing-only plan). The safe, landing-scoped fix is trimming `product-landing.css`'s own `@import` to the weights actually used.
+- [x] Track CTA clicks (hero primary/secondary, plans, closing WhatsApp link) as custom Vercel Analytics events
+- [x] Decide SSR/prerendering timing — approved: deferred (see below)
+- [x] AI/answer-engine visibility (GEO/AEO): `llms.txt`, an FAQ section with quotable answers, `sitemap.xml`, and an explicit `robots.txt` policy for AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot)
 
 ## Findings (source of this plan)
 
@@ -30,15 +30,15 @@ Reviewed: `frontend/src/features/platform/ProductLandingPage.jsx`, `frontend/src
 
 | Area | Gap |
 |---|---|
-| SEO | `index.html` title/description don't match `ProductLandingPage.jsx` copy; both are only corrected client-side via `useEffect`. No canonical link, no `robots.txt`, no `sitemap.xml`, no JSON-LD. |
-| Social preview | No Open Graph or Twitter Card tags at all; no social image. Preview bots (WhatsApp, LinkedIn, X, iMessage) don't execute JS. |
-| Icons | Only `favicon.svg` exists; no `apple-touch-icon`, no `.ico` fallback, no web manifest. |
-| Accessibility | No skip link before the header; no `prefers-reduced-motion` rule in `product-landing.css` (0 matches); no explicit `:focus`/`:focus-visible` styling; hamburger menu button and language-toggle button have no `aria-label`. |
+| SEO | ✅ Fixed. `index.html` title/description now match `ProductLandingPage.jsx` copy (and the JS copy was updated to match, so there's no flicker on mount). Canonical link and JSON-LD `Organization` added. `robots.txt`/`sitemap.xml` still pending — moved to the AI/answer-engine block. |
+| Social preview | ✅ Fixed. Open Graph + Twitter Card tags added, with a brand-derived `og-image.png` (1200×630) rendered from the actual brand colors/mark in `product-landing.css`. |
+| Icons | ✅ Fixed. `apple-touch-icon.png` (180×180) and `favicon.ico` (PNG-in-ICO container) added, both generated from the existing `favicon.svg` mark; `index.html` now links all three (`favicon.svg`, `favicon.ico`, `apple-touch-icon.png`) — previously there was no `<link rel="icon">` at all, so the tab icon wasn't wired up. |
+| Accessibility | ✅ Fixed. Skip link added (first focusable element, jumps to `<main id="main-content">`), `@media (prefers-reduced-motion: reduce)` added (note: the stylesheet had no `transition`/`animation` at all before this, so this is future-proofing, not a fix to an existing motion problem), `:focus-visible` outline added for links/buttons, and `aria-label`s added to the hamburger menu button (previously had zero accessible name) and the language toggle. |
 | Legal | No Privacy Policy or Terms link anywhere on the landing or footer, despite the platform handling donor/beneficiary data. Confirmed: no such content exists yet — **deferred to its own plan**, out of scope here. |
-| Performance | 5 font weights across 2 families loaded from `fonts.googleapis.com`, render-blocking. |
-| Analytics | `@vercel/analytics` only tracks pageviews; no event tracking on CTAs, so landing conversion can't be measured. |
+| Performance | ✅ Fixed (landing-scoped). `product-landing.css`'s own `@import` trimmed to the weights actually used (Inter: dropped unused 500; Source Serif 4: dropped unused 600, since every heading using it renders at weight 700). The global `index.html` font `<link>` (Manrope, used by the rest of the app) is untouched — out of scope for a landing-only plan. |
+| Analytics | ✅ Fixed. `track()` from `@vercel/analytics/react` now fires on the 4 CTAs (hero primary/secondary, each plan card, the closing WhatsApp link), each tagged with the active `language`. |
 | Rendering | Pure client-rendered SPA (confirmed: `index.html` `<div id="root">` is empty, all content injected by `main.jsx`/React). Affects crawler reliability and perceived load speed — does not, by itself, block the Open Graph/meta fix above. |
-| AI/answer-engine visibility | No `llms.txt`; no FAQ or self-contained factual statements written to be quoted verbatim; `robots.txt` doesn't exist yet, so there's no explicit allow/deny policy for AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot, etc.). |
+| AI/answer-engine visibility | ✅ Fixed. `llms.txt` published with the approved bilingual summary; `robots.txt` allows all crawlers and disallows only `/app`/`/app/*`, with a `Sitemap:` pointer; `sitemap.xml` lists the public routes; an 8-question bilingual FAQ section (`#faq`, `<details>/<summary>`) was added to the landing, matched by a static `FAQPage` JSON-LD block in `index.html`. |
 
 ### SSR / prerendering — recommendation
 
@@ -100,21 +100,60 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 - Manual: `robots.txt`/`sitemap.xml` reachable at production URLs; canonical matches deployed domain
 - Confirm `document.title`/meta description still update correctly on client-side language toggle (existing behavior must not regress)
 
+### Block 1 (meta/OG/icons) — verification results, 2026-07-26
+
+- Added `frontend/index.test.js` first (Red), covering title/description, canonical, OG/Twitter tags, favicon/apple-touch-icon links, JSON-LD, and exact pixel dimensions of the new PNG assets (via raw PNG/ICO header parsing, no extra dependency). Confirmed failing before implementation.
+- `npm test` (frontend/): 8/8 new tests pass. 13 pre-existing failures remain, unrelated to this change (monetary/in-kind submission tests — confirmed pre-existing by running the same suite via `git stash -u` before these changes).
+- `npm run lint`: clean except pre-existing warnings in `portalTranslations.js` and `main.jsx` (unrelated to this change).
+- `npm run build`: succeeds; `dist/index.html` and `dist/assets/` carry the new tags and copied `public/` assets correctly.
+- `vite preview` + a headless-Chromium screenshot of the built site confirmed no visual regression on the hero/module sections.
+- `og-image.png`, `apple-touch-icon.png`, and `favicon.ico` were generated locally (not hand-drawn) from the brand mark/colors already in `product-landing.css` and `favicon.svg`, rendered via the pre-installed headless Chromium (`headless_shell` binary — note: `chrome --headless=new` reserves browser-chrome height and under-renders a fixed pixel target by ~90px, so asset generation used the dedicated `headless_shell` binary instead), then `favicon.ico` was packaged as a PNG-in-ICO container (valid per the ICO spec, no extra tooling needed).
+- Not yet verified live: real link-preview debugger against production, since the Vercel preview deploy is currently blocked by the account's daily deploy-rate limit (unrelated infra issue, reported separately).
+
+### Block 2 (accessibility) — verification results, 2026-07-26
+
+- Added `frontend/src/features/platform/ProductLandingPage.accessibility.test.js` first (Red): asserts the skip link is the first focusable element and targets `#main-content`, the hamburger and language-toggle buttons carry `aria-label`, and `product-landing.css` declares `prefers-reduced-motion` and `:focus-visible` rules. Confirmed failing before implementation (this project has no component-rendering test setup — no jsdom/testing-library anywhere in the codebase — so this follows the existing convention of source-level string/regex assertions rather than introducing new test tooling for one check).
+- Implementation: skip link (`.skip-link`, visually hidden until `:focus`, jumps to `<main id="main-content" tabIndex={-1}>`), a shared `:focus-visible` outline for links/buttons in `.product-site`, an `aria-label` on the hamburger button that changes with state (`Abrir menú`/`Cerrar menú`, `Open menu`/`Close menu`), an `aria-label` on the language toggle naming the target language (`Switch to English` / `Cambiar a español`), and a `@media (prefers-reduced-motion: reduce)` block.
+- Finding worth recording: `product-landing.css` had zero `transition`/`animation` declarations before this change — there was no existing motion to turn off. The reduced-motion rule is added as required future-proofing (per `CLAUDE.md`'s explicit interface guidance), not a fix to an active bug.
+- `pnpm test` (frontend/, corrected to the project's actual package manager — see note below): 3/3 new tests pass, 60 total tests run, same 13 pre-existing unrelated failures.
+- `pnpm lint` / `pnpm build`: clean, same pre-existing warnings as Block 1, build succeeds.
+- Not yet verified live: real Tab-key keyboard walkthrough and OS-level reduced-motion toggle in an actual browser session — verified at the source/CSS level (the `:focus`/`:focus-visible`/`prefers-reduced-motion` mechanisms used are standard, well-understood CSS, not application logic), but a real keyboard pass on the deployed preview is still recommended once the Vercel rate limit clears.
+- **Package manager correction:** this plan's Verification section and `CLAUDE.md` both specify `pnpm`. Block 1's implementation pass initially ran `npm install`/`npm test`, which generated a stray `package-lock.json` — caught before committing (this repo deliberately moved from npm to pnpm in a past PR, see `pnpm-lock.yaml`). The stray lockfile was deleted, `node_modules` reinstalled with `pnpm install`, and both blocks re-verified with `pnpm test`/`pnpm lint`/`pnpm build` before commit. No lockfile changes were committed.
+
+### Block 3 (AI/answer-engine visibility) — verification results, 2026-07-26
+
+- Added `frontend/public.test.js` and `frontend/src/features/platform/ProductLandingPage.faq.test.js` first (Red): asserts `robots.txt`'s allow/disallow/sitemap directives, `sitemap.xml`'s three `<loc>` entries, `llms.txt`'s content, the FAQ section's markup and exactly 8 bilingual Q&A entries sourced from the `copy` object, and a matching `FAQPage` JSON-LD block in `index.html`. Confirmed failing before implementation.
+- `frontend/public/robots.txt`: single `User-agent: *` block — `Allow: /`, `Disallow: /app` + `/app/*`, `Sitemap:` pointer. No AI-bot-specific rules by design (per the confirmed decision: AI crawlers get the same treatment as any other crawler, not special-cased).
+- `frontend/public/sitemap.xml`: lists `/`, `/donations/in-kind`, `/donations/monetary` under `somosedificadigital.com`. `/app` is intentionally excluded (matches `robots.txt`).
+- `frontend/public/llms.txt`: the exact bilingual draft approved earlier in this plan, published verbatim.
+- FAQ section: 8 bilingual questions (ES/EN, matching the approved draft) added to `ProductLandingPage.jsx` as `<details>/<summary>` accordions under `#faq`, with a corresponding nav link and new `.faq-list` CSS matching the existing design system (brand colors, existing spacing/radius scale). Rendered and screenshotted locally via a `pnpm build` + `vite preview` + headless-Chromium screenshot — confirmed it sits cleanly between Plans and the closing CTA with no layout regression.
+- `index.html` also gained a static `FAQPage` JSON-LD block with the same 8 question/answer pairs shown on the page (structured data must match visible content).
+- `pnpm test`: 65 total tests, 52 pass (all new ones), same 13 pre-existing unrelated failures. `pnpm lint`/`pnpm build`: clean, same pre-existing warnings, build succeeds; `dist/` carries `robots.txt`, `sitemap.xml`, and `llms.txt` correctly (Vite copies `public/` as-is).
+- Not yet verified live: real crawler behavior against `robots.txt`/`sitemap.xml`/`llms.txt` and a Google Rich Results / FAQPage validator pass — both recommended once deployed to production.
+
+### Block 4 (analytics + font cleanup) — verification results, 2026-07-26
+
+- Added `frontend/src/features/platform/ProductLandingPage.analytics.test.js` and `frontend/src/features/platform/product-landing.fonts.test.js` first (Red): asserts `track()` is imported and wired to the 4 CTAs with the expected event names/props, and that the `@import` in `product-landing.css` requests exactly the weights used. Confirmed failing before implementation.
+- Analytics: `track()` from `@vercel/analytics/react` fires on hero primary/secondary, each plan card's CTA (tagged with `{ plan: name }`), and the closing WhatsApp link — all tagged with `{ language }`. Anchor navigation is untouched (fire-and-forget, no `preventDefault`).
+- Fonts: traced actual usage before cutting anything — every Source Serif 4 heading in `product-landing.css` renders at weight 700 (either explicit or via the UA default `h2`/`h3` bold), so the family only needs weight 700, not 600. Inter's used weights are 400 (body default), 700/800/900 (explicit), and 650/850 (nav/some CTAs) which the browser nearest-matches to 600/700 and 800/900 respectively — dropping the unused 500 doesn't change either match (ties are equidistant from 500 either way). Trimmed the `@import` from 6+2=8 requested font-file variants down to 5+1=6, with zero visual change (confirmed via `pnpm build` + `vite preview` + headless-Chromium screenshot comparison).
+- **Scope correction:** the plan originally suspected `Manrope` (loaded globally in `index.html`) was dead weight. That's wrong outside the landing page — `src/index.css` and most of the dashboard/in-kind CSS use `Manrope` as their primary font. `index.html`'s font `<link>` is shared by every route in this SPA, so it was left untouched; only `product-landing.css`'s own landing-scoped `@import` was trimmed. This finding was corrected in the Objectives/Findings sections above before implementing, to avoid a plan describing a fix that was never actually safe to make.
+- `pnpm test`: 67 total tests, 54 pass (all new ones), same 13 pre-existing unrelated failures. `pnpm lint`/`pnpm build`: clean, same pre-existing warnings, build succeeds.
+
 ## Checklist
 
-- [ ] Static meta/OG/canonical/icons in `index.html`
-- [ ] `robots.txt` + `sitemap.xml`
-- [ ] JSON-LD `Organization`
-- [ ] Skip link + `prefers-reduced-motion` + `:focus-visible`
-- [ ] `aria-label`s on menu/language buttons
-- [ ] Font weight reduction
-- [ ] CTA event tracking
-- [ ] `llms.txt` (bilingual summary)
-- [ ] `robots.txt` written: allow all public content, `Disallow: /app` and `/app/*` only
-- [ ] FAQ section with bilingual, self-contained Q&A copy
-- [ ] `pnpm test && pnpm lint && pnpm build` green
-- [ ] Docs updated (`ROADMAP-R-v1` marked superseded for Part 1)
-- [ ] PR opened with before/after screenshots
+- [x] Static meta/OG/canonical/icons in `index.html`
+- [x] `robots.txt` + `sitemap.xml`
+- [x] JSON-LD `Organization`
+- [x] Skip link + `prefers-reduced-motion` + `:focus-visible`
+- [x] `aria-label`s on menu/language buttons
+- [x] Font weight reduction (landing-scoped)
+- [x] CTA event tracking
+- [x] `llms.txt` (bilingual summary)
+- [x] `robots.txt` written: allow all public content, `Disallow: /app` and `/app/*` only
+- [x] FAQ section with bilingual, self-contained Q&A copy
+- [x] `pnpm test && pnpm lint && pnpm build` green
+- [x] Docs updated (`ROADMAP-R-v1` marked superseded for Part 1)
+- [ ] PR opened with before/after screenshots — draft PR open (#30); a live-preview screenshot/link-preview pass is still recommended once reviewed
 
 ## Draft Content: FAQ and `llms.txt` (pending product-owner review)
 

@@ -1,0 +1,17 @@
+# Edifica Digital
+
+> Software modular para iglesias y organizaciones cristianas: donaciones, administración eclesial y productos digitales en una plataforma con datos separados por organización.
+> Modular software for churches and Christian organizations: donations, church administration, and digital products in one platform with data kept separate per organization.
+
+## Módulos / Modules
+- Donaciones y proyectos / Donations and projects (Disponible / Available): fondos y bienes, aliados, proyectos financiados, evidencias / funds and goods, partners, funded projects, evidence.
+- Iglesia / Church (En desarrollo / In development): membresía, calendario, discipulado, educación cristiana / membership, calendar, discipleship, Christian education.
+- Productos digitales / Digital products (Catálogo inicial / Initial catalog): cursos, plantillas, bibliotecas descargables / courses, templates, downloadable libraries.
+
+## Planes / Plans
+- Esencial / Essential: equipos pequeños, un módulo principal / small teams, one primary module.
+- Organización / Organization: múltiples usuarios, módulos combinables / multiple users, combinable modules.
+- Ecosistema / Ecosystem: todos los módulos contratados, soporte prioritario / all contracted modules, priority support.
+
+## Contacto / Contact
+- Solicitar presentación vía WhatsApp desde el sitio / Request a presentation via WhatsApp from the site: https://somosedificadigital.com/#contacto
