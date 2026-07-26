@@ -20,6 +20,15 @@ Lightweight backlog for future work that does not yet have a plan in `docs/plans
   - DMARC was missing entirely. Added `_dmarc.somosedificadigital.com` as `v=DMARC1; p=none; rua=mailto:contacto@somosedificadigital.com; pct=100` (monitor mode) in Cloudflare DNS.
   - Remaining: re-send a magic link after DNS propagation and confirm inbox placement (not spam). If it still lands in spam, next lever is customizing the default Supabase magic-link email template (`Authentication > Emails > Templates`), since the stock template is generic.
 
+## Reported by product owner (2026-07-26)
+
+- [ ] Mejorar la entrega de informes impresos (revisar formato, maquetación y flujo de exportación/impresión de los reportes actuales).
+- [ ] Al crear un tenant, la persona cuyo correo se registra debe crearse automáticamente como administrador de ese tenant.
+- [ ] Mejorar el proceso para crear aliados (suppliers/actores) y unificar la experiencia en todos los sitios donde se pueda buscar y/o crear un aliado, de forma simple y consistente.
+- [ ] Revisar la etiqueta del estimado de donantes (verificar redacción/precisión de la etiqueta mostrada en la interfaz).
+- [ ] Ajustar la parte visual del resumen: actualmente se ve muy amontonado; revisar espaciado y jerarquía visual.
+- [ ] Evaluar una funcionalidad de calendario de disponibilidad para voluntarios.
+
 ## Product strategy: modular ecosystem
 
 - [ ] Evaluate restructuring Edifica Digital as a suite of independently sellable, integrated modules/systems rather than a single donation-traceability product.
