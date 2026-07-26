@@ -17,6 +17,7 @@ const emptyForm = {
   objective: '',
   expected_results: '',
   reporting_requirements: '',
+  beneficiary_detail_enabled: false,
   notes: '',
 }
 
@@ -87,7 +88,7 @@ export default function ProjectsPanel({ access }) {
 
     const { data, error: projectError } = await supabase
       .from('project')
-      .select('id, organization_id, code, name, funding_partner, status, start_date, end_date, approved_budget, currency, objective, expected_results, reporting_requirements, notes, created_at, updated_at, organization:organization(name)')
+      .select('id, organization_id, code, name, funding_partner, status, start_date, end_date, approved_budget, currency, objective, expected_results, reporting_requirements, beneficiary_detail_enabled, notes, created_at, updated_at, organization:organization(name)')
       .order('created_at', { ascending: false })
 
     if (projectError) {
@@ -135,6 +136,7 @@ export default function ProjectsPanel({ access }) {
       objective: project.objective,
       expected_results: project.expected_results ?? '',
       reporting_requirements: project.reporting_requirements ?? '',
+      beneficiary_detail_enabled: Boolean(project.beneficiary_detail_enabled),
       notes: project.notes ?? '',
     })
     setFormOpen(true)
@@ -168,6 +170,7 @@ export default function ProjectsPanel({ access }) {
       objective: form.objective.trim(),
       expected_results: form.expected_results.trim() || null,
       reporting_requirements: form.reporting_requirements.trim() || null,
+      beneficiary_detail_enabled: Boolean(form.beneficiary_detail_enabled),
       notes: form.notes.trim() || null,
       created_by: access.userId,
       updated_by: access.userId,
@@ -195,7 +198,7 @@ export default function ProjectsPanel({ access }) {
         <div>
           <p className="edifica-kicker">CUMPLIMIENTO Y TRAZABILIDAD</p>
           <h1>Proyectos financiados</h1>
-          <p className="operations-intro">Administra la cartera de proyectos, sus financiadores, presupuesto, objetivos y exigencias de cumplimiento desde una vista institucional.</p>
+          <p className="operations-intro">Administra la cartera de proyectos, sus aliados o donantes, presupuesto, objetivos y exigencias de cumplimiento desde una vista institucional.</p>
         </div>
         <div className="project-header-actions">
           <div className="operations-summary"><strong>{activeCount}</strong><span>proyectos activos</span></div>
@@ -210,14 +213,14 @@ export default function ProjectsPanel({ access }) {
       {formOpen && canManage && (
         <section className="project-form-portal">
           <div className="project-form-breadcrumb"><button type="button" onClick={reset}>Proyectos</button><span>/</span><strong>{form.id ? 'Editar' : 'Crear'}</strong></div>
-          <form onSubmit={save}>
+          <form onSubmit={save} key={form.id || 'new-project'}>
             <section className="project-form-section">
-              <header><div><span>01</span><h2>Identificación del proyecto</h2></div><p>Datos de la organización responsable y del aliado financiador.</p></header>
+              <header><div><span>01</span><h2>Identificación del proyecto</h2></div><p>Datos de la organización responsable y del aliado o donante que financia.</p></header>
               <div className="project-form-grid">
                 <label><span>Organización usuaria</span><select value={form.organization_id} onChange={(event) => setForm((current) => ({ ...current, organization_id: event.target.value }))} disabled={access.role !== 'super_admin'} required><option value="">Seleccionar</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>
                 <label><span>Código del proyecto</span><input value={form.code} onChange={(event) => setForm((current) => ({ ...current, code: event.target.value }))} placeholder="AGUA-2026-01" required /></label>
                 <label className="wide"><span>Nombre del proyecto</span><input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Proyecto de agua y salud" required /></label>
-                <label className="wide"><span>Aliado u organización financiadora</span><input value={form.funding_partner} onChange={(event) => setForm((current) => ({ ...current, funding_partner: event.target.value }))} placeholder="Nombre de la organización internacional" required /></label>
+                <label className="wide"><span>Aliado o donante financiador</span><input value={form.funding_partner} onChange={(event) => setForm((current) => ({ ...current, funding_partner: event.target.value }))} placeholder="Nombre de la organización o persona que financia" required /></label>
               </div>
             </section>
 
@@ -233,11 +236,13 @@ export default function ProjectsPanel({ access }) {
             </section>
 
             <section className="project-form-section">
-              <header><div><span>03</span><h2>Compromisos de cumplimiento</h2></div><p>Base narrativa para cotejar lo aprobado frente a la ejecución final.</p></header>
+              <header><div><span>03</span><h2>Compromisos de cumplimiento</h2></div><p>Base narrativa y nivel de detalle requerido para cotejar lo aprobado frente a la ejecución final.</p></header>
               <div className="project-form-grid">
                 <label className="wide"><span>Objetivo</span><textarea value={form.objective} onChange={(event) => setForm((current) => ({ ...current, objective: event.target.value }))} required /></label>
                 <label className="wide"><span>Resultados esperados</span><textarea value={form.expected_results} onChange={(event) => setForm((current) => ({ ...current, expected_results: event.target.value }))} placeholder="Metas cuantitativas, productos y personas previstas" /></label>
                 <label className="wide"><span>Exigencias de reporte</span><textarea value={form.reporting_requirements} onChange={(event) => setForm((current) => ({ ...current, reporting_requirements: event.target.value }))} placeholder="Frecuencia, formatos, indicadores, facturas y evidencias requeridas" /></label>
+                <label className="operations-checkbox wide"><input type="checkbox" checked={form.beneficiary_detail_enabled} onChange={(event) => setForm((current) => ({ ...current, beneficiary_detail_enabled: event.target.checked }))} /><span>Este proyecto requiere registrar individualmente a las personas beneficiadas.</span></label>
+                <p className="operations-empty-note wide">Activa esta opción únicamente cuando el aliado o donante solicite datos nominales. Los demás proyectos conservarán cifras agregadas.</p>
                 <label className="wide"><span>Observaciones</span><textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} /></label>
               </div>
             </section>
@@ -252,7 +257,7 @@ export default function ProjectsPanel({ access }) {
       {!formOpen && error && <p className="operations-feedback error">{error}</p>}
 
       <section className="project-filter-bar operations-card">
-        <label className="project-search"><span className="sr-only">Buscar proyecto</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por código, proyecto, organización o financiador" /></label>
+        <label className="project-search"><span className="sr-only">Buscar proyecto</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por código, proyecto, organización o aliado/donante" /></label>
         <label><span className="sr-only">Estado</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">Todos los estados</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
         {access.role === 'super_admin' && <label><span className="sr-only">Organización</span><select value={organizationFilter} onChange={(event) => setOrganizationFilter(event.target.value)}><option value="all">Todas las organizaciones</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
         <button type="button" onClick={() => { setSearch(''); setStatusFilter('all'); setOrganizationFilter('all') }}>Limpiar</button>
@@ -263,10 +268,10 @@ export default function ProjectsPanel({ access }) {
         {loading ? <p className="edifica-empty">Cargando proyectos…</p> : filteredProjects.length === 0 ? <p className="edifica-empty">No existen proyectos que coincidan con los filtros.</p> : (
           <div className="edifica-table-wrap">
             <table className="project-portal-table">
-              <thead><tr><th>Proyecto</th><th>Organización / financiador</th><th>Vigencia</th><th>Presupuesto</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <thead><tr><th>Proyecto</th><th>Organización / aliado o donante</th><th>Vigencia</th><th>Presupuesto</th><th>Estado</th><th>Acciones</th></tr></thead>
               <tbody>{filteredProjects.map((project) => (
                 <tr key={project.id}>
-                  <td><strong>{project.name}</strong><span>{project.code}</span></td>
+                  <td><strong>{project.name}</strong><span>{project.code}{project.beneficiary_detail_enabled ? ' · Registro nominal' : ''}</span></td>
                   <td><strong>{project.organization?.name ?? 'Organización'}</strong><span>{project.funding_partner}</span></td>
                   <td><span>{formatDate(project.start_date)}</span><small>hasta {formatDate(project.end_date)}</small></td>
                   <td className="project-budget">{formatMoney(project.approved_budget, project.currency)}</td>
