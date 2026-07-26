@@ -4,7 +4,7 @@
 **Status:** Draft
 **Owner:** Isaac Delgado, Yang (yangetze)
 **Created:** 2026-07-26
-**Last Updated:** 2026-07-26 (added AI/answer-engine visibility scope)
+**Last Updated:** 2026-07-26 (added AI/answer-engine visibility scope; resolved OG-image and Privacy/Terms open questions)
 
 ## Overview
 
@@ -19,7 +19,6 @@ This supersedes **Part 1 (SEO)** of `ROADMAP-R-v1_seo-and-offline-modules.md`: t
 - [ ] Add `robots.txt`, `sitemap.xml`, canonical `<link>`, `apple-touch-icon`/`favicon.ico` fallback
 - [ ] Add JSON-LD `Organization` structured data
 - [ ] Accessibility: skip link, `prefers-reduced-motion` support, visible `:focus-visible` states, `aria-label` on icon-only controls
-- [ ] Add a Privacy Policy / Terms link in the footer (content dependency — see Open Questions)
 - [ ] Reduce Google Fonts payload (currently 5 weights across 2 families, external render-blocking request)
 - [ ] Track CTA clicks (hero primary/secondary, plans, closing WhatsApp link) as custom Vercel Analytics events
 - [ ] Decide SSR/prerendering timing (recommended: defer to Phase 2, see below)
@@ -35,7 +34,7 @@ Reviewed: `frontend/src/features/platform/ProductLandingPage.jsx`, `frontend/src
 | Social preview | No Open Graph or Twitter Card tags at all; no social image. Preview bots (WhatsApp, LinkedIn, X, iMessage) don't execute JS. |
 | Icons | Only `favicon.svg` exists; no `apple-touch-icon`, no `.ico` fallback, no web manifest. |
 | Accessibility | No skip link before the header; no `prefers-reduced-motion` rule in `product-landing.css` (0 matches); no explicit `:focus`/`:focus-visible` styling; hamburger menu button and language-toggle button have no `aria-label`. |
-| Legal | No Privacy Policy or Terms link anywhere on the landing or footer, despite the platform handling donor/beneficiary data. |
+| Legal | No Privacy Policy or Terms link anywhere on the landing or footer, despite the platform handling donor/beneficiary data. Confirmed: no such content exists yet — **deferred to its own plan**, out of scope here. |
 | Performance | 5 font weights across 2 families loaded from `fonts.googleapis.com`, render-blocking. |
 | Analytics | `@vercel/analytics` only tracks pageviews; no event tracking on CTAs, so landing conversion can't be measured. |
 | Rendering | Pure client-rendered SPA (confirmed: `index.html` `<div id="root">` is empty, all content injected by `main.jsx`/React). Affects crawler reliability and perceived load speed — does not, by itself, block the Open Graph/meta fix above. |
@@ -65,12 +64,11 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 - `frontend/index.html` — static meta, Open Graph/Twitter Card, canonical, icons, JSON-LD
 - `frontend/public/robots.txt` (new)
 - `frontend/public/sitemap.xml` (new)
-- `frontend/public/og-image.png` or `.jpg` (new — needs design input, see Open Questions)
+- `frontend/public/og-image.png` or `.jpg` (new — designed from existing brand marks/colors in `product-landing.css`)
 - `frontend/public/apple-touch-icon.png`, `favicon.ico` (new)
-- `frontend/src/features/platform/ProductLandingPage.jsx` — skip link, `aria-label`s, footer legal link, CTA event tracking
+- `frontend/src/features/platform/ProductLandingPage.jsx` — skip link, `aria-label`s, CTA event tracking
 - `frontend/src/features/platform/product-landing.css` — `prefers-reduced-motion`, `:focus-visible` states, skip-link styling
 - `frontend/index.html` — font `<link>` weight reduction
-- New privacy/terms route or static page (content pending product-owner input)
 - `frontend/public/llms.txt` (new) — bilingual plain-text/Markdown summary of Edifica for AI assistants
 - `frontend/public/robots.txt` — explicit allow/deny rules for AI crawlers (`GPTBot`, `ClaudeBot`, `PerplexityBot`, `Google-Extended`, `CCBot`), not just traditional search engines
 - `frontend/src/features/platform/ProductLandingPage.jsx` — FAQ section with self-contained, quotable Q&A copy (bilingual)
@@ -78,8 +76,8 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 ## Open Questions (need a decision before implementing)
 
 - [x] Meta description copy — confirmed: `Edifica Digital | Software para iglesias`
-- [ ] Who provides the Open Graph social preview image (1200×630), or should one be designed from the existing brand marks in the CSS?
-- [ ] Does a Privacy Policy / Terms page already exist anywhere (legal, another doc), or does this plan need to draft one? Content ownership stays with product owners per `AGENTS.md`.
+- [x] Open Graph social preview image — confirmed: design it from the existing brand marks/colors already in `product-landing.css` (brand mark, purple/orange/yellow tones), no external asset needed
+- [x] Privacy Policy / Terms — confirmed: does not exist yet. Deferred out of this plan entirely (see "Deferred" below); the footer legal link ships once that separate plan produces real content
 - [ ] Confirm canonical production domain for the `<link rel="canonical">` and `sitemap.xml`: `somosedificadigital.com`?
 - [ ] Any target keywords or reference sites to align meta copy/JSON-LD with?
 - [ ] Approve deferring SSR/prerendering to Phase 2 (recommended above)?
@@ -91,8 +89,7 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 | Risk | Mitigation |
 |---|---|
 | Font-weight reduction changes visual weight in headings/buttons | Verify against current design system visually before/after; keep at least the weights actually used in `product-landing.css` |
-| Privacy/Terms page content doesn't exist yet, blocking the footer link | Ship footer link once content is provided; do not fabricate legal text — flag as a dependency, not a blocker for the rest of this plan |
-| Social preview image missing at ship time | Land Open Graph markup with a placeholder-free fallback (site logo) until final artwork is ready, swap later without a code change if stored as a static asset |
+| A brand-derived OG image reads as an afterthought rather than deliberate art | Use the actual brand mark, palette, and kicker typography already defined in `product-landing.css` rather than a generic template, so it's visually consistent with the site |
 
 ## Verification
 
@@ -110,7 +107,6 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 - [ ] JSON-LD `Organization`
 - [ ] Skip link + `prefers-reduced-motion` + `:focus-visible`
 - [ ] `aria-label`s on menu/language buttons
-- [ ] Footer legal link (pending content)
 - [ ] Font weight reduction
 - [ ] CTA event tracking
 - [ ] `llms.txt` (bilingual summary)
@@ -120,6 +116,10 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 - [ ] Docs updated (`ROADMAP-R-v1` marked superseded for Part 1)
 - [ ] PR opened with before/after screenshots
 
+## Deferred (out of scope for this plan)
+
+- **Privacy Policy / Terms of Service.** Confirmed with product owners: no such content exists yet. Drafting and publishing legal pages, plus the footer link to them, is its own plan — do not block this plan on it, and do not add a footer link pointing to a page that doesn't exist yet.
+
 ## Next
 
-Once product owners answer the Open Questions above (image, legal content, domain), implementation proceeds in the order: static meta/OG/icons → accessibility → analytics events → font cleanup → legal link (as soon as content lands). SSR/prerendering stays out of scope unless explicitly requested later.
+Open Questions remaining before implementation: canonical domain, target keywords/reference sites, SSR/prerendering deferral approval, AI-crawler `robots.txt` policy, and who drafts the FAQ/`llms.txt` copy. Once answered, implementation proceeds in the order: static meta/OG/icons (brand-derived social image) → accessibility → AI/answer-engine visibility (`llms.txt`, FAQ, `robots.txt`) → analytics events → font cleanup. A separate plan will cover Privacy Policy / Terms when that content is ready.
