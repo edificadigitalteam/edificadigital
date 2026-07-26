@@ -25,6 +25,7 @@ function formatDate(value) {
 export default function OperatorAdminPanel({ access }) {
   const [operators, setOperators] = useState([])
   const [organizations, setOrganizations] = useState([])
+  const [billingOverview, setBillingOverview] = useState(null)
   const [form, setForm] = useState({ ...emptyForm, organization_id: access.organizationId || '' })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -38,31 +39,38 @@ export default function OperatorAdminPanel({ access }) {
     if (!supabase) return
     setLoading(true)
     setError('')
-
     const operatorRequest = supabase.rpc('admin_list_operator_access')
     const organizationRequest = isSuperAdmin
       ? supabase.rpc('admin_list_organizations')
       : Promise.resolve({ data: access.organizationId ? [{ id: access.organizationId, name: access.organizationName || 'Mi organización' }] : [], error: null })
-
     const [{ data, error: requestError }, { data: organizationData, error: organizationError }] = await Promise.all([operatorRequest, organizationRequest])
-
     if (requestError || organizationError) {
       setOperators([])
       setError(requestError?.message ?? organizationError?.message ?? 'No fue posible cargar los accesos.')
     } else {
       setOperators(data ?? [])
       setOrganizations(organizationData ?? [])
-      setForm((current) => ({
-        ...current,
-        organization_id: current.organization_id || access.organizationId || organizationData?.[0]?.id || '',
-      }))
+      setForm((current) => ({ ...current, organization_id: current.organization_id || access.organizationId || organizationData?.[0]?.id || '' }))
     }
     setLoading(false)
   }, [access.organizationId, access.organizationName, isSuperAdmin])
 
-  useEffect(() => {
-    loadOperators()
-  }, [loadOperators])
+  const loadBilling = useCallback(async (organizationId) => {
+    if (!supabase || !organizationId) {
+      setBillingOverview(null)
+      return
+    }
+    const { data, error: requestError } = await supabase.rpc('organization_billing_overview', {
+      target_organization_id: organizationId,
+    })
+    if (requestError) {
+      setBillingOverview(null)
+      setError((current) => current || requestError.message)
+    } else setBillingOverview(data ?? null)
+  }, [])
+
+  useEffect(() => { loadOperators() }, [loadOperators])
+  useEffect(() => { loadBilling(form.organization_id) }, [form.organization_id, loadBilling])
 
   const resetForm = () => {
     setForm({ ...emptyForm, organization_id: access.organizationId || organizations[0]?.id || '' })
@@ -88,7 +96,6 @@ export default function OperatorAdminPanel({ access }) {
   const saveOperator = async (event) => {
     event.preventDefault()
     if (!supabase || saving) return
-
     setSaving(true)
     setError('')
     setMessage('')
@@ -102,13 +109,13 @@ export default function OperatorAdminPanel({ access }) {
         active: form.active,
       },
     })
-
     if (requestError) {
       setError(requestError.message)
     } else {
       setMessage(form.id ? 'Acceso actualizado correctamente.' : 'Persona habilitada correctamente.')
       resetForm()
       await loadOperators()
+      await loadBilling(form.organization_id)
     }
     setSaving(false)
   }
@@ -118,7 +125,6 @@ export default function OperatorAdminPanel({ access }) {
     setSaving(true)
     setError('')
     setMessage('')
-
     const { error: requestError } = await supabase.rpc('admin_save_operator_access', {
       payload: {
         id: operator.id,
@@ -129,42 +135,42 @@ export default function OperatorAdminPanel({ access }) {
         active: !operator.active,
       },
     })
-
-    if (requestError) {
-      setError(requestError.message)
-    } else {
+    if (requestError) setError(requestError.message)
+    else {
       setMessage(operator.active ? 'Acceso suspendido.' : 'Acceso reactivado.')
       await loadOperators()
+      await loadBilling(operator.organization_id)
     }
     setSaving(false)
   }
 
+  const seatLimitReached = Boolean(billingOverview?.seat_limit && billingOverview.active_users >= billingOverview.seat_limit && !form.id)
+
   return (
     <div className="edifica-admin-page">
       <header className="edifica-dashboard-header">
-        <div>
-          <p className="edifica-kicker">ADMINISTRACIÓN</p>
-          <h1>Personas habilitadas</h1>
-          <p className="edifica-admin-intro">Agrega usuarios, asígnalos a una organización y administra su nivel de acceso dentro de Edifica.</p>
-        </div>
+        <div><p className="edifica-kicker">ADMINISTRACIÓN</p><h1>Personas habilitadas</h1><p className="edifica-admin-intro">Cada persona utiliza un acceso individual dentro de la organización y ocupa uno de los cupos de su plan.</p></div>
         <div className="edifica-admin-summary"><strong>{activeCount}</strong><span>accesos activos</span></div>
       </header>
 
-      <section className="edifica-admin-form-card">
-        <div className="edifica-admin-card-heading">
-          <div><p className="edifica-kicker">{form.id ? 'EDITAR ACCESO' : 'NUEVO ACCESO'}</p><h2>{form.id ? 'Actualizar persona' : 'Habilitar una persona'}</h2></div>
-          {form.id && <button type="button" onClick={resetForm}>Cancelar edición</button>}
-        </div>
+      {billingOverview?.organization_id && (
+        <section className={`operator-seat-card ${seatLimitReached ? 'limit' : ''}`}>
+          <div><p className="edifica-kicker">CUPO DEL PLAN</p><h2>{billingOverview.organization_name}</h2><span>{billingOverview.plan_name_es || 'Plan personalizado'} · {billingOverview.status}</span></div>
+          <div className="operator-seat-count"><strong>{billingOverview.active_users} / {billingOverview.seat_limit}</strong><span>{billingOverview.available_seats} cupos disponibles</span></div>
+          <a href="/app/admin/billing">Ver plan y facturación</a>
+        </section>
+      )}
 
+      <section className="edifica-admin-form-card">
+        <div className="edifica-admin-card-heading"><div><p className="edifica-kicker">{form.id ? 'EDITAR ACCESO' : 'NUEVO ACCESO'}</p><h2>{form.id ? 'Actualizar persona' : 'Habilitar una persona'}</h2></div>{form.id && <button type="button" onClick={resetForm}>Cancelar edición</button>}</div>
         <form className="edifica-admin-form" onSubmit={saveOperator}>
           <label><span>Nombre</span><input type="text" value={form.display_name} onChange={(event) => setForm((current) => ({ ...current, display_name: event.target.value }))} placeholder="Nombre y apellido" required /></label>
           <label><span>Correo electrónico</span><input type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} placeholder="persona@organizacion.org" required /></label>
           <label><span>Organización</span><select value={form.organization_id} onChange={(event) => setForm((current) => ({ ...current, organization_id: event.target.value }))} disabled={!isSuperAdmin}><option value="">Sin asignar</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>
           <label><span>Rol</span><select value={form.role} onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))} disabled={!isSuperAdmin}><option value="operator">Operador</option>{isSuperAdmin && <option value="admin">Administrador</option>}{isSuperAdmin && <option value="super_admin">Superadministrador</option>}</select></label>
           <label className="edifica-admin-checkbox"><input type="checkbox" checked={form.active} onChange={(event) => setForm((current) => ({ ...current, active: event.target.checked }))} /><span>Acceso activo</span></label>
-          <button className="edifica-primary-button" type="submit" disabled={saving}>{saving ? 'Guardando…' : form.id ? 'Guardar cambios' : 'Habilitar persona'}</button>
+          <button className="edifica-primary-button" type="submit" disabled={saving || seatLimitReached}>{saving ? 'Guardando…' : seatLimitReached ? 'Cupo de usuarios completo' : form.id ? 'Guardar cambios' : 'Habilitar persona'}</button>
         </form>
-
         {message && <p className="edifica-admin-feedback success">{message}</p>}
         {error && <p className="edifica-admin-feedback error">{error}</p>}
       </section>
