@@ -9,16 +9,6 @@ import { installGlobalErrorLogging } from './lib/logger.js'
 
 installGlobalErrorLogging()
 
-if (!window.__edificaStableAttributesInstalled) {
-  const nativeSetAttribute = Element.prototype.setAttribute
-  Element.prototype.setAttribute = function setStableAttribute(name, value) {
-    const normalizedValue = String(value)
-    if (this.getAttribute(name) === normalizedValue) return undefined
-    return nativeSetAttribute.call(this, name, normalizedValue)
-  }
-  window.__edificaStableAttributesInstalled = true
-}
-
 const isDashboard = window.location.pathname === '/app' || window.location.pathname.startsWith('/app/')
 const isOperationalForm = window.location.pathname.startsWith('/donations/')
 
