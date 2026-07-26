@@ -35,6 +35,10 @@ The connected Supabase project is `edifydb` (`rrqyihsjftlloizsccvi`). Database i
 - Mail is hosted on Zoho Mail (`mx.zoho.com`, `mx2.zoho.com`, `mx3.zoho.com`), with SPF, DKIM, and DMARC (`p=none`, monitor mode) published for the domain.
 - Supabase Auth sends transactional email (magic links) through Zoho's SMTP relay via custom SMTP (`Authentication > Emails > SMTP Settings`), using `contacto@somosedificadigital.com` as the sender. This replaces Supabase's rate-limited built-in relay (2 emails/hour) with Zoho's higher send limit.
 
+### SEO and AI discoverability
+
+The public surface (`/`, `/donations/*`) is client-rendered with no server-side rendering, so every public route ships a static metadata baseline in `index.html` (title, description, canonical to `somosedificadigital.com`, Open Graph/Twitter Card, JSON-LD) rather than relying only on the client-side language toggle. `robots.txt` allows all crawlers — including AI-answer-engine crawlers — on public content and disallows only `/app`; `public/llms.txt` maintains a bilingual product summary for AI assistants. Full decision record and rationale: `docs/adr/ADR-005-seo-and-ai-discoverability.md`.
+
 ## Operational flow
 
 ### Receive
@@ -135,9 +139,9 @@ docs/specs/               Executable behavior descriptions
 6. Open a pull request for human review.
 7. Merge to `main` to publish both production domains.
 
-See `docs/adr/ADR-001-manual-production-promotion.md` for the production-domain history, `docs/adr/ADR-003-in-kind-shipment-inventory.md` for the shipment model, and `docs/adr/ADR-004-protected-beneficiary-identity.md` for the beneficiary privacy boundary.
+See `docs/adr/ADR-001-manual-production-promotion.md` for the production-domain history, `docs/adr/ADR-003-in-kind-shipment-inventory.md` for the shipment model, `docs/adr/ADR-004-protected-beneficiary-identity.md` for the beneficiary privacy boundary, and `docs/adr/ADR-005-seo-and-ai-discoverability.md` for the SEO and AI-discoverability baseline.
 
 ---
 
-**Version:** 2.1
-**Last updated:** 2026-07-19
+**Version:** 2.2
+**Last updated:** 2026-07-26
