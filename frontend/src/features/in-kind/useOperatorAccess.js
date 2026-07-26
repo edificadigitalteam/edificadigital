@@ -20,7 +20,27 @@ function getAppRedirectUrl() {
   const isLegacyLocalhost = window.location.hostname === 'localhost' && window.location.port === '3000'
   const baseUrl = configuredUrl || (isLegacyLocalhost ? demoFallbackUrl : window.location.origin)
   const normalizedBaseUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`
-  return new URL('/app', normalizedBaseUrl).toString()
+  const redirect = new URL('/app', normalizedBaseUrl)
+  redirect.searchParams.set('auth', 'callback')
+  return redirect.toString()
+}
+
+function clearCallbackUrl() {
+  if (window.location.pathname !== '/app') return
+  const params = new URLSearchParams(window.location.search)
+  const callbackKeys = ['code', 'auth', 'login', 'error', 'error_code', 'error_description', 't']
+  if (!callbackKeys.some((key) => params.has(key)) && !window.location.hash) return
+  window.history.replaceState({}, document.title, '/app')
+}
+
+function clearLocalAuthCache() {
+  try {
+    Object.keys(window.localStorage).forEach((key) => {
+      if (key.startsWith('sb-') && key.endsWith('-auth-token')) window.localStorage.removeItem(key)
+    })
+  } catch {
+    // Browser storage can be unavailable in restricted contexts.
+  }
 }
 
 async function resolveCurrentTenant() {
@@ -46,10 +66,12 @@ export function useOperatorAccess() {
       userId: session.user.id ?? '',
     }
 
-    const [profileResponse, tenant] = await Promise.all([
-      supabase.rpc('current_operator_profile'),
-      resolveCurrentTenant(),
-    ])
+    let profileResponse = await supabase.rpc('current_operator_profile')
+    if (profileResponse.error) {
+      await new Promise((resolve) => window.setTimeout(resolve, 250))
+      profileResponse = await supabase.rpc('current_operator_profile')
+    }
+    const tenant = await resolveCurrentTenant()
     const { data: profile, error: profileError } = profileResponse
 
     if (!profileError) {
@@ -77,6 +99,7 @@ export function useOperatorAccess() {
           ? 'Este acceso pertenece a una organización diferente al tenant solicitado.'
           : '',
       })
+      if (authorized && !tenantMismatch) clearCallbackUrl()
       return
     }
 
@@ -107,19 +130,46 @@ export function useOperatorAccess() {
       tenantOrganizationId: tenant?.organization_id ?? '',
       message: '',
     })
+    if (data) clearCallbackUrl()
   }, [])
 
   useEffect(() => {
     if (!supabase) return undefined
 
     let active = true
-    supabase.auth.getSession().then(({ data }) => {
-      if (active) checkAccess(data.session)
-    })
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const bootstrap = async () => {
+      setState((current) => ({ ...current, status: 'loading', message: '' }))
+      const params = new URLSearchParams(window.location.search)
+      const code = params.get('code')
+
+      if (code) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+        if (exchangeError && active) {
+          setState({ status: 'signed_out', ...emptyIdentity, message: exchangeError.message })
+          return
+        }
+      }
+
+      const { data, error } = await supabase.auth.getSession()
+      if (!active) return
+      if (error) {
+        setState({ status: 'signed_out', ...emptyIdentity, message: error.message })
+        return
+      }
+      await checkAccess(data.session)
+    }
+
+    bootstrap()
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       window.setTimeout(() => {
-        if (active) checkAccess(session)
+        if (!active) return
+        if (event === 'SIGNED_OUT') {
+          setState({ status: 'signed_out', ...emptyIdentity })
+          return
+        }
+        checkAccess(session)
       }, 0)
     })
 
@@ -148,8 +198,10 @@ export function useOperatorAccess() {
   }
 
   const signOut = async () => {
-    if (supabase) await supabase.auth.signOut()
-    setState({ status: 'signed_out', ...emptyIdentity })
+    setState({ status: 'loading', ...emptyIdentity })
+    if (supabase) await supabase.auth.signOut({ scope: 'local' })
+    clearLocalAuthCache()
+    window.location.replace(`/?signed_out=1&t=${Date.now()}`)
   }
 
   return { ...state, requestMagicLink, signOut }
