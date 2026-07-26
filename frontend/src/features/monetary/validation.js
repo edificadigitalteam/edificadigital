@@ -1,6 +1,6 @@
 const messages = {
   es: {
-    donorName: 'Escribe el nombre del donante o aliado para continuar.',
+    donorName: 'Selecciona o crea el aliado o donante para continuar.',
     receivedAt: 'Selecciona la fecha y hora de recepción.',
     paymentMethod: 'Selecciona la forma de recepción.',
     originAmount: 'Escribe un monto de origen mayor que cero.',
@@ -16,7 +16,7 @@ const messages = {
     verificationAccepted: 'Confirma la revisión de los datos y comprobantes.',
   },
   en: {
-    donorName: 'Enter the donor or partner name to continue.',
+    donorName: 'Select or create the partner or donor to continue.',
     receivedAt: 'Select the receipt date and time.',
     paymentMethod: 'Select the receipt method.',
     originAmount: 'Enter an origin amount greater than zero.',
@@ -47,6 +47,7 @@ export const createInitialMonetaryDraft = () => ({
   donationType: 'monetary',
   organizationId: '',
   projectId: '',
+  donorActorId: '',
   donorName: '',
   donorType: 'organization',
   donorEmail: '',
@@ -79,9 +80,8 @@ export function calculateUsdBaseAmount(originAmount, exchangeRateToUsd) {
 export function validateMonetaryDraft(draft, language = 'es') {
   const copy = messages[language] ?? messages.es
   const errors = {}
-  const anonymous = draft.donorType === 'anonymous' || draft.isAnonymous
 
-  if (!anonymous && !draft.donorName?.trim()) errors.donorName = copy.donorName
+  if (!draft.donorActorId || !draft.donorName?.trim()) errors.donorName = copy.donorName
   if (!draft.receivedAt) errors.receivedAt = copy.receivedAt
   if (!draft.paymentMethod) errors.paymentMethod = copy.paymentMethod
   if (!isPositive(draft.originAmount)) errors.originAmount = copy.originAmount
