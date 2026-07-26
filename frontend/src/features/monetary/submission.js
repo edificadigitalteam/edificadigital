@@ -40,6 +40,9 @@ export function buildMonetaryPayload(draft, attachments = []) {
   return {
     submission_key: draft.submissionId,
     reference_code: createMonetaryReference(draft),
+    organization_id: draft.organizationId,
+    project_id: nullable(draft.projectId),
+    donor_actor_id: draft.donorActorId,
     donor: {
       name: anonymous ? 'Donante anónimo' : draft.donorName.trim(),
       email: anonymous ? null : nullable(draft.donorEmail)?.toLowerCase() ?? null,
@@ -95,33 +98,9 @@ export async function submitMonetaryDonation({ client, draft, evidence = [] }) {
     attachments.push({ attachment_type: entry.type, storage_path: upload.data?.path ?? path, file_name: entry.file.name, notes: null })
   }
 
-  const response = await client.rpc('submit_monetary_donation', { payload: buildMonetaryPayload(draft, attachments) })
+  const response = await client.rpc('submit_monetary_donation_v2', {
+    payload: buildMonetaryPayload(draft, attachments),
+  })
   if (response.error) throw new MonetarySubmissionError('record', response.error)
-
-  const donationUpdate = await client
-    .from('donation')
-    .update({ project_id: draft.projectId || null, organization_id: draft.organizationId || null })
-    .eq('id', response.data.donation_id)
-  if (donationUpdate.error) throw new MonetarySubmissionError('record', donationUpdate.error)
-
-  const { data: donationActor, error: actorLookupError } = await client
-    .from('donation')
-    .select('actor_id')
-    .eq('id', response.data.donation_id)
-    .single()
-  if (actorLookupError) throw new MonetarySubmissionError('record', actorLookupError)
-
-  const actorUpdate = await client
-    .from('actor')
-    .update({
-      country: nullable(draft.donorCountry),
-      email: nullable(draft.donorEmail)?.toLowerCase() ?? null,
-      phone: nullable(draft.donorPhone),
-      is_organization: draft.donorType === 'organization',
-      is_anonymous: draft.donorType === 'anonymous' || draft.isAnonymous,
-    })
-    .eq('id', donationActor.actor_id)
-  if (actorUpdate.error) throw new MonetarySubmissionError('record', actorUpdate.error)
-
   return { ...response.data, evidence_count: attachments.length }
 }
