@@ -19,3 +19,23 @@ Lightweight backlog for future work that does not yet have a plan in `docs/plans
   - SPF (`v=spf1 include:zohomail.com ~all`) and DKIM (`zmail._domainkey.somosedificadigital.com`) were already published and aligned to `somosedificadigital.com`.
   - DMARC was missing entirely. Added `_dmarc.somosedificadigital.com` as `v=DMARC1; p=none; rua=mailto:contacto@somosedificadigital.com; pct=100` (monitor mode) in Cloudflare DNS.
   - Remaining: re-send a magic link after DNS propagation and confirm inbox placement (not spam). If it still lands in spam, next lever is customizing the default Supabase magic-link email template (`Authentication > Emails > Templates`), since the stock template is generic.
+
+## Product strategy: modular ecosystem
+
+- [ ] Evaluate restructuring Edifica Digital as a suite of independently sellable, integrated modules/systems rather than a single donation-traceability product.
+  - **Context.** The donation-traceability workflow (actors, donations, shipments, inventory, impact, protected beneficiaries) is itself a complete, complex system. The product opportunity is to treat it as the first module of a broader ecosystem, where each module solves one operational need for a faith-based or nonprofit organization and can be adopted, priced, and onboarded on its own, while sharing identity, actors, audit trail, bilingual UI, and design system with the rest of the suite.
+  - **Module 1 (current, in production): Donation traceability.** Actor and role management, monetary and in-kind donation intake, shipment/inventory tracking, transformations, impact reporting, and protected beneficiary registration — as documented in `docs/ARCHITECTURE.md` and `docs/DATABASE.md`.
+  - **Module 2 (proposed, next to scope): Church/congregation management software.** A distinct system oriented around the internal operation of a local church rather than donation flow, likely covering:
+    - Member and family directory (household relationships, contact info, privacy tiers analogous to the existing `private.beneficiary` boundary).
+    - Attendance and participation tracking for services, groups, and events.
+    - Ministries, small groups/cell groups, and volunteer/serving-team scheduling.
+    - Giving/tithing records, which may reuse or extend the existing monetary donation schema (`submit_monetary_donation`, receipt methods, currency handling) rather than duplicating it.
+    - Event and facility/room scheduling, calendar coordination.
+    - Communications (announcements, bilingual messaging) reusing the platform's Spanish/English pattern.
+    - Reporting for pastoral/leadership decision-making, kept separate from public donor-facing impact reports.
+  - **Cross-cutting design questions to resolve before a plan can be written** (per `AGENTS.md`/this guide's plan-first requirement):
+    - Shared vs. separate identity: does a church use one `somosedificadigital` account across modules, and how does `private` schema isolation extend to member data (likely stricter than beneficiary data, since it includes minors, families, and giving history)?
+    - Data model boundary: is "member" a new actor role, a new table set, or a fully separate schema namespace (e.g. `church.*`) to keep RLS and audits scoped per module?
+    - Packaging/pricing: are modules sold independently, bundled, or as an add-on tier on top of the donation module?
+    - Multi-tenancy: does one Supabase project serve multiple churches, and if so, what row-level tenant isolation is required beyond the current single-organization assumption?
+  - **Next step.** Do not implement until a product owner confirms scope and priority; when ready, this becomes its own plan in `docs/plans/` (schema, RLS, bilingual UI, and migration impact) following the standard plan → tests → implementation → verification → documentation order.
