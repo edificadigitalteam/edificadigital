@@ -1,7 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
 import './operations.css'
 import './compliance.css'
+
+const IMAGE_LIMIT = 10 * 1024 * 1024
+const VIDEO_LIMIT = 50 * 1024 * 1024
+const evidenceMimeTypes = new Map([
+  ['image/jpeg', 'image'],
+  ['image/png', 'image'],
+  ['image/webp', 'image'],
+  ['application/pdf', 'document'],
+  ['video/mp4', 'video'],
+  ['video/quicktime', 'video'],
+])
 
 const emptyOutput = {
   id: '',
@@ -58,12 +69,44 @@ function percentage(value, target) {
   return Math.min(999, Math.round((Number(value || 0) / safeTarget) * 100))
 }
 
+function sanitizeFileName(name) {
+  const lastDot = name.lastIndexOf('.')
+  const extension = lastDot >= 0 ? name.slice(lastDot).toLowerCase() : ''
+  const base = (lastDot >= 0 ? name.slice(0, lastDot) : name)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 70) || 'evidence'
+  return `${base}${extension.replace(/[^.a-z0-9]/g, '')}`
+}
+
+function evidenceType(file) {
+  return evidenceMimeTypes.get(file?.type) ?? null
+}
+
+function validateEvidence(file) {
+  const type = evidenceType(file)
+  if (!type) return 'Formato no permitido. Usa JPG, JPEG, PNG, WEBP, PDF, MP4 o MOV.'
+  const maximum = type === 'video' ? VIDEO_LIMIT : IMAGE_LIMIT
+  if (Number(file.size) > maximum) {
+    return type === 'video'
+      ? 'Cada video puede pesar hasta 50 MB.'
+      : 'Cada imagen o PDF puede pesar hasta 10 MB.'
+  }
+  return ''
+}
+
 export default function ProjectCompliancePanel({ access }) {
   const queryProject = new URLSearchParams(window.location.search).get('project') ?? ''
+  const evidenceInputId = useId()
   const [projects, setProjects] = useState([])
   const [selectedProjectId, setSelectedProjectId] = useState(queryProject)
   const [outputs, setOutputs] = useState([])
   const [expenses, setExpenses] = useState([])
+  const [evidences, setEvidences] = useState([])
+  const [evidenceFiles, setEvidenceFiles] = useState([])
   const [outputForm, setOutputForm] = useState(emptyOutput)
   const [expenseForm, setExpenseForm] = useState(emptyExpense)
   const [activeForm, setActiveForm] = useState('output')
@@ -76,6 +119,16 @@ export default function ProjectCompliancePanel({ access }) {
     () => projects.find((project) => project.id === selectedProjectId) ?? null,
     [projects, selectedProjectId],
   )
+
+  const evidenceByOutput = useMemo(() => {
+    const grouped = new Map()
+    evidences.forEach((evidence) => {
+      const current = grouped.get(evidence.project_output_id) ?? []
+      current.push(evidence)
+      grouped.set(evidence.project_output_id, current)
+    })
+    return grouped
+  }, [evidences])
 
   const loadProjects = useCallback(async () => {
     if (!supabase) return
@@ -106,6 +159,7 @@ export default function ProjectCompliancePanel({ access }) {
     if (!supabase || !projectId) {
       setOutputs([])
       setExpenses([])
+      setEvidences([])
       return
     }
 
@@ -126,10 +180,32 @@ export default function ProjectCompliancePanel({ access }) {
 
     if (outputResponse.error || expenseResponse.error) {
       setError(outputResponse.error?.message ?? expenseResponse.error?.message ?? 'No fue posible cargar la ejecución.')
-    } else {
-      setOutputs(outputResponse.data ?? [])
-      setExpenses(expenseResponse.data ?? [])
+      setLoading(false)
+      return
     }
+
+    const nextOutputs = outputResponse.data ?? []
+    let nextEvidences = []
+    if (nextOutputs.length) {
+      const { data: evidenceData, error: evidenceError } = await supabase
+        .from('project_output_evidence')
+        .select('id, organization_id, project_id, project_output_id, evidence_type, storage_path, file_name, mime_type, file_size_bytes, caption, created_at')
+        .in('project_output_id', nextOutputs.map((output) => output.id))
+        .order('created_at', { ascending: true })
+
+      if (evidenceError) {
+        setError(evidenceError.message)
+      } else {
+        nextEvidences = await Promise.all((evidenceData ?? []).map(async (evidence) => {
+          const { data } = await supabase.storage.from('project-evidence').createSignedUrl(evidence.storage_path, 3600)
+          return { ...evidence, signed_url: data?.signedUrl ?? '' }
+        }))
+      }
+    }
+
+    setOutputs(nextOutputs)
+    setExpenses(expenseResponse.data ?? [])
+    setEvidences(nextEvidences)
     setLoading(false)
   }, [])
 
@@ -139,6 +215,7 @@ export default function ProjectCompliancePanel({ access }) {
   const resetForms = () => {
     setOutputForm(emptyOutput)
     setExpenseForm({ ...emptyExpense, expense_date: new Date().toISOString().slice(0, 10) })
+    setEvidenceFiles([])
     setError('')
     setMessage('')
   }
@@ -156,6 +233,7 @@ export default function ProjectCompliancePanel({ access }) {
       status: output.status,
       notes: output.notes ?? '',
     })
+    setEvidenceFiles([])
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -175,9 +253,63 @@ export default function ProjectCompliancePanel({ access }) {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  const chooseEvidence = (event) => {
+    const selected = Array.from(event.target.files ?? [])
+    const invalid = selected.map((file) => ({ file, error: validateEvidence(file) })).find((entry) => entry.error)
+    if (invalid) {
+      setError(`${invalid.file.name}: ${invalid.error}`)
+      event.target.value = ''
+      return
+    }
+    setError('')
+    setEvidenceFiles((current) => [...current, ...selected])
+    event.target.value = ''
+  }
+
+  const removePendingEvidence = (index) => {
+    setEvidenceFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))
+  }
+
+  const uploadEvidence = async (outputId, files) => {
+    for (const file of files) {
+      const type = evidenceType(file)
+      const uniqueId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`
+      const path = `${selectedProject.organization_id}/${selectedProject.id}/${outputId}/${uniqueId}-${sanitizeFileName(file.name)}`
+      const upload = await supabase.storage.from('project-evidence').upload(path, file, {
+        cacheControl: '3600',
+        contentType: file.type,
+        upsert: false,
+      })
+      if (upload.error) throw upload.error
+
+      const { error: recordError } = await supabase.from('project_output_evidence').insert({
+        organization_id: selectedProject.organization_id,
+        project_id: selectedProject.id,
+        project_output_id: outputId,
+        evidence_type: type,
+        storage_path: upload.data?.path ?? path,
+        file_name: file.name,
+        mime_type: file.type,
+        file_size_bytes: file.size,
+        created_by: access.userId,
+      })
+      if (recordError) {
+        await supabase.storage.from('project-evidence').remove([upload.data?.path ?? path])
+        throw recordError
+      }
+    }
+  }
+
   const saveOutput = async (event) => {
     event.preventDefault()
     if (!supabase || !selectedProject || saving) return
+
+    const existingEvidence = outputForm.id ? (evidenceByOutput.get(outputForm.id) ?? []) : []
+    if (!evidenceFiles.length && !existingEvidence.length) {
+      setError('Cada avance o entrega debe incluir al menos una evidencia multimedia.')
+      return
+    }
+
     setSaving(true)
     setError('')
     setMessage('')
@@ -197,17 +329,20 @@ export default function ProjectCompliancePanel({ access }) {
       updated_by: access.userId,
     }
 
-    const request = outputForm.id
-      ? supabase.from('project_output').update(payload).eq('id', outputForm.id)
-      : supabase.from('project_output').insert(payload)
-    const { error: requestError } = await request
+    try {
+      const request = outputForm.id
+        ? supabase.from('project_output').update(payload).eq('id', outputForm.id).select('id').single()
+        : supabase.from('project_output').insert(payload).select('id').single()
+      const { data: savedOutput, error: requestError } = await request
+      if (requestError) throw requestError
 
-    if (requestError) {
-      setError(requestError.message)
-    } else {
-      setMessage(outputForm.id ? 'Resultado actualizado.' : 'Resultado tangible registrado.')
+      if (evidenceFiles.length) await uploadEvidence(savedOutput.id, evidenceFiles)
+      setMessage(outputForm.id ? 'Avance actualizado.' : 'Avance registrado.')
       setOutputForm(emptyOutput)
+      setEvidenceFiles([])
       await loadExecution(selectedProject.id)
+    } catch (requestError) {
+      setError(requestError?.message ?? 'No fue posible guardar el avance y sus evidencias.')
     }
     setSaving(false)
   }
@@ -273,8 +408,8 @@ export default function ProjectCompliancePanel({ access }) {
       <header className="edifica-dashboard-header compliance-header">
         <div>
           <p className="edifica-kicker">CUMPLIMIENTO DEL PROYECTO</p>
-          <h1>Resultados e informe final</h1>
-          <p className="operations-intro">Convierte cada proyecto en resultados verificables: metas, kits armados, entregas, beneficiarios, inversión y soportes para el informe al aliado financiador.</p>
+          <h1>Ejecución e informe final</h1>
+          <p className="operations-intro">Registra los avances del proyecto, las entregas, las personas beneficiadas, la inversión y los soportes requeridos por el aliado financiador.</p>
         </div>
         <button className="compliance-print" type="button" onClick={() => window.print()} disabled={!selectedProject}>Imprimir informe</button>
       </header>
@@ -297,16 +432,16 @@ export default function ProjectCompliancePanel({ access }) {
         <section className="operations-card"><p className="edifica-empty">Crea o selecciona un proyecto para registrar su ejecución.</p></section>
       ) : (
         <>
-          <section className="compliance-metrics">
+          <section className="compliance-metrics print-summary">
             <article><span>Presupuesto aprobado</span><strong>{formatMoney(selectedProject.approved_budget, selectedProject.currency)}</strong><small>{selectedProject.currency}</small></article>
             <article><span>Inversión ejecutada</span><strong>{formatMoney(investment, selectedProject.currency)}</strong><small>{budgetCompliance}% del presupuesto</small></article>
             <article><span>Cumplimiento físico</span><strong>{averageCompliance}%</strong><small>Promedio de metas entregadas</small></article>
-            <article><span>Personas beneficiadas</span><strong>{formatNumber(beneficiaries)}</strong><small>Según resultados reportados</small></article>
+            <article><span>Personas beneficiadas</span><strong>{formatNumber(beneficiaries)}</strong><small>Según avances reportados</small></article>
           </section>
 
           <section className="operations-card compliance-entry-card no-print">
             <div className="compliance-tabs">
-              <button className={activeForm === 'output' ? 'active' : ''} type="button" onClick={() => setActiveForm('output')}>Resultado tangible</button>
+              <button className={activeForm === 'output' ? 'active' : ''} type="button" onClick={() => setActiveForm('output')}>Avances y entregas</button>
               <button className={activeForm === 'expense' ? 'active' : ''} type="button" onClick={() => setActiveForm('expense')}>Inversión ejecutada</button>
             </div>
 
@@ -320,11 +455,21 @@ export default function ProjectCompliancePanel({ access }) {
                 <label><span>Cantidad entregada</span><input type="number" min="0" step="0.001" value={outputForm.delivered_quantity} onChange={(event) => setOutputForm((current) => ({ ...current, delivered_quantity: event.target.value }))} /></label>
                 <label><span>Personas beneficiadas</span><input type="number" min="0" step="1" value={outputForm.beneficiary_count} onChange={(event) => setOutputForm((current) => ({ ...current, beneficiary_count: event.target.value }))} /></label>
                 <label className="wide"><span>Observaciones y método de verificación</span><textarea value={outputForm.notes} onChange={(event) => setOutputForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Actas, listas de beneficiarios, fotografías, centros atendidos..." /></label>
-                <div className="compliance-form-actions"><button type="button" onClick={() => setOutputForm(emptyOutput)}>Limpiar</button><button className="edifica-primary-button" type="submit" disabled={saving}>{saving ? 'Guardando…' : outputForm.id ? 'Guardar cambios' : 'Registrar resultado'}</button></div>
+
+                <div className="wide compliance-evidence-field">
+                  <div><strong>Evidencias multimedia</strong><span>Agrega fotografías, PDF o videos que sustenten esta ejecución.</span></div>
+                  <input id={evidenceInputId} type="file" multiple accept=".jpg,.jpeg,.png,.webp,.pdf,.mp4,.mov,image/jpeg,image/png,image/webp,application/pdf,video/mp4,video/quicktime" onChange={chooseEvidence} />
+                  <label htmlFor={evidenceInputId}>Agregar evidencias</label>
+                  <small>Imágenes y PDF: máximo 10 MB. Videos MP4 o MOV: máximo 50 MB.</small>
+                  {outputForm.id && (evidenceByOutput.get(outputForm.id) ?? []).length > 0 && <p>{(evidenceByOutput.get(outputForm.id) ?? []).length} evidencias guardadas para este avance.</p>}
+                  {evidenceFiles.length > 0 && <div className="pending-evidence-list">{evidenceFiles.map((file, index) => <div key={`${file.name}-${index}`}><span>{file.name}</span><small>{(file.size / 1024 / 1024).toFixed(2)} MB</small><button type="button" onClick={() => removePendingEvidence(index)}>Eliminar</button></div>)}</div>}
+                </div>
+
+                <div className="compliance-form-actions"><button type="button" onClick={() => { setOutputForm(emptyOutput); setEvidenceFiles([]) }}>Limpiar</button><button className="edifica-primary-button" type="submit" disabled={saving}>{saving ? 'Guardando…' : outputForm.id ? 'Guardar cambios' : 'Registrar avance'}</button></div>
               </form>
             ) : (
               <form className="operations-form" onSubmit={saveExpense}>
-                <label><span>Fecha</span><input type="date" value={expenseForm.expense_date} onChange={(event) => setExpenseForm((current) => ({ ...current, expense_date: event.target.value }))} required /></label>
+                <label><span>Fecha de gasto</span><input type="date" value={expenseForm.expense_date} onChange={(event) => setExpenseForm((current) => ({ ...current, expense_date: event.target.value }))} required /></label>
                 <label><span>Estado</span><select value={expenseForm.status} onChange={(event) => setExpenseForm((current) => ({ ...current, status: event.target.value }))}>{Object.entries(expenseStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
                 <label><span>Proveedor</span><input value={expenseForm.supplier_name} onChange={(event) => setExpenseForm((current) => ({ ...current, supplier_name: event.target.value }))} required /></label>
                 <label><span>Categoría</span><input value={expenseForm.category} onChange={(event) => setExpenseForm((current) => ({ ...current, category: event.target.value }))} placeholder="Alimentos, transporte, salud..." required /></label>
@@ -350,14 +495,29 @@ export default function ProjectCompliancePanel({ access }) {
             </div>
 
             <div className="final-report-section">
-              <div className="edifica-section-heading"><div><p className="edifica-kicker">EJECUCIÓN FÍSICA</p><h2>Metas y resultados</h2></div><span>{outputs.length} indicadores</span></div>
-              {loading ? <p className="edifica-empty">Cargando ejecución…</p> : outputs.length === 0 ? <p className="edifica-empty">Todavía faltan resultados tangibles por registrar.</p> : (
-                <div className="edifica-table-wrap"><table className="compliance-table"><thead><tr><th>Resultado</th><th>Meta</th><th>Armado</th><th>Entregado</th><th>Cumplimiento</th><th>Beneficiarios</th><th className="no-print">Acción</th></tr></thead><tbody>{outputs.map((output) => {
+              <div className="edifica-section-heading"><div><p className="edifica-kicker">EJECUCIÓN FÍSICA</p><h2>Metas y avances</h2></div><span>{outputs.length} indicadores</span></div>
+              {loading ? <p className="edifica-empty">Cargando ejecución…</p> : outputs.length === 0 ? <p className="edifica-empty">Todavía faltan avances y entregas por registrar.</p> : (
+                <div className="edifica-table-wrap"><table className="compliance-table"><thead><tr><th>Actividad / producto</th><th>Meta</th><th>Armado</th><th>Entregado</th><th>Cumplimiento</th><th>Beneficiarios</th><th>Evidencias</th><th className="no-print">Acción</th></tr></thead><tbody>{outputs.map((output) => {
                   const progress = percentage(output.delivered_quantity, output.target_quantity)
-                  return <tr key={output.id}><td><strong>{output.name}</strong><span>{output.unit_label} · {outputStatusLabels[output.status]}</span></td><td>{formatNumber(output.target_quantity)}</td><td>{formatNumber(output.produced_quantity)}</td><td>{formatNumber(output.delivered_quantity)}</td><td><div className="compliance-progress"><span style={{ width: `${Math.min(progress, 100)}%` }} /><b>{progress}%</b></div></td><td>{formatNumber(output.beneficiary_count)}</td><td className="no-print"><button type="button" onClick={() => editOutput(output)}>Editar</button></td></tr>
+                  const outputEvidence = evidenceByOutput.get(output.id) ?? []
+                  return <tr key={output.id}><td><strong>{output.name}</strong><span>{output.unit_label} · {outputStatusLabels[output.status]}</span></td><td>{formatNumber(output.target_quantity)}</td><td>{formatNumber(output.produced_quantity)}</td><td>{formatNumber(output.delivered_quantity)}</td><td><div className="compliance-progress"><span style={{ width: `${Math.min(progress, 100)}%` }} /><b>{progress}%</b></div></td><td>{formatNumber(output.beneficiary_count)}</td><td><strong>{outputEvidence.length}</strong></td><td className="no-print"><button type="button" onClick={() => editOutput(output)}>Editar</button></td></tr>
                 })}</tbody></table></div>
               )}
             </div>
+
+            {evidences.length > 0 && <div className="final-report-section evidence-report-section">
+              <div className="edifica-section-heading"><div><p className="edifica-kicker">SOPORTES MULTIMEDIA</p><h2>Evidencias de ejecución</h2></div><span>{evidences.length} archivos</span></div>
+              <div className="evidence-report-grid">{outputs.map((output) => {
+                const outputEvidence = evidenceByOutput.get(output.id) ?? []
+                if (!outputEvidence.length) return null
+                return <article key={output.id}><header><strong>{output.name}</strong><span>{outputEvidence.length} evidencias</span></header><div>{outputEvidence.map((evidence) => <figure key={evidence.id} className={`evidence-preview ${evidence.evidence_type}`}>
+                  {evidence.evidence_type === 'image' && evidence.signed_url ? <img src={evidence.signed_url} alt={evidence.caption || evidence.file_name} /> : null}
+                  {evidence.evidence_type === 'video' && evidence.signed_url ? <video controls preload="metadata" src={evidence.signed_url} /> : null}
+                  {evidence.evidence_type === 'document' ? <a href={evidence.signed_url} target="_blank" rel="noreferrer"><span>PDF</span></a> : null}
+                  <figcaption>{evidence.file_name}</figcaption>
+                </figure>)}</div></article>
+              })}</div>
+            </div>}
 
             <div className="final-report-section">
               <div className="edifica-section-heading"><div><p className="edifica-kicker">EJECUCIÓN FINANCIERA</p><h2>Inversión y comprobantes</h2></div><span>{formatMoney(investment, selectedProject.currency)}</span></div>
