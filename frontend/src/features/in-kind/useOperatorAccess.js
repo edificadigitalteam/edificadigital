@@ -15,10 +15,20 @@ const emptyIdentity = {
 }
 const demoFallbackUrl = 'https://edificadigital-git-feature-demo-acces-a82faf-yangetzes-projects.vercel.app'
 
+function isLocalUrl(value) {
+  try {
+    const parsed = new URL(value.startsWith('http') ? value : `https://${value}`)
+    return ['localhost', '127.0.0.1', '0.0.0.0'].includes(parsed.hostname)
+  } catch {
+    return false
+  }
+}
+
 function getAppRedirectUrl() {
   const configuredUrl = import.meta.env.VITE_APP_URL?.trim()
-  const isLegacyLocalhost = window.location.hostname === 'localhost' && window.location.port === '3000'
-  const baseUrl = configuredUrl || (isLegacyLocalhost ? demoFallbackUrl : window.location.origin)
+  const runtimeIsLocal = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname)
+  const usableConfiguredUrl = configuredUrl && !isLocalUrl(configuredUrl) ? configuredUrl : ''
+  const baseUrl = usableConfiguredUrl || (runtimeIsLocal ? demoFallbackUrl : window.location.origin)
   const normalizedBaseUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`
   const redirect = new URL('/app', normalizedBaseUrl)
   redirect.searchParams.set('auth', 'callback')
