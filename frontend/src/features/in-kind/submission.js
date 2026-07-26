@@ -61,6 +61,9 @@ export function buildSubmissionPayload(draft, attachments = []) {
   return {
     submission_key: draft.submissionId,
     reference_code: createSubmissionReference(draft),
+    organization_id: draft.organizationId,
+    project_id: nullable(draft.projectId),
+    donor_actor_id: draft.donorActorId,
     sender: {
       name: anonymous ? 'Donante anónimo' : draft.donorName.trim(),
       email: anonymous ? null : nullable(draft.donorEmail)?.toLowerCase() ?? null,
@@ -130,7 +133,9 @@ export async function submitInKindShipment({ client, draft, evidence = [] }) {
     attachments.push({ attachment_type: normalizeAttachmentType(entry.type), storage_path: upload.data?.path ?? path, file_name: entry.file.name, notes: entry.type === 'manifest_spreadsheet' ? 'Manifiesto detallado adjunto.' : null })
   }
 
-  const response = await client.rpc('submit_in_kind_shipment', { payload: buildSubmissionPayload(draft, attachments) })
+  const response = await client.rpc('submit_in_kind_shipment_v2', {
+    payload: buildSubmissionPayload(draft, attachments),
+  })
   if (response.error) throw new SubmissionError('record', response.error)
 
   const shipmentUpdate = await client.from('shipment').update({
@@ -139,21 +144,6 @@ export async function submitInKindShipment({ client, draft, evidence = [] }) {
     package_unit_code: draft.packageUnit || 'lot',
   }).eq('id', response.data.shipment_id)
   if (shipmentUpdate.error) throw new SubmissionError('record', shipmentUpdate.error)
-
-  const donationUpdate = await client.from('donation').update({ project_id: draft.projectId || null, organization_id: draft.organizationId || null }).eq('id', response.data.donation_id)
-  if (donationUpdate.error) throw new SubmissionError('record', donationUpdate.error)
-
-  const { data: donationActor, error: actorLookupError } = await client.from('donation').select('actor_id').eq('id', response.data.donation_id).single()
-  if (actorLookupError) throw new SubmissionError('record', actorLookupError)
-  const anonymous = draft.donorType === 'anonymous'
-  const actorUpdate = await client.from('actor').update({
-    email: anonymous ? null : nullable(draft.donorEmail)?.toLowerCase() ?? null,
-    phone: anonymous ? null : nullable(draft.donorPhone),
-    country: anonymous ? null : nullable(draft.donorCountry || draft.originCountry),
-    is_organization: draft.donorType === 'organization',
-    is_anonymous: anonymous,
-  }).eq('id', donationActor.actor_id)
-  if (actorUpdate.error) throw new SubmissionError('record', actorUpdate.error)
 
   return { ...response.data, evidence_count: attachments.length }
 }
