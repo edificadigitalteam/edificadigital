@@ -1,0 +1,53 @@
+.compliance-metrics { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.compliance-metrics article:nth-child(5) { border-top-color: var(--ed-orange); }
+.beneficiary-access-card { display: flex; align-items: center; justify-content: space-between; gap: 22px; padding: 20px 22px; border: 1px solid #ead9c5; border-left: 5px solid var(--ed-orange); border-radius: 15px; background: #fff9f1; }
+.beneficiary-access-card > div { display: grid; gap: 5px; }
+.beneficiary-access-card h2 { margin: 0; color: var(--ed-purple-dark); font-family: 'Source Serif 4', Georgia, serif; }
+.beneficiary-access-card p { margin: 0; color: var(--ed-muted); line-height: 1.45; }
+.beneficiary-access-card button { min-height: 42px; padding: 0 16px; border: 0; border-radius: 10px; background: var(--ed-purple); color: #fff; font-weight: 850; white-space: nowrap; cursor: pointer; }
+.beneficiary-access-card > span { color: var(--ed-muted); font-size: .8rem; }
+.beneficiary-disabled-state { display: grid; justify-items: start; gap: 10px; padding: 28px; }
+.beneficiary-disabled-state strong { color: var(--ed-purple-dark); font-size: 1.15rem; }
+.beneficiary-disabled-state p { max-width: 680px; margin: 0; color: var(--ed-muted); line-height: 1.55; }
+.beneficiary-disabled-state button { border: 0; border-radius: 9px; padding: 11px 15px; background: var(--ed-orange); color: #fff; font-weight: 850; cursor: pointer; }
+.funding-comparison-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 20px 24px; }
+.funding-comparison-grid article { display: grid; gap: 7px; padding: 17px; border: 1px solid var(--ed-line); border-radius: 12px; background: #fff; }
+.funding-comparison-grid article:nth-child(1) { border-top: 4px solid var(--ed-purple); }
+.funding-comparison-grid article:nth-child(2) { border-top: 4px solid var(--ed-orange); }
+.funding-comparison-grid article:nth-child(3) { border-top: 4px solid var(--ed-yellow); }
+.funding-comparison-grid article:nth-child(4) { border-top: 4px solid #8d62bc; }
+.funding-comparison-grid article.negative { border-color: #e4aaaa; background: #fff6f5; }
+.funding-comparison-grid span { color: var(--ed-muted); font-size: .74rem; font-weight: 750; }
+.funding-comparison-grid strong { color: var(--ed-purple-dark); font-size: 1.25rem; overflow-wrap: anywhere; }
+.funding-comparison-grid small { color: var(--ed-muted); line-height: 1.35; }
+.funding-in-kind-note { margin: 0 24px 18px; padding: 11px 13px; border-radius: 9px; background: #fff8e5; color: #6a5112; font-size: .8rem; }
+.funding-donations-table td:first-child { min-width: 120px; }
+.funding-donations-table td:nth-child(3) { min-width: 170px; }
+.funding-donations-table td:last-child { min-width: 190px; }
+
+@media (max-width: 1250px) {
+  .compliance-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .funding-comparison-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .compliance-metrics,
+  .funding-comparison-grid { grid-template-columns: 1fr; }
+  .beneficiary-access-card { align-items: stretch; flex-direction: column; }
+  .beneficiary-access-card button { width: 100%; }
+}
+
+@media print {
+  .print-summary { grid-template-columns: repeat(5, 1fr) !important; gap: 3mm !important; }
+  .print-summary article { min-height: 21mm !important; padding: 3mm !important; }
+  .print-summary strong { font-size: 12pt !important; }
+  .print-summary small { font-size: 6.2pt !important; }
+  .funding-comparison-grid { grid-template-columns: repeat(4, 1fr); gap: 2.5mm; padding: 4mm; page-break-inside: avoid; }
+  .funding-comparison-grid article { padding: 3mm; border-radius: 2mm; }
+  .funding-comparison-grid strong { font-size: 10pt; }
+  .funding-comparison-grid span,
+  .funding-comparison-grid small { font-size: 6.5pt; }
+  .funding-in-kind-note { margin: 0 4mm 3mm; padding: 2.5mm; font-size: 7pt; }
+  .funding-reconciliation-section { break-inside: auto; }
+  .funding-donations-table th,
+  .funding-donations-table td { font-size: 6.8pt !important; padding: 2.2mm !important; }
+}
