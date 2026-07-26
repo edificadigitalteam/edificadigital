@@ -4,7 +4,7 @@
 **Status:** Draft
 **Owner:** Isaac Delgado, Yang (yangetze)
 **Created:** 2026-07-26
-**Last Updated:** 2026-07-26 (added AI/answer-engine visibility scope; resolved OG-image, Privacy/Terms, and robots.txt AI-crawler open questions)
+**Last Updated:** 2026-07-26 (all open questions resolved except FAQ/llms.txt drafting ownership — see Open Questions)
 
 ## Overview
 
@@ -16,8 +16,8 @@ This supersedes **Part 1 (SEO)** of `ROADMAP-R-v1_seo-and-offline-modules.md`: t
 
 - [ ] Fix static `<meta>` title/description in `frontend/index.html` to match real landing copy
 - [ ] Add Open Graph + Twitter Card tags and a social preview image
-- [ ] Add `robots.txt`, `sitemap.xml`, canonical `<link>`, `apple-touch-icon`/`favicon.ico` fallback
-- [ ] Add JSON-LD `Organization` structured data
+- [ ] Add `robots.txt`, `sitemap.xml`, canonical `<link>` (domain: `somosedificadigital.com`), `apple-touch-icon`/`favicon.ico` fallback
+- [ ] Add JSON-LD `Organization` structured data (aligned with target keywords: "software para iglesias", "software para donaciones", "software de trazabilidad de donaciones")
 - [ ] Accessibility: skip link, `prefers-reduced-motion` support, visible `:focus-visible` states, `aria-label` on icon-only controls
 - [ ] Reduce Google Fonts payload (currently 5 weights across 2 families, external render-blocking request)
 - [ ] Track CTA clicks (hero primary/secondary, plans, closing WhatsApp link) as custom Vercel Analytics events
@@ -42,7 +42,7 @@ Reviewed: `frontend/src/features/platform/ProductLandingPage.jsx`, `frontend/src
 
 ### SSR / prerendering — recommendation
 
-Full SSR (migrating to Next.js/Remix) is not warranted for one public marketing route while the rest of the app is authenticated and not meant to be indexed. Static, correct `<meta>`/Open Graph tags in `index.html` (no JS execution required) resolve the social-preview problem and give Google (which does execute JS) a reliable baseline. **Recommendation: ship the static-meta fix now, defer prerendering to a Phase 2 item**, revisited only if analytics later show poor organic indexing.
+Full SSR (migrating to Next.js/Remix) is not warranted for one public marketing route while the rest of the app is authenticated and not meant to be indexed. Static, correct `<meta>`/Open Graph tags in `index.html` (no JS execution required) resolve the social-preview problem and give Google (which does execute JS) a reliable baseline. **Recommendation: ship the static-meta fix now, defer prerendering to a Phase 2 item**, revisited only if analytics later show poor organic indexing. **Approved by product owners — deferred.**
 
 ### AI/answer-engine visibility (GEO/AEO) — what this means and why it's the same rendering problem
 
@@ -78,9 +78,9 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 - [x] Meta description copy — confirmed: `Edifica Digital | Software para iglesias`
 - [x] Open Graph social preview image — confirmed: design it from the existing brand marks/colors already in `product-landing.css` (brand mark, purple/orange/yellow tones), no external asset needed
 - [x] Privacy Policy / Terms — confirmed: does not exist yet. Deferred out of this plan entirely (see "Deferred" below); the footer legal link ships once that separate plan produces real content
-- [ ] Confirm canonical production domain for the `<link rel="canonical">` and `sitemap.xml`: `somosedificadigital.com`?
-- [ ] Any target keywords or reference sites to align meta copy/JSON-LD with?
-- [ ] Approve deferring SSR/prerendering to Phase 2 (recommended above)?
+- [x] Canonical production domain — confirmed: `somosedificadigital.com`
+- [x] Target keywords — confirmed: "software para iglesias", "software para donaciones", "software de trazabilidad de donaciones" (suggested to align with the traceability/transparency positioning already in `CLAUDE.md`'s mission and the current meta description)
+- [x] SSR/prerendering deferral to Phase 2 — approved
 - [x] AI-training/answer crawlers (`GPTBot`, `ClaudeBot`, `PerplexityBot`, `Google-Extended`, `CCBot`) in `robots.txt` — confirmed: **allow** on all public content (landing, `/donations/in-kind`, `/donations/monetary`). **Disallow only `/app` and `/app/*`** (the authenticated dashboard, per `frontend/src/main.jsx`'s `isDashboard` check) — same boundary as anything else that shouldn't be crawled, not a blanket AI opt-out.
 - [ ] Who drafts the FAQ questions/answers and the `llms.txt` summary — product owners or can this plan propose a first draft from existing landing copy for review?
 
@@ -122,4 +122,4 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 
 ## Next
 
-Open Questions remaining before implementation: canonical domain, target keywords/reference sites, SSR/prerendering deferral approval, AI-crawler `robots.txt` policy, and who drafts the FAQ/`llms.txt` copy. Once answered, implementation proceeds in the order: static meta/OG/icons (brand-derived social image) → accessibility → AI/answer-engine visibility (`llms.txt`, FAQ, `robots.txt`) → analytics events → font cleanup. A separate plan will cover Privacy Policy / Terms when that content is ready.
+Only one Open Question remains: who drafts the FAQ questions/answers and the `llms.txt` summary. Once that's decided, this plan's Status moves to "In Progress" and implementation proceeds in the order: static meta/OG/icons (domain `somosedificadigital.com`, brand-derived social image, keywords worked into copy/JSON-LD) → accessibility → AI/answer-engine visibility (`llms.txt`, FAQ, `robots.txt`) → analytics events → font cleanup. A separate plan will cover Privacy Policy / Terms when that content is ready. SSR/prerendering stays deferred per the approved recommendation.
