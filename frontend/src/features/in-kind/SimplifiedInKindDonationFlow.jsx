@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from 'react'
+import DonorPicker from '../donors/DonorPicker.jsx'
 import { supabase } from '../../lib/supabase.js'
 import { useOperatorAccess } from './useOperatorAccess.js'
 import { OperatorAccessScreen } from './OperatorAccess.jsx'
@@ -7,7 +8,7 @@ import './in-kind.css'
 import '../monetary/monetary.css'
 import './simplified-in-kind.css'
 
-const DRAFT_KEY = 'edifica-in-kind-consolidated-draft-v3'
+const DRAFT_KEY = 'edifica-in-kind-consolidated-draft-v4'
 
 const content = {
   es: {
@@ -16,7 +17,7 @@ const content = {
     intro: 'Registra la donación y su envío de forma consolidada. El detalle extenso puede cargarse mediante un manifiesto en Excel, CSV o PDF.',
     required: 'Los campos marcados con * son obligatorios.', completed: 'REGISTRO COMPLETADO', reference: 'Referencia',
     sections: {
-      donor: ['01', 'Donante o aliado y proyecto', 'Identifica a la organización, persona o donante anónimo y el proyecto relacionado.'],
+      donor: ['01', 'Aliado o donante y proyecto', 'Busca un registro existente o crea uno rápidamente y vincula la carga al proyecto correspondiente.'],
       route: ['02', 'Ruta del envío', 'Utiliza únicamente la información logística necesaria para seguimiento.'],
       contents: ['03', 'Resumen del contenido', 'Clasifica la carga por categorías y registra bultos, cajas, paletas o lotes.'],
       evidence: ['04', 'Documentos y confirmación', 'Adjunta manifiesto, documento de transporte, fotografías u otros soportes.'],
@@ -29,7 +30,7 @@ const content = {
     intro: 'Record the donation and shipment as a consolidated load. Extensive detail can be uploaded through an Excel, CSV, or PDF manifest.',
     required: 'Fields marked with * are required.', completed: 'RECORD COMPLETED', reference: 'Reference',
     sections: {
-      donor: ['01', 'Donor or partner and project', 'Identify the organization, person, or anonymous donor and the related project.'],
+      donor: ['01', 'Partner or donor and project', 'Search for an existing record or create one quickly and link the shipment to the corresponding project.'],
       route: ['02', 'Shipment route', 'Use only the logistics information required for tracking.'],
       contents: ['03', 'Contents summary', 'Classify the load and register packages, boxes, pallets, or lots.'],
       evidence: ['04', 'Documents and confirmation', 'Attach the manifest, transport document, photographs, or other evidence.'],
@@ -41,8 +42,6 @@ const content = {
 const labels = {
   es: {
     organization: 'Organización *', project: 'Proyecto relacionado', noProject: 'Sin proyecto específico', select: 'Seleccionar',
-    donorName: 'Nombre del donante o aliado *', donorType: 'Tipo de donante', organizationType: 'Organización', personType: 'Persona', anonymousType: 'Anónimo',
-    donorEmail: 'Correo electrónico', donorPhone: 'Teléfono', donorCountry: 'País del donante o aliado', anonymousNotice: 'El registro se guardará como donante anónimo y los datos de contacto quedarán vacíos.',
     scope: 'Alcance *', international: 'Internacional', national: 'Nacional', transport: 'Transporte *', sea: 'Marítimo', air: 'Aéreo',
     originCountry: 'País de origen *', originCity: 'Ciudad de origen', destinationCountry: 'País de destino *', destinationCity: 'Ciudad de destino', status: 'Estado',
     announced: 'Anunciado', inTransit: 'En tránsito', customs: 'En aduana', received: 'Recibido', closed: 'Cerrado', container: 'Número de contenedor', tracking: 'Número de seguimiento',
@@ -55,8 +54,6 @@ const labels = {
   },
   en: {
     organization: 'Organization *', project: 'Related project', noProject: 'No specific project', select: 'Select',
-    donorName: 'Donor or partner name *', donorType: 'Donor type', organizationType: 'Organization', personType: 'Person', anonymousType: 'Anonymous',
-    donorEmail: 'Email address', donorPhone: 'Phone', donorCountry: 'Donor or partner country', anonymousNotice: 'The record will be saved as an anonymous donor and contact fields will remain empty.',
     scope: 'Scope *', international: 'International', national: 'National', transport: 'Transport *', sea: 'Sea', air: 'Air',
     originCountry: 'Origin country *', originCity: 'Origin city', destinationCountry: 'Destination country *', destinationCity: 'Destination city', status: 'Status',
     announced: 'Announced', inTransit: 'In transit', customs: 'In customs', received: 'Received', closed: 'Closed', container: 'Container number', tracking: 'Tracking number',
@@ -77,7 +74,7 @@ const categoryLabels = {
 const createId = () => globalThis.crypto?.randomUUID?.() ?? `00000000-0000-4000-8000-${Date.now().toString(16).padEnd(12, '0').slice(0, 12)}`
 
 const createDraft = (access = {}) => ({
-  submissionId: createId(), organizationId: access.organizationId || '', projectId: '',
+  submissionId: createId(), organizationId: access.organizationId || '', projectId: '', donorActorId: '',
   donorName: '', donorType: 'organization', donorEmail: '', donorPhone: '', donorCountry: '',
   shipmentScope: 'international', originCountry: '', originCity: '', destinationCountry: 'Venezuela', destinationCity: '',
   transportMode: 'sea', status: 'announced', containerNumber: '', trackingNumber: '', departureDate: '', estimatedArrival: '', actualArrival: '',
@@ -104,7 +101,6 @@ export default function SimplifiedInKindDonationFlow() {
   const fileInputId = useId()
   const copy = content[language]
   const field = labels[language]
-  const anonymous = draft.donorType === 'anonymous'
 
   useEffect(() => { document.documentElement.lang = language; document.title = copy.metaTitle; window.localStorage.setItem('edifica-language', language) }, [copy.metaTitle, language])
   useEffect(() => {
@@ -124,13 +120,22 @@ export default function SimplifiedInKindDonationFlow() {
   }, [draft])
 
   const update = (fieldName, value) => {
-    setDraft((current) => {
-      const next = { ...current, [fieldName]: value }
-      if (fieldName === 'donorType' && value === 'anonymous') { next.donorName = ''; next.donorEmail = ''; next.donorPhone = ''; next.donorCountry = '' }
-      return next
-    })
+    setDraft((current) => ({ ...current, [fieldName]: value }))
     setErrors((current) => ({ ...current, [fieldName]: undefined }))
     setMessage('')
+  }
+
+  const selectDonor = (donor) => {
+    setDraft((current) => ({
+      ...current,
+      donorActorId: donor?.id ?? '',
+      donorName: donor?.name ?? '',
+      donorType: donor?.is_anonymous ? 'anonymous' : donor?.is_organization ? 'organization' : 'person',
+      donorEmail: donor?.email ?? '',
+      donorPhone: donor?.phone ?? '',
+      donorCountry: donor?.country ?? '',
+    }))
+    setErrors((current) => ({ ...current, donorName: undefined }))
   }
 
   const toggleCategory = (category) => update('categories', draft.categories.includes(category) ? draft.categories.filter((item) => item !== category) : [...draft.categories, category])
@@ -139,7 +144,7 @@ export default function SimplifiedInKindDonationFlow() {
   const validate = () => {
     const next = {}
     if (!draft.organizationId) next.organizationId = language === 'es' ? 'Selecciona una organización.' : 'Select an organization.'
-    if (!anonymous && !draft.donorName.trim()) next.donorName = language === 'es' ? 'Escribe el nombre del donante o aliado.' : 'Enter the donor or partner name.'
+    if (!draft.donorActorId || !draft.donorName.trim()) next.donorName = language === 'es' ? 'Selecciona o crea un aliado o donante.' : 'Select or create a partner or donor.'
     if (!draft.originCountry.trim()) next.originCountry = language === 'es' ? 'Escribe el país de origen.' : 'Enter the origin country.'
     if (!draft.destinationCountry.trim()) next.destinationCountry = language === 'es' ? 'Escribe el país de destino.' : 'Enter the destination country.'
     if (!draft.estimatedArrival) next.estimatedArrival = language === 'es' ? 'Selecciona una fecha estimada.' : 'Select an estimated date.'
@@ -176,11 +181,9 @@ export default function SimplifiedInKindDonationFlow() {
         <div className="intake-heading"><p className="intake-eyebrow"><span />{copy.eyebrow}</p><h1>{copy.title}</h1><p>{copy.intro}</p><small className="monetary-required">{copy.required}</small></div>
         <form className="monetary-form" onSubmit={submit}>
           <Section data={copy.sections.donor}><div className="monetary-grid">
-            {access.role === 'super_admin' ? <label className="intake-field"><span className="field-label">{field.organization}</span><select value={draft.organizationId} onChange={(event) => { update('organizationId', event.target.value); update('projectId', '') }}><option value="">{field.select}</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select>{errors.organizationId && <p className="field-error">{errors.organizationId}</p>}</label> : <input type="hidden" value={draft.organizationId} readOnly />}
+            {access.role === 'super_admin' ? <label className="intake-field"><span className="field-label">{field.organization}</span><select value={draft.organizationId} onChange={(event) => { update('organizationId', event.target.value); update('projectId', ''); selectDonor(null) }}><option value="">{field.select}</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select>{errors.organizationId && <p className="field-error">{errors.organizationId}</p>}</label> : <input type="hidden" value={draft.organizationId} readOnly />}
             <label className="intake-field"><span className="field-label">{field.project}</span><select value={draft.projectId} onChange={(event) => update('projectId', event.target.value)}><option value="">{field.noProject}</option>{availableProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label>
-            <label className="intake-field"><span className="field-label">{field.donorType}</span><select value={draft.donorType} onChange={(event) => update('donorType', event.target.value)}><option value="organization">{field.organizationType}</option><option value="person">{field.personType}</option><option value="anonymous">{field.anonymousType}</option></select></label>
-            {!anonymous && <><label className="intake-field wide"><span className="field-label">{field.donorName}</span><input value={draft.donorName} onChange={(event) => update('donorName', event.target.value)} />{errors.donorName && <p className="field-error">{errors.donorName}</p>}</label><label className="intake-field"><span className="field-label">{field.donorEmail}</span><input type="email" value={draft.donorEmail} onChange={(event) => update('donorEmail', event.target.value)} /></label><label className="intake-field"><span className="field-label">{field.donorPhone}</span><input value={draft.donorPhone} onChange={(event) => update('donorPhone', event.target.value)} /></label><label className="intake-field"><span className="field-label">{field.donorCountry}</span><input value={draft.donorCountry} onChange={(event) => update('donorCountry', event.target.value)} /></label></>}
-            {anonymous && <p className="operations-empty-note wide">{field.anonymousNotice}</p>}
+            <div className="wide"><DonorPicker organizationId={draft.organizationId} value={draft.donorActorId} onChange={selectDonor} language={language} required />{errors.donorName && <p className="field-error">{errors.donorName}</p>}</div>
           </div></Section>
 
           <Section data={copy.sections.route}><div className="monetary-grid">
