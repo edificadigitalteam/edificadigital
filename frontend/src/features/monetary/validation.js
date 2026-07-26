@@ -1,6 +1,6 @@
 const messages = {
   es: {
-    donorName: 'Escribe el nombre del donante para continuar.',
+    donorName: 'Selecciona o crea el aliado o donante para continuar.',
     receivedAt: 'Selecciona la fecha y hora de recepción.',
     paymentMethod: 'Selecciona la forma de recepción.',
     originAmount: 'Escribe un monto de origen mayor que cero.',
@@ -16,7 +16,7 @@ const messages = {
     verificationAccepted: 'Confirma la revisión de los datos y comprobantes.',
   },
   en: {
-    donorName: 'Enter the donor name to continue.',
+    donorName: 'Select or create the partner or donor to continue.',
     receivedAt: 'Select the receipt date and time.',
     paymentMethod: 'Select the receipt method.',
     originAmount: 'Enter an origin amount greater than zero.',
@@ -45,12 +45,18 @@ const createUuid = () => {
 export const createInitialMonetaryDraft = () => ({
   submissionId: createUuid(),
   donationType: 'monetary',
+  organizationId: '',
+  projectId: '',
+  donorActorId: '',
   donorName: '',
-  donorType: 'person',
+  donorType: 'organization',
+  donorEmail: '',
+  donorPhone: '',
+  donorCountry: '',
   donorContact: '',
   isAnonymous: false,
   receivedAt: '',
-  paymentMethod: 'cash',
+  paymentMethod: 'bank_transfer',
   originAmount: '',
   originCurrency: 'USD',
   usdBaseAmount: '',
@@ -75,7 +81,7 @@ export function validateMonetaryDraft(draft, language = 'es') {
   const copy = messages[language] ?? messages.es
   const errors = {}
 
-  if (!draft.donorName?.trim()) errors.donorName = copy.donorName
+  if (!draft.donorActorId || !draft.donorName?.trim()) errors.donorName = copy.donorName
   if (!draft.receivedAt) errors.receivedAt = copy.receivedAt
   if (!draft.paymentMethod) errors.paymentMethod = copy.paymentMethod
   if (!isPositive(draft.originAmount)) errors.originAmount = copy.originAmount
@@ -88,34 +94,19 @@ export function validateMonetaryDraft(draft, language = 'es') {
     if (!draft.exchangeRateDate) errors.exchangeRateDate = copy.exchangeRateDate
   }
 
-  if (draft.paymentMethod !== 'cash' && !draft.transactionReference?.trim()) {
-    errors.transactionReference = copy.transactionReference
-  }
+  if (draft.paymentMethod !== 'cash' && !draft.transactionReference?.trim()) errors.transactionReference = copy.transactionReference
 
   if (['bank_transfer', 'mobile_payment'].includes(draft.paymentMethod)) {
     if (!draft.senderInstitution?.trim()) errors.senderInstitution = copy.senderInstitution
     if (!draft.receiverAccountLabel?.trim()) errors.receiverAccountLabel = copy.receiverAccountLabel
   }
 
-  if (
-    isPositive(draft.originAmount)
-    && isPositive(draft.exchangeRateToUsd)
-    && isPositive(draft.usdBaseAmount)
-  ) {
+  if (isPositive(draft.originAmount) && isPositive(draft.exchangeRateToUsd) && isPositive(draft.usdBaseAmount)) {
     const calculated = Number(draft.originAmount) * Number(draft.exchangeRateToUsd)
-    if (Math.abs(calculated - Number(draft.usdBaseAmount)) > 0.02) {
-      errors.usdBaseAmount = copy.conversion
-    }
-    if (
-      draft.originCurrency === 'USD'
-      && (Number(draft.exchangeRateToUsd) !== 1 || Math.abs(Number(draft.originAmount) - Number(draft.usdBaseAmount)) > 0.01)
-    ) {
-      errors.usdBaseAmount = copy.conversion
-    }
+    if (Math.abs(calculated - Number(draft.usdBaseAmount)) > 0.02) errors.usdBaseAmount = copy.conversion
+    if (draft.originCurrency === 'USD' && (Number(draft.exchangeRateToUsd) !== 1 || Math.abs(Number(draft.originAmount) - Number(draft.usdBaseAmount)) > 0.01)) errors.usdBaseAmount = copy.conversion
   }
 
   if (!draft.verificationAccepted) errors.verificationAccepted = copy.verificationAccepted
-
   return { valid: Object.keys(errors).length === 0, errors }
 }
-

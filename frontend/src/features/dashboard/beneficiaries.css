@@ -1,0 +1,12 @@
+.beneficiary-registry { overflow: hidden; }
+.beneficiary-intro { margin: -4px 24px 18px; color: var(--ed-muted); font-size: .86rem; line-height: 1.55; }
+.beneficiary-form { border-top: 1px solid var(--ed-line); }
+.beneficiary-table td strong { display: block; color: var(--ed-ink); }
+.beneficiary-table td span { display: block; margin-top: 3px; color: var(--ed-muted); font-size: .72rem; }
+.beneficiary-table button { border: 0; background: transparent; color: var(--ed-purple); font-weight: 800; cursor: pointer; }
+@media (max-width: 760px) {
+  .beneficiary-intro { margin-inline: 18px; }
+}
+@media print {
+  .beneficiary-registry { display: none !important; }
+}

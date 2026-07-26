@@ -1,0 +1,129 @@
+.portal-dashboard-shell {
+  grid-template-columns: 286px minmax(0, 1fr);
+  background: #f7f5fa;
+}
+.portal-sidebar {
+  min-height: 0;
+  padding: 0;
+  border-right: 0;
+  background: linear-gradient(180deg, #2f173f 0%, #3a1c51 58%, #261232 100%);
+  color: #fff;
+  box-shadow: 10px 0 32px rgba(35, 15, 48, .08);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 209, 102, .45) transparent;
+}
+.portal-sidebar::-webkit-scrollbar { width: 7px; }
+.portal-sidebar::-webkit-scrollbar-track { background: transparent; }
+.portal-sidebar::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(255, 209, 102, .42); }
+.portal-brand-block {
+  display: grid;
+  gap: 5px;
+  padding: 24px 24px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.12);
+}
+.portal-brand-block .edifica-wordmark { color: #fff; font-size: 1.3rem; }
+.portal-brand-block .edifica-wordmark span { color: var(--ed-yellow); }
+.portal-brand-block small { color: rgba(255,255,255,.55); font-size: .62rem; font-weight: 800; letter-spacing: .16em; }
+.portal-tenant-card {
+  display: grid;
+  gap: 5px;
+  margin: 18px 18px 0;
+  padding: 15px 16px;
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 12px;
+  background: rgba(255,255,255,.07);
+}
+.portal-tenant-card > span { color: var(--ed-yellow); font-size: .58rem; font-weight: 900; letter-spacing: .13em; }
+.portal-tenant-card strong { overflow: hidden; color: #fff; font-size: .9rem; text-overflow: ellipsis; white-space: nowrap; }
+.portal-tenant-card small { color: rgba(255,255,255,.58); font-size: .7rem; }
+.portal-primary-nav { flex: 0 0 auto; gap: 3px; margin-top: 20px; padding: 0 14px; }
+.portal-nav-section {
+  display: block;
+  margin: 14px 12px 6px;
+  color: rgba(255,255,255,.42);
+  font-size: .58rem;
+  font-weight: 900;
+  letter-spacing: .15em;
+}
+.portal-management-section { margin-top: 22px; }
+.portal-primary-nav a,
+.portal-admin-nav a {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  color: rgba(255,255,255,.72);
+  font-size: .85rem;
+  font-weight: 650;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+.portal-primary-nav a:hover,
+.portal-admin-nav a:hover {
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  transform: translateX(2px);
+}
+.portal-primary-nav a.active,
+.portal-admin-nav a.active {
+  background: linear-gradient(90deg, rgba(242,140,40,.28), rgba(255,209,102,.12));
+  color: #fff;
+  box-shadow: inset 3px 0 0 var(--ed-orange);
+}
+.portal-nav-icon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(255,255,255,.07);
+}
+.portal-nav-icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.portal-primary-nav a.active .portal-nav-icon,
+.portal-admin-nav a.active .portal-nav-icon { background: var(--ed-orange); color: #fff; }
+.portal-sidebar-footer { flex: 0 0 auto; gap: 12px; margin-top: 28px; padding: 0 14px 18px; }
+.portal-admin-nav { gap: 3px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.12); }
+.portal-admin-nav .portal-nav-section { margin-top: 0; }
+.portal-user-footer {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  background: rgba(0,0,0,.12);
+}
+.portal-user-footer > div { min-width: 0; display: grid; gap: 3px; }
+.portal-user-footer strong,
+.portal-user-footer span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.portal-user-footer strong { color: #fff; font-size: .78rem; }
+.portal-user-footer span { color: rgba(255,255,255,.48); font-size: .66rem; }
+.portal-user-footer .edifica-signout {
+  min-height: 38px;
+  border-color: rgba(255,255,255,.25);
+  color: #fff;
+  font-size: .76rem;
+}
+.portal-user-footer .edifica-signout:hover { border-color: var(--ed-orange); background: var(--ed-orange); }
+
+@media (max-width: 960px) {
+  .portal-dashboard-shell { grid-template-columns: 250px minmax(0, 1fr); }
+}
+
+@media (max-width: 760px) {
+  .portal-dashboard-shell { grid-template-columns: 1fr; }
+  .portal-sidebar { position: relative; height: auto; max-height: none; overflow: visible; }
+  .portal-primary-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .portal-nav-section { grid-column: 1 / -1; }
+  .portal-admin-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .portal-admin-nav .portal-nav-section { grid-column: 1 / -1; }
+}
+
+@media (max-width: 520px) {
+  .portal-primary-nav,
+  .portal-admin-nav { grid-template-columns: 1fr; }
+}

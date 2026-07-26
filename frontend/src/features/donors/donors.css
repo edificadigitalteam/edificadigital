@@ -1,0 +1,38 @@
+.donor-picker { display: grid; gap: 10px; }
+.donor-picker-select { display: grid; gap: 7px; }
+.donor-picker-select > span,
+.donor-quick-form label > span { color: #2d2235; font-size: .83rem; font-weight: 800; }
+.donor-picker select,
+.donor-picker input,
+.donor-quick-form select,
+.donor-quick-form input { width: 100%; min-height: 46px; padding: 11px 13px; border: 1px solid #d8cfdf; border-radius: 10px; background: #fff; color: #201a26; font: inherit; }
+.donor-picker select:focus,
+.donor-picker input:focus { border-color: #5b2e91; outline: 0; box-shadow: 0 0 0 3px rgba(91, 46, 145, .1); }
+.donor-picker-summary { display: grid; gap: 3px; padding: 10px 12px; border-left: 3px solid #f28c28; border-radius: 8px; background: #fff8ef; }
+.donor-picker-summary strong { color: #341550; }
+.donor-picker-summary span { color: #6d6672; font-size: .82rem; }
+.donor-quick-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 16px; border: 1px solid #ddd7e2; border-radius: 14px; background: #fbfaff; }
+.donor-quick-form label { display: grid; gap: 7px; }
+.donor-quick-form .wide { grid-column: 1 / -1; }
+.donor-quick-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.donor-quick-actions button { border: 1px solid #5b2e91; border-radius: 9px; padding: 10px 14px; background: #fff; color: #5b2e91; font-weight: 800; cursor: pointer; }
+.donor-quick-actions button:last-child { background: #5b2e91; color: #fff; }
+.donor-picker-error { margin: 0; color: #9a3434; font-size: .83rem; }
+
+.donor-directory-page { display: grid; gap: 22px; }
+.donor-directory-toolbar { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(220px, 320px) auto; gap: 12px; align-items: end; }
+.donor-directory-toolbar label { display: grid; gap: 7px; }
+.donor-directory-toolbar input,
+.donor-directory-toolbar select { min-height: 46px; padding: 11px 13px; border: 1px solid #ddd7e2; border-radius: 10px; background: #fff; font: inherit; }
+.donor-directory-toolbar button { min-height: 46px; border: 0; border-radius: 10px; padding: 0 18px; background: #f28c28; color: #fff; font-weight: 900; cursor: pointer; }
+.donor-directory-form { padding: 22px; }
+.donor-directory-form .operations-form { margin-top: 0; }
+.donor-type-chip { display: inline-flex; width: fit-content; padding: 4px 9px; border-radius: 999px; background: #eee6f6; color: #5b2e91; font-size: .72rem; font-weight: 900; }
+.donor-directory-table td strong { display: block; color: #341550; }
+.donor-directory-table td span { display: block; margin-top: 3px; color: #6d6672; font-size: .78rem; }
+
+@media (max-width: 800px) {
+  .donor-directory-toolbar { grid-template-columns: 1fr; }
+  .donor-quick-form { grid-template-columns: 1fr; }
+  .donor-quick-form .wide { grid-column: auto; }
+}

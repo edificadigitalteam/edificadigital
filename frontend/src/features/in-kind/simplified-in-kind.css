@@ -1,0 +1,24 @@
+.simplified-in-kind-shell .monetary-form { gap: 22px; }
+.simplified-section { scroll-margin-top: 100px; }
+.simplified-section .intake-field { display: grid; gap: 8px; }
+.simplified-section .field-label { color: #2b2330; font-size: .86rem; font-weight: 800; }
+.simplified-section input,
+.simplified-section select,
+.simplified-section textarea { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid #ddd7e2; border-radius: 11px; background: #fff; color: #201a26; font: inherit; outline: none; }
+.simplified-section textarea { min-height: 105px; resize: vertical; }
+.simplified-section input:focus,
+.simplified-section select:focus,
+.simplified-section textarea:focus { border-color: #5b2e91; box-shadow: 0 0 0 3px rgba(91, 46, 145, .1); }
+.simplified-categories { display: grid; gap: 12px; }
+.simplified-categories > span { font-size: .86rem; font-weight: 800; }
+.simplified-categories > div { display: flex; flex-wrap: wrap; gap: 9px; }
+.simplified-categories label { display: inline-flex; align-items: center; gap: 7px; padding: 9px 12px; border: 1px solid #ddd7e2; border-radius: 999px; background: #fff; color: #514a56; font-size: .82rem; font-weight: 700; cursor: pointer; }
+.simplified-categories input { width: 15px; min-height: 15px; padding: 0; }
+.simplified-manifest-note { margin-bottom: 18px; padding: 17px 18px; border-left: 4px solid #f28c28; border-radius: 10px; background: #fff8ee; }
+.simplified-manifest-note strong { color: #341550; }
+.simplified-manifest-note p { margin: 6px 0 0; color: #6d6672; line-height: 1.55; }
+.simplified-confirmation { margin-top: 18px; }
+@media (max-width: 720px) {
+  .simplified-in-kind-shell .intake-header { align-items: flex-start; }
+  .simplified-in-kind-shell .intake-header-actions { flex-wrap: wrap; justify-content: flex-end; }
+}

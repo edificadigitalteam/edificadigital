@@ -74,8 +74,9 @@ function LandingPage() {
             <i aria-hidden="true">/</i>
             <b>{copy.nav.alternate}</b>
           </button>
-          <a className="nav-cta" href="#contacto" onClick={closeMenu}>
-            {copy.nav.cta} <Arrow />
+          <a href="#contacto" onClick={closeMenu}>{copy.nav.cta}</a>
+          <a className="nav-cta" href="/app" onClick={closeMenu}>
+            {language === 'es' ? 'Iniciar sesión' : 'Sign in'} <Arrow />
           </a>
         </nav>
       </header>
