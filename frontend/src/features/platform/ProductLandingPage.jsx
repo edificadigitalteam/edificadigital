@@ -5,8 +5,8 @@ import './product-landing.css'
 
 const copy = {
   es: {
-    metaTitle: 'Edifica | Software para iglesias y organizaciones cristianas',
-    metaDescription: 'Edifica reúne gestión de donaciones, administración eclesial y productos digitales en una plataforma modular para iglesias y organizaciones cristianas.',
+    metaTitle: 'Edifica Digital | Software para iglesias',
+    metaDescription: 'Edifica es un software modular para iglesias y organizaciones cristianas, con donaciones trazables, administración eclesial y productos digitales en una sola plataforma.',
     nav: { modules: 'Módulos', ecosystem: 'Ecosistema', resources: 'Recursos', plans: 'Planes', contact: 'Solicitar presentación', login: 'Iniciar sesión' },
     hero: {
       kicker: 'SOFTWARE MODULAR PARA ORGANIZACIONES CRISTIANAS',
@@ -98,8 +98,8 @@ const copy = {
     footer: 'Software modular para iglesias y organizaciones cristianas.',
   },
   en: {
-    metaTitle: 'Edifica | Software for churches and Christian organizations',
-    metaDescription: 'Edifica brings donation management, church administration, and digital products together in a modular platform for churches and Christian organizations.',
+    metaTitle: 'Edifica Digital | Software for churches',
+    metaDescription: 'Edifica is modular software for churches and Christian organizations, with traceable donations, church administration, and digital products in one platform.',
     nav: { modules: 'Modules', ecosystem: 'Ecosystem', resources: 'Resources', plans: 'Plans', contact: 'Request a presentation', login: 'Sign in' },
     hero: {
       kicker: 'MODULAR SOFTWARE FOR CHRISTIAN ORGANIZATIONS',

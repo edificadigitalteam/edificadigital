@@ -4,7 +4,7 @@
 **Status:** In Progress
 **Owner:** Isaac Delgado, Yang (yangetze)
 **Created:** 2026-07-26
-**Last Updated:** 2026-07-26 (FAQ/llms.txt draft approved as-is — all Open Questions resolved, plan ready for implementation)
+**Last Updated:** 2026-07-26 (Block 1 implemented: meta/OG/icons, canonical, JSON-LD — see Verification)
 
 ## Overview
 
@@ -14,15 +14,15 @@ This supersedes **Part 1 (SEO)** of `ROADMAP-R-v1_seo-and-offline-modules.md`: t
 
 ## Objectives
 
-- [ ] Fix static `<meta>` title/description in `frontend/index.html` to match real landing copy
-- [ ] Add Open Graph + Twitter Card tags and a social preview image
-- [ ] Add `robots.txt`, `sitemap.xml`, canonical `<link>` (domain: `somosedificadigital.com`), `apple-touch-icon`/`favicon.ico` fallback
-- [ ] Add JSON-LD `Organization` structured data (aligned with target keywords: "software para iglesias", "software para donaciones", "software de trazabilidad de donaciones")
+- [x] Fix static `<meta>` title/description in `frontend/index.html` to match real landing copy
+- [x] Add Open Graph + Twitter Card tags and a social preview image
+- [x] Add canonical `<link>` (domain: `somosedificadigital.com`), `apple-touch-icon`/`favicon.ico` fallback — `robots.txt`/`sitemap.xml` moved to the AI/answer-engine block below (robots.txt references the sitemap, so they ship together)
+- [x] Add JSON-LD `Organization` structured data (aligned with target keywords: "software para iglesias", "software para donaciones", "software de trazabilidad de donaciones")
 - [ ] Accessibility: skip link, `prefers-reduced-motion` support, visible `:focus-visible` states, `aria-label` on icon-only controls
-- [ ] Reduce Google Fonts payload (currently 5 weights across 2 families, external render-blocking request)
+- [ ] Reduce Google Fonts payload (currently 5 weights across 2 families, external render-blocking request — also found: `Manrope` is loaded in `index.html` but never used; the site actually renders with `Inter`, loaded separately via a `@import` inside `product-landing.css`)
 - [ ] Track CTA clicks (hero primary/secondary, plans, closing WhatsApp link) as custom Vercel Analytics events
-- [ ] Decide SSR/prerendering timing (recommended: defer to Phase 2, see below)
-- [ ] AI/answer-engine visibility (GEO/AEO): `llms.txt`, an FAQ section with quotable answers, and an explicit `robots.txt` policy for AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot)
+- [x] Decide SSR/prerendering timing — approved: deferred (see below)
+- [ ] AI/answer-engine visibility (GEO/AEO): `llms.txt`, an FAQ section with quotable answers, `sitemap.xml`, and an explicit `robots.txt` policy for AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, CCBot)
 
 ## Findings (source of this plan)
 
@@ -30,9 +30,9 @@ Reviewed: `frontend/src/features/platform/ProductLandingPage.jsx`, `frontend/src
 
 | Area | Gap |
 |---|---|
-| SEO | `index.html` title/description don't match `ProductLandingPage.jsx` copy; both are only corrected client-side via `useEffect`. No canonical link, no `robots.txt`, no `sitemap.xml`, no JSON-LD. |
-| Social preview | No Open Graph or Twitter Card tags at all; no social image. Preview bots (WhatsApp, LinkedIn, X, iMessage) don't execute JS. |
-| Icons | Only `favicon.svg` exists; no `apple-touch-icon`, no `.ico` fallback, no web manifest. |
+| SEO | ✅ Fixed. `index.html` title/description now match `ProductLandingPage.jsx` copy (and the JS copy was updated to match, so there's no flicker on mount). Canonical link and JSON-LD `Organization` added. `robots.txt`/`sitemap.xml` still pending — moved to the AI/answer-engine block. |
+| Social preview | ✅ Fixed. Open Graph + Twitter Card tags added, with a brand-derived `og-image.png` (1200×630) rendered from the actual brand colors/mark in `product-landing.css`. |
+| Icons | ✅ Fixed. `apple-touch-icon.png` (180×180) and `favicon.ico` (PNG-in-ICO container) added, both generated from the existing `favicon.svg` mark; `index.html` now links all three (`favicon.svg`, `favicon.ico`, `apple-touch-icon.png`) — previously there was no `<link rel="icon">` at all, so the tab icon wasn't wired up. |
 | Accessibility | No skip link before the header; no `prefers-reduced-motion` rule in `product-landing.css` (0 matches); no explicit `:focus`/`:focus-visible` styling; hamburger menu button and language-toggle button have no `aria-label`. |
 | Legal | No Privacy Policy or Terms link anywhere on the landing or footer, despite the platform handling donor/beneficiary data. Confirmed: no such content exists yet — **deferred to its own plan**, out of scope here. |
 | Performance | 5 font weights across 2 families loaded from `fonts.googleapis.com`, render-blocking. |
@@ -100,11 +100,21 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 - Manual: `robots.txt`/`sitemap.xml` reachable at production URLs; canonical matches deployed domain
 - Confirm `document.title`/meta description still update correctly on client-side language toggle (existing behavior must not regress)
 
+### Block 1 (meta/OG/icons) — verification results, 2026-07-26
+
+- Added `frontend/index.test.js` first (Red), covering title/description, canonical, OG/Twitter tags, favicon/apple-touch-icon links, JSON-LD, and exact pixel dimensions of the new PNG assets (via raw PNG/ICO header parsing, no extra dependency). Confirmed failing before implementation.
+- `npm test` (frontend/): 8/8 new tests pass. 13 pre-existing failures remain, unrelated to this change (monetary/in-kind submission tests — confirmed pre-existing by running the same suite via `git stash -u` before these changes).
+- `npm run lint`: clean except pre-existing warnings in `portalTranslations.js` and `main.jsx` (unrelated to this change).
+- `npm run build`: succeeds; `dist/index.html` and `dist/assets/` carry the new tags and copied `public/` assets correctly.
+- `vite preview` + a headless-Chromium screenshot of the built site confirmed no visual regression on the hero/module sections.
+- `og-image.png`, `apple-touch-icon.png`, and `favicon.ico` were generated locally (not hand-drawn) from the brand mark/colors already in `product-landing.css` and `favicon.svg`, rendered via the pre-installed headless Chromium (`headless_shell` binary — note: `chrome --headless=new` reserves browser-chrome height and under-renders a fixed pixel target by ~90px, so asset generation used the dedicated `headless_shell` binary instead), then `favicon.ico` was packaged as a PNG-in-ICO container (valid per the ICO spec, no extra tooling needed).
+- Not yet verified live: real link-preview debugger against production, since the Vercel preview deploy is currently blocked by the account's daily deploy-rate limit (unrelated infra issue, reported separately).
+
 ## Checklist
 
-- [ ] Static meta/OG/canonical/icons in `index.html`
+- [x] Static meta/OG/canonical/icons in `index.html`
 - [ ] `robots.txt` + `sitemap.xml`
-- [ ] JSON-LD `Organization`
+- [x] JSON-LD `Organization`
 - [ ] Skip link + `prefers-reduced-motion` + `:focus-visible`
 - [ ] `aria-label`s on menu/language buttons
 - [ ] Font weight reduction
