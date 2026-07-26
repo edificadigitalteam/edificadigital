@@ -4,7 +4,7 @@
 **Status:** In Progress
 **Owner:** Isaac Delgado, Yang (yangetze)
 **Created:** 2026-07-26
-**Last Updated:** 2026-07-26 (Block 1 implemented: meta/OG/icons, canonical, JSON-LD — see Verification)
+**Last Updated:** 2026-07-26 (Block 2 implemented: skip link, focus-visible, reduced-motion, aria-labels — see Verification)
 
 ## Overview
 
@@ -18,7 +18,7 @@ This supersedes **Part 1 (SEO)** of `ROADMAP-R-v1_seo-and-offline-modules.md`: t
 - [x] Add Open Graph + Twitter Card tags and a social preview image
 - [x] Add canonical `<link>` (domain: `somosedificadigital.com`), `apple-touch-icon`/`favicon.ico` fallback — `robots.txt`/`sitemap.xml` moved to the AI/answer-engine block below (robots.txt references the sitemap, so they ship together)
 - [x] Add JSON-LD `Organization` structured data (aligned with target keywords: "software para iglesias", "software para donaciones", "software de trazabilidad de donaciones")
-- [ ] Accessibility: skip link, `prefers-reduced-motion` support, visible `:focus-visible` states, `aria-label` on icon-only controls
+- [x] Accessibility: skip link, `prefers-reduced-motion` support, visible `:focus-visible` states, `aria-label` on icon-only controls
 - [ ] Reduce Google Fonts payload (currently 5 weights across 2 families, external render-blocking request — also found: `Manrope` is loaded in `index.html` but never used; the site actually renders with `Inter`, loaded separately via a `@import` inside `product-landing.css`)
 - [ ] Track CTA clicks (hero primary/secondary, plans, closing WhatsApp link) as custom Vercel Analytics events
 - [x] Decide SSR/prerendering timing — approved: deferred (see below)
@@ -33,7 +33,7 @@ Reviewed: `frontend/src/features/platform/ProductLandingPage.jsx`, `frontend/src
 | SEO | ✅ Fixed. `index.html` title/description now match `ProductLandingPage.jsx` copy (and the JS copy was updated to match, so there's no flicker on mount). Canonical link and JSON-LD `Organization` added. `robots.txt`/`sitemap.xml` still pending — moved to the AI/answer-engine block. |
 | Social preview | ✅ Fixed. Open Graph + Twitter Card tags added, with a brand-derived `og-image.png` (1200×630) rendered from the actual brand colors/mark in `product-landing.css`. |
 | Icons | ✅ Fixed. `apple-touch-icon.png` (180×180) and `favicon.ico` (PNG-in-ICO container) added, both generated from the existing `favicon.svg` mark; `index.html` now links all three (`favicon.svg`, `favicon.ico`, `apple-touch-icon.png`) — previously there was no `<link rel="icon">` at all, so the tab icon wasn't wired up. |
-| Accessibility | No skip link before the header; no `prefers-reduced-motion` rule in `product-landing.css` (0 matches); no explicit `:focus`/`:focus-visible` styling; hamburger menu button and language-toggle button have no `aria-label`. |
+| Accessibility | ✅ Fixed. Skip link added (first focusable element, jumps to `<main id="main-content">`), `@media (prefers-reduced-motion: reduce)` added (note: the stylesheet had no `transition`/`animation` at all before this, so this is future-proofing, not a fix to an existing motion problem), `:focus-visible` outline added for links/buttons, and `aria-label`s added to the hamburger menu button (previously had zero accessible name) and the language toggle. |
 | Legal | No Privacy Policy or Terms link anywhere on the landing or footer, despite the platform handling donor/beneficiary data. Confirmed: no such content exists yet — **deferred to its own plan**, out of scope here. |
 | Performance | 5 font weights across 2 families loaded from `fonts.googleapis.com`, render-blocking. |
 | Analytics | `@vercel/analytics` only tracks pageviews; no event tracking on CTAs, so landing conversion can't be measured. |
@@ -110,13 +110,23 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 - `og-image.png`, `apple-touch-icon.png`, and `favicon.ico` were generated locally (not hand-drawn) from the brand mark/colors already in `product-landing.css` and `favicon.svg`, rendered via the pre-installed headless Chromium (`headless_shell` binary — note: `chrome --headless=new` reserves browser-chrome height and under-renders a fixed pixel target by ~90px, so asset generation used the dedicated `headless_shell` binary instead), then `favicon.ico` was packaged as a PNG-in-ICO container (valid per the ICO spec, no extra tooling needed).
 - Not yet verified live: real link-preview debugger against production, since the Vercel preview deploy is currently blocked by the account's daily deploy-rate limit (unrelated infra issue, reported separately).
 
+### Block 2 (accessibility) — verification results, 2026-07-26
+
+- Added `frontend/src/features/platform/ProductLandingPage.accessibility.test.js` first (Red): asserts the skip link is the first focusable element and targets `#main-content`, the hamburger and language-toggle buttons carry `aria-label`, and `product-landing.css` declares `prefers-reduced-motion` and `:focus-visible` rules. Confirmed failing before implementation (this project has no component-rendering test setup — no jsdom/testing-library anywhere in the codebase — so this follows the existing convention of source-level string/regex assertions rather than introducing new test tooling for one check).
+- Implementation: skip link (`.skip-link`, visually hidden until `:focus`, jumps to `<main id="main-content" tabIndex={-1}>`), a shared `:focus-visible` outline for links/buttons in `.product-site`, an `aria-label` on the hamburger button that changes with state (`Abrir menú`/`Cerrar menú`, `Open menu`/`Close menu`), an `aria-label` on the language toggle naming the target language (`Switch to English` / `Cambiar a español`), and a `@media (prefers-reduced-motion: reduce)` block.
+- Finding worth recording: `product-landing.css` had zero `transition`/`animation` declarations before this change — there was no existing motion to turn off. The reduced-motion rule is added as required future-proofing (per `CLAUDE.md`'s explicit interface guidance), not a fix to an active bug.
+- `pnpm test` (frontend/, corrected to the project's actual package manager — see note below): 3/3 new tests pass, 60 total tests run, same 13 pre-existing unrelated failures.
+- `pnpm lint` / `pnpm build`: clean, same pre-existing warnings as Block 1, build succeeds.
+- Not yet verified live: real Tab-key keyboard walkthrough and OS-level reduced-motion toggle in an actual browser session — verified at the source/CSS level (the `:focus`/`:focus-visible`/`prefers-reduced-motion` mechanisms used are standard, well-understood CSS, not application logic), but a real keyboard pass on the deployed preview is still recommended once the Vercel rate limit clears.
+- **Package manager correction:** this plan's Verification section and `CLAUDE.md` both specify `pnpm`. Block 1's implementation pass initially ran `npm install`/`npm test`, which generated a stray `package-lock.json` — caught before committing (this repo deliberately moved from npm to pnpm in a past PR, see `pnpm-lock.yaml`). The stray lockfile was deleted, `node_modules` reinstalled with `pnpm install`, and both blocks re-verified with `pnpm test`/`pnpm lint`/`pnpm build` before commit. No lockfile changes were committed.
+
 ## Checklist
 
 - [x] Static meta/OG/canonical/icons in `index.html`
 - [ ] `robots.txt` + `sitemap.xml`
 - [x] JSON-LD `Organization`
-- [ ] Skip link + `prefers-reduced-motion` + `:focus-visible`
-- [ ] `aria-label`s on menu/language buttons
+- [x] Skip link + `prefers-reduced-motion` + `:focus-visible`
+- [x] `aria-label`s on menu/language buttons
 - [ ] Font weight reduction
 - [ ] CTA event tracking
 - [ ] `llms.txt` (bilingual summary)

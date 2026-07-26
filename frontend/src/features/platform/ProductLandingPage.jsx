@@ -7,7 +7,10 @@ const copy = {
   es: {
     metaTitle: 'Edifica Digital | Software para iglesias',
     metaDescription: 'Edifica es un software modular para iglesias y organizaciones cristianas, con donaciones trazables, administración eclesial y productos digitales en una sola plataforma.',
-    nav: { modules: 'Módulos', ecosystem: 'Ecosistema', resources: 'Recursos', plans: 'Planes', contact: 'Solicitar presentación', login: 'Iniciar sesión' },
+    nav: {
+      modules: 'Módulos', ecosystem: 'Ecosistema', resources: 'Recursos', plans: 'Planes', contact: 'Solicitar presentación', login: 'Iniciar sesión',
+      skip: 'Saltar al contenido principal', openMenu: 'Abrir menú', closeMenu: 'Cerrar menú', switchLanguage: 'Switch to English',
+    },
     hero: {
       kicker: 'SOFTWARE MODULAR PARA ORGANIZACIONES CRISTIANAS',
       title: 'Administra, sirve y crece desde una sola plataforma.',
@@ -100,7 +103,10 @@ const copy = {
   en: {
     metaTitle: 'Edifica Digital | Software for churches',
     metaDescription: 'Edifica is modular software for churches and Christian organizations, with traceable donations, church administration, and digital products in one platform.',
-    nav: { modules: 'Modules', ecosystem: 'Ecosystem', resources: 'Resources', plans: 'Plans', contact: 'Request a presentation', login: 'Sign in' },
+    nav: {
+      modules: 'Modules', ecosystem: 'Ecosystem', resources: 'Resources', plans: 'Plans', contact: 'Request a presentation', login: 'Sign in',
+      skip: 'Skip to main content', openMenu: 'Open menu', closeMenu: 'Close menu', switchLanguage: 'Cambiar a español',
+    },
     hero: {
       kicker: 'MODULAR SOFTWARE FOR CHRISTIAN ORGANIZATIONS',
       title: 'Manage, serve, and grow from one platform.',
@@ -191,21 +197,22 @@ export default function ProductLandingPage() {
 
   return (
     <div className="product-site">
+      <a href="#main-content" className="skip-link">{text.nav.skip}</a>
       <header className="product-header">
         <Brand />
-        <button className="product-menu-button" type="button" aria-expanded={menuOpen} onClick={() => setMenuOpen((current) => !current)}><span /><span /></button>
+        <button className="product-menu-button" type="button" aria-expanded={menuOpen} aria-label={menuOpen ? text.nav.closeMenu : text.nav.openMenu} onClick={() => setMenuOpen((current) => !current)}><span /><span /></button>
         <nav className={menuOpen ? 'open' : ''}>
           <a href="#modulos" onClick={close}>{text.nav.modules}</a>
           <a href="#ecosistema" onClick={close}>{text.nav.ecosystem}</a>
           <a href="#recursos" onClick={close}>{text.nav.resources}</a>
           <a href="#planes" onClick={close}>{text.nav.plans}</a>
-          <button type="button" onClick={() => { setLanguage((current) => current === 'es' ? 'en' : 'es'); close() }}><b>{language.toUpperCase()}</b><span>/</span>{language === 'es' ? 'EN' : 'ES'}</button>
+          <button type="button" aria-label={text.nav.switchLanguage} onClick={() => { setLanguage((current) => current === 'es' ? 'en' : 'es'); close() }}><b>{language.toUpperCase()}</b><span>/</span>{language === 'es' ? 'EN' : 'ES'}</button>
           <a className="product-contact-link" href="#contacto" onClick={close}>{text.nav.contact}</a>
           <a className="product-login" href="/app">{text.nav.login} <Arrow /></a>
         </nav>
       </header>
 
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <section className="product-hero" id="inicio">
           <div className="product-hero-copy">
             <p className="product-kicker"><span />{text.hero.kicker}</p>
