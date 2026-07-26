@@ -3,6 +3,8 @@ import { supabase } from '../../lib/supabase.js'
 import BillingPanel from '../billing/BillingPanel.jsx'
 import DonorDirectoryPanel from '../donors/DonorDirectoryPanel.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
+import { ChurchModulePreview, DigitalProductsPreview } from '../platform/ModulePreview.jsx'
+import PlatformHome from '../platform/PlatformHome.jsx'
 import DonationDetailModal from './DonationDetailModal.jsx'
 import DonationEditModal from './DonationEditModal.jsx'
 import OperatorAdminPanel from './OperatorAdminPanel.jsx'
@@ -25,7 +27,6 @@ const iconPaths = {
   package: 'm4 7 8-4 8 4-8 4-8-4Zm0 0v10l8 4 8-4V7m-8 4v10',
   people: 'M16 20v-1.5a4.5 4.5 0 0 0-4.5-4.5h-5A4.5 4.5 0 0 0 2 18.5V20m7-9a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8-1a3 3 0 1 0 0-6m5 16v-1.5a4 4 0 0 0-3-3.9',
   project: 'M4 5h16v15H4zM8 5V3h8v2M8 10h8M8 14h5',
-  report: 'M5 3h11l3 3v15H5zM15 3v4h4M9 17v-3m3 3v-6m3 6V9',
   donor: 'M4 20v-2.2A4.8 4.8 0 0 1 8.8 13h2.4a4.8 4.8 0 0 1 4.8 4.8V20M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8-1v6m-3-3h6',
   users: 'M4 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 2 2 2 3-4',
   organization: 'M4 21V7l8-4 8 4v14M8 10h2m4 0h2m-8 4h2m4 0h2m-5 7v-4h2v4',
@@ -52,7 +53,7 @@ function LoginCard({ access }) {
       <section className="edifica-login-card">
         <a className="edifica-wordmark" href="/">edifica<span>digital</span></a>
         <p className="edifica-kicker">ACCESO AL SISTEMA</p>
-        <h1>Ingresa al panel de Edifica</h1>
+        <h1>Ingresa a Edifica</h1>
         <p>Usa el correo habilitado por el administrador. Recibirás un enlace seguro para iniciar sesión.</p>
         {access.status === 'link_sent' ? <div className="edifica-message success">Revisa tu correo. El enlace de acceso fue enviado a <strong>{access.email}</strong>.</div> : access.status === 'restricted' ? <div className="edifica-message error">Este correo todavía requiere autorización administrativa.<button type="button" onClick={access.signOut}>Cerrar sesión</button></div> : (
           <form onSubmit={submit}>
@@ -181,7 +182,7 @@ function DashboardHome({ access }) {
 
   return (
     <>
-      <header className="edifica-dashboard-header"><div><p className="edifica-kicker">PANEL OPERATIVO</p><h1>Resumen de operaciones</h1>{access.organizationName && <p className="edifica-dashboard-organization">{access.organizationName}</p>}</div><div className="edifica-user-chip"><strong>{access.displayName || access.email}</strong><span>{roleLabels[access.role] ?? access.role}</span></div></header>
+      <header className="edifica-dashboard-header"><div><p className="edifica-kicker">MÓDULO DONACIONES</p><h1>Resumen de operaciones</h1>{access.organizationName && <p className="edifica-dashboard-organization">{access.organizationName}</p>}</div><div className="edifica-user-chip"><strong>{access.displayName || access.email}</strong><span>{roleLabels[access.role] ?? access.role}</span></div></header>
       <section className="edifica-metrics operations-summary-metrics">
         <article><span>Total registrado</span><strong>{totals.all}</strong><small>Donaciones de la organización</small></article>
         <article><span>Fondos recibidos</span><strong>{formatMoney(totals.monetaryReceivedUsd, 'USD')}</strong><small>Base consolidada en USD</small></article>
@@ -193,8 +194,8 @@ function DashboardHome({ access }) {
       <section className="edifica-actions edifica-actions-expanded">
         <a href="/donations/monetary/new"><strong>Registrar donación monetaria</strong><span>Divisas, transferencias, efectivo y comprobantes.</span></a>
         <a href="/donations/in-kind/new"><strong>Registrar donación en especies</strong><span>Cargas consolidadas, manifiestos, contenedores y envíos.</span></a>
-        <a href="/app/donors"><strong>Crear aliado o donante</strong><span>Directorio reutilizable para proyectos y donaciones.</span></a>
-        <a href="/app/projects"><strong>{canAdmin ? 'Cargar proyecto financiado' : 'Consultar proyectos'}</strong><span>Objetivos, presupuesto, ejecución, facturas, evidencias e informes.</span></a>
+        <a href="/app/donations/donors"><strong>Crear aliado o donante</strong><span>Directorio reutilizable para proyectos y donaciones.</span></a>
+        <a href="/app/donations/projects"><strong>{canAdmin ? 'Cargar proyecto financiado' : 'Consultar proyectos'}</strong><span>Objetivos, presupuesto, ejecución, facturas y evidencias.</span></a>
       </section>
       <section className="edifica-records" id="registros">
         <div className="edifica-section-heading"><div><p className="edifica-kicker">ACTIVIDAD RECIENTE</p><h2>Registros de la organización</h2></div><span>{donations.length} registros</span></div>
@@ -207,18 +208,24 @@ function DashboardHome({ access }) {
 
 export default function DashboardApp() {
   const access = useOperatorAccess()
-  const path = window.location.pathname
+  const path = window.location.pathname.replace(/\/$/, '') || '/'
+  const platformHome = path === '/app'
+  const churchPage = path.startsWith('/app/church')
+  const academyPage = path.startsWith('/app/academy')
   const operatorsPage = path.startsWith('/app/admin/operators')
   const organizationsPage = path.startsWith('/app/admin/organizations')
   const billingPage = path.startsWith('/app/admin/billing')
-  const compliancePage = path.startsWith('/app/compliance')
-  const projectsPage = path.startsWith('/app/projects')
-  const volunteersPage = path.startsWith('/app/volunteers')
-  const donorsPage = path.startsWith('/app/donors')
+  const compliancePage = path.startsWith('/app/donations/execution') || path.startsWith('/app/compliance')
+  const projectsPage = path.startsWith('/app/donations/projects') || path.startsWith('/app/projects')
+  const volunteersPage = path.startsWith('/app/donations/volunteers') || path.startsWith('/app/volunteers')
+  const donorsPage = path.startsWith('/app/donations/donors') || path.startsWith('/app/donors')
+  const donationsHome = path === '/app/donations'
   const canAdmin = access.role === 'admin' || access.role === 'super_admin'
-  const homePage = !operatorsPage && !organizationsPage && !billingPage && !projectsPage && !volunteersPage && !compliancePage && !donorsPage
 
   if (access.status !== 'authorized') return <LoginCard access={access} />
+  if (platformHome) return <PlatformHome access={access} />
+  if (churchPage) return <ChurchModulePreview access={access} />
+  if (academyPage) return <DigitalProductsPreview access={access} />
 
   let page = <DashboardHome access={access} />
   if (projectsPage) page = <ProjectsPanel access={access} />
@@ -232,18 +239,19 @@ export default function DashboardApp() {
   return (
     <div className="edifica-dashboard-shell portal-dashboard-shell">
       <aside className="edifica-sidebar portal-sidebar">
-        <div className="portal-brand-block"><a className="edifica-wordmark" href="/app">edifica<span>digital</span></a><small>PORTAL DE GESTIÓN</small></div>
+        <div className="portal-brand-block"><a className="edifica-wordmark" href="/app">edifica<span>digital</span></a><small>MÓDULO DONACIONES</small></div>
         <div className="portal-tenant-card"><span>ORGANIZACIÓN ACTIVA</span><strong>{access.organizationName || 'Administración general'}</strong><small>{roleLabels[access.role] ?? access.role}</small></div>
         <nav className="edifica-primary-nav portal-primary-nav">
-          <span className="portal-nav-section">OPERACIÓN</span>
-          <NavLink active={homePage} href="/app" icon="home">Resumen</NavLink>
+          <span className="portal-nav-section">EDIFICA</span>
+          <NavLink href="/app" icon="home">Todos los módulos</NavLink>
+          <span className="portal-nav-section portal-management-section">DONACIONES</span>
+          <NavLink active={donationsHome} href="/app/donations" icon="home">Resumen</NavLink>
           <NavLink href="/donations/monetary/new" icon="money">Donación monetaria</NavLink>
           <NavLink href="/donations/in-kind/new" icon="package">Donación en especies</NavLink>
-          <NavLink active={volunteersPage} href="/app/volunteers" icon="people">Voluntariado</NavLink>
-          <span className="portal-nav-section portal-management-section">GESTIÓN Y CUMPLIMIENTO</span>
-          <NavLink active={projectsPage} href="/app/projects" icon="project">Proyectos</NavLink>
-          <NavLink active={compliancePage} href="/app/compliance" icon="report">Resultados e informes</NavLink>
-          <NavLink active={donorsPage} href="/app/donors" icon="donor">Aliados y donantes</NavLink>
+          <NavLink active={volunteersPage} href="/app/donations/volunteers" icon="people">Voluntariado</NavLink>
+          <span className="portal-nav-section portal-management-section">GESTIÓN</span>
+          <NavLink active={projectsPage || compliancePage} href="/app/donations/projects" icon="project">Proyectos</NavLink>
+          <NavLink active={donorsPage} href="/app/donations/donors" icon="donor">Aliados y donantes</NavLink>
         </nav>
         <div className="edifica-sidebar-footer portal-sidebar-footer">
           {canAdmin && <nav className="edifica-admin-nav portal-admin-nav" aria-label="Administración"><span className="portal-nav-section">ADMINISTRACIÓN</span><NavLink active={operatorsPage} href="/app/admin/operators" icon="users">Personas habilitadas</NavLink><NavLink active={organizationsPage} href="/app/admin/organizations" icon="organization">Organizaciones y hosts</NavLink><NavLink active={billingPage} href="/app/admin/billing" icon="billing">Planes y facturación</NavLink></nav>}

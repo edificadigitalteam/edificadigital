@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react'
+import { platformTranslations } from './platformTranslations.js'
 import { portalTranslationPatterns, portalTranslations } from './portalTranslations.js'
 import './global-language.css'
 
 const LANGUAGE_KEY = 'edifica-language'
-const translations = new Map(Object.entries(portalTranslations))
+const translations = new Map([
+  ...Object.entries(portalTranslations),
+  ...Object.entries(platformTranslations),
+])
 const textState = new WeakMap()
 const attributeState = new WeakMap()
 const translatedAttributes = ['placeholder', 'title', 'aria-label']
