@@ -4,7 +4,7 @@
 **Status:** Draft
 **Owner:** Isaac Delgado, Yang (yangetze)
 **Created:** 2026-07-26
-**Last Updated:** 2026-07-26 (all open questions resolved except FAQ/llms.txt drafting ownership — see Open Questions)
+**Last Updated:** 2026-07-26 (added FAQ and llms.txt first draft, pending product-owner approval)
 
 ## Overview
 
@@ -82,7 +82,7 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 - [x] Target keywords — confirmed: "software para iglesias", "software para donaciones", "software de trazabilidad de donaciones" (suggested to align with the traceability/transparency positioning already in `CLAUDE.md`'s mission and the current meta description)
 - [x] SSR/prerendering deferral to Phase 2 — approved
 - [x] AI-training/answer crawlers (`GPTBot`, `ClaudeBot`, `PerplexityBot`, `Google-Extended`, `CCBot`) in `robots.txt` — confirmed: **allow** on all public content (landing, `/donations/in-kind`, `/donations/monetary`). **Disallow only `/app` and `/app/*`** (the authenticated dashboard, per `frontend/src/main.jsx`'s `isDashboard` check) — same boundary as anything else that shouldn't be crawled, not a blanket AI opt-out.
-- [ ] Who drafts the FAQ questions/answers and the `llms.txt` summary — product owners or can this plan propose a first draft from existing landing copy for review?
+- [ ] FAQ/`llms.txt` copy — first draft proposed below in "Draft Content", built only from facts already stated in `ProductLandingPage.jsx`'s copy (no new claims). **Pending product-owner review/approval before it ships.**
 
 ## Risks & Mitigation
 
@@ -116,10 +116,76 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 - [ ] Docs updated (`ROADMAP-R-v1` marked superseded for Part 1)
 - [ ] PR opened with before/after screenshots
 
+## Draft Content: FAQ and `llms.txt` (pending product-owner review)
+
+Built only from facts already present in `ProductLandingPage.jsx`'s `copy` object — no new claims, no invented pricing or features. Module states (`Disponible`/`En desarrollo`/`Catálogo inicial`) are kept honest rather than smoothed over, since an AI assistant repeating an overstated claim as fact is worse than not being cited at all.
+
+### FAQ — Spanish
+
+1. **¿Qué es Edifica Digital?**
+   Edifica es un software modular para iglesias y organizaciones cristianas que reúne gestión de donaciones, administración eclesial y productos digitales de formación en una sola plataforma.
+2. **¿Para quién es Edifica?**
+   Edifica está diseñado para iglesias y organizaciones cristianas que necesitan administrar donaciones, proyectos, beneficiarios y equipos de trabajo con orden e integridad, con los datos separados por organización.
+3. **¿Qué módulos incluye la plataforma?**
+   Edifica tiene tres líneas conectadas: Donaciones y proyectos (disponible), que registra fondos y bienes, aliados, proyectos y evidencias; Iglesia (en desarrollo), para membresía, calendario y discipulado; y Productos digitales (catálogo inicial), con cursos, plantillas y recursos prácticos.
+4. **¿Qué hace el módulo de Donaciones y proyectos?**
+   Registra donaciones monetarias y en especie, administra aliados y donantes, y da seguimiento a proyectos financiados y su ejecución.
+5. **¿Los datos de mi organización están separados de los de otras organizaciones?**
+   Sí. Cada organización tiene su propia cuenta institucional: es propietaria de su espacio, su suscripción y sus datos, con usuarios y equipos que trabajan mediante accesos individuales y permisos definidos.
+6. **¿Qué planes de suscripción existen?**
+   Edifica ofrece tres planes: Esencial (equipos pequeños que comienzan con un módulo principal), Organización (varios operadores y procesos activos, con módulos combinables) y Ecosistema (implementación amplia, con todos los módulos contratados y soporte prioritario).
+7. **¿Edifica está disponible en español e inglés?**
+   Sí, la plataforma está disponible en español e inglés con un cambio de idioma persistente.
+8. **¿Cómo solicito una presentación de Edifica?**
+   Se puede solicitar una presentación directamente desde el sitio, que conecta por WhatsApp con el equipo de Edifica.
+
+### FAQ — English
+
+1. **What is Edifica Digital?**
+   Edifica is modular software for churches and Christian organizations that brings donation management, church administration, and digital training products together in one platform.
+2. **Who is Edifica for?**
+   Edifica is built for churches and Christian organizations that need to manage donations, projects, beneficiaries, and work teams with order and integrity, with each organization's data kept separate.
+3. **What modules does the platform include?**
+   Edifica has three connected lines: Donations and projects (available), which records funds and goods, partners, projects, and evidence; Church (in development), for membership, calendar, and discipleship; and Digital products (initial catalog), with courses, templates, and practical resources.
+4. **What does the Donations and projects module do?**
+   It records monetary and in-kind donations, manages partners and donors, and tracks funded projects and their execution.
+5. **Is my organization's data separate from other organizations' data?**
+   Yes. Each organization has its own institutional account: it owns its workspace, subscription, and data, with users and teams working through individual access and defined permissions.
+6. **What subscription plans exist?**
+   Edifica offers three plans: Essential (small teams starting with one primary module), Organization (several operators and active processes, with combinable modules), and Ecosystem (broad implementation, all contracted modules, and priority support).
+7. **Is Edifica available in Spanish and English?**
+   Yes, the platform is available in Spanish and English with a persistent language switch.
+8. **How do I request a presentation of Edifica?**
+   A presentation can be requested directly from the site, which connects via WhatsApp with the Edifica team.
+
+### `llms.txt` (draft — `frontend/public/llms.txt`)
+
+```markdown
+# Edifica Digital
+
+> Software modular para iglesias y organizaciones cristianas: donaciones, administración eclesial y productos digitales en una plataforma con datos separados por organización.
+> Modular software for churches and Christian organizations: donations, church administration, and digital products in one platform with data kept separate per organization.
+
+## Módulos / Modules
+- Donaciones y proyectos / Donations and projects (Disponible / Available): fondos y bienes, aliados, proyectos financiados, evidencias / funds and goods, partners, funded projects, evidence.
+- Iglesia / Church (En desarrollo / In development): membresía, calendario, discipulado, educación cristiana / membership, calendar, discipleship, Christian education.
+- Productos digitales / Digital products (Catálogo inicial / Initial catalog): cursos, plantillas, bibliotecas descargables / courses, templates, downloadable libraries.
+
+## Planes / Plans
+- Esencial / Essential: equipos pequeños, un módulo principal / small teams, one primary module.
+- Organización / Organization: múltiples usuarios, módulos combinables / multiple users, combinable modules.
+- Ecosistema / Ecosystem: todos los módulos contratados, soporte prioritario / all contracted modules, priority support.
+
+## Contacto / Contact
+- Solicitar presentación vía WhatsApp desde el sitio / Request a presentation via WhatsApp from the site: https://somosedificadigital.com/#contacto
+```
+
+**Note:** This draft is intentionally conservative — it does not state pricing, user limits, or storage numbers, since none are published on the landing today. If product owners want those included, they need to confirm the actual figures first.
+
 ## Deferred (out of scope for this plan)
 
 - **Privacy Policy / Terms of Service.** Confirmed with product owners: no such content exists yet. Drafting and publishing legal pages, plus the footer link to them, is its own plan — do not block this plan on it, and do not add a footer link pointing to a page that doesn't exist yet.
 
 ## Next
 
-Only one Open Question remains: who drafts the FAQ questions/answers and the `llms.txt` summary. Once that's decided, this plan's Status moves to "In Progress" and implementation proceeds in the order: static meta/OG/icons (domain `somosedificadigital.com`, brand-derived social image, keywords worked into copy/JSON-LD) → accessibility → AI/answer-engine visibility (`llms.txt`, FAQ, `robots.txt`) → analytics events → font cleanup. A separate plan will cover Privacy Policy / Terms when that content is ready. SSR/prerendering stays deferred per the approved recommendation.
+All Open Questions are resolved except final sign-off on the FAQ/`llms.txt` draft above. Once approved (as-is or with edits), this plan's Status moves to "In Progress" and implementation proceeds in the order: static meta/OG/icons (domain `somosedificadigital.com`, brand-derived social image, keywords worked into copy/JSON-LD) → accessibility → AI/answer-engine visibility (`llms.txt`, FAQ, `robots.txt`) → analytics events → font cleanup. A separate plan will cover Privacy Policy / Terms when that content is ready. SSR/prerendering stays deferred per the approved recommendation.
