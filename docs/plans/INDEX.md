@@ -40,7 +40,7 @@ All project plans are stored in `/docs/plans/` with a consistent naming conventi
 | R | `plans/ROADMAP-R-v1_seo-and-offline-modules.md` | 📋 Draft | Part 1 (SEO) superseded by S1-LANDING below; Part 2 (offline field modules) still needs decisions |
 | S1-D6 | (TBD) | 📋 Planned | Day 6: PDF + QA + Polish |
 | S1-OBS | [SPRINT-S1-v1_vercel-observability.md](SPRINT-S1-v1_vercel-observability.md) | ✅ Complete | Client error tracking reported into Vercel Runtime Logs |
-| S1-LANDING | [SPRINT-S1-v1_landing-page-best-practices.md](SPRINT-S1-v1_landing-page-best-practices.md) | 📋 Draft | Public landing page: SEO, Open Graph, accessibility, legal link, font/analytics cleanup (needs image/legal-content decisions before implementation) |
+| S1-LANDING | [SPRINT-S1-v1_landing-page-best-practices.md](SPRINT-S1-v1_landing-page-best-practices.md) | ✍️ In Progress | Public landing page: SEO, Open Graph, accessibility, AI/answer-engine visibility (GEO/AEO), font/analytics cleanup — all decisions confirmed, implementation starting |
 
 ### Legend
 

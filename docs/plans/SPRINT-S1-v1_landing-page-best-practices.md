@@ -1,10 +1,10 @@
 # SPRINT: Landing Page Best Practices
 
 **Code:** SPRINT-S1-v1_landing-page-best-practices
-**Status:** Draft
+**Status:** In Progress
 **Owner:** Isaac Delgado, Yang (yangetze)
 **Created:** 2026-07-26
-**Last Updated:** 2026-07-26 (added FAQ and llms.txt first draft, pending product-owner approval)
+**Last Updated:** 2026-07-26 (FAQ/llms.txt draft approved as-is — all Open Questions resolved, plan ready for implementation)
 
 ## Overview
 
@@ -82,7 +82,7 @@ None. This is a frontend/static-asset-only change — no Supabase schema, RLS, o
 - [x] Target keywords — confirmed: "software para iglesias", "software para donaciones", "software de trazabilidad de donaciones" (suggested to align with the traceability/transparency positioning already in `CLAUDE.md`'s mission and the current meta description)
 - [x] SSR/prerendering deferral to Phase 2 — approved
 - [x] AI-training/answer crawlers (`GPTBot`, `ClaudeBot`, `PerplexityBot`, `Google-Extended`, `CCBot`) in `robots.txt` — confirmed: **allow** on all public content (landing, `/donations/in-kind`, `/donations/monetary`). **Disallow only `/app` and `/app/*`** (the authenticated dashboard, per `frontend/src/main.jsx`'s `isDashboard` check) — same boundary as anything else that shouldn't be crawled, not a blanket AI opt-out.
-- [ ] FAQ/`llms.txt` copy — first draft proposed below in "Draft Content", built only from facts already stated in `ProductLandingPage.jsx`'s copy (no new claims). **Pending product-owner review/approval before it ships.**
+- [x] FAQ/`llms.txt` copy — draft below in "Draft Content", built only from facts already stated in `ProductLandingPage.jsx`'s copy (no new claims). **Approved as-is by product owners.**
 
 ## Risks & Mitigation
 
@@ -188,4 +188,4 @@ Built only from facts already present in `ProductLandingPage.jsx`'s `copy` objec
 
 ## Next
 
-All Open Questions are resolved except final sign-off on the FAQ/`llms.txt` draft above. Once approved (as-is or with edits), this plan's Status moves to "In Progress" and implementation proceeds in the order: static meta/OG/icons (domain `somosedificadigital.com`, brand-derived social image, keywords worked into copy/JSON-LD) → accessibility → AI/answer-engine visibility (`llms.txt`, FAQ, `robots.txt`) → analytics events → font cleanup. A separate plan will cover Privacy Policy / Terms when that content is ready. SSR/prerendering stays deferred per the approved recommendation.
+All Open Questions are resolved and the FAQ/`llms.txt` draft is approved as-is. Implementation begins on a new branch, in this order: static meta/OG/icons (domain `somosedificadigital.com`, brand-derived social image, keywords worked into copy/JSON-LD) → accessibility → AI/answer-engine visibility (`llms.txt`, FAQ, `robots.txt`) → analytics events → font cleanup. A separate plan will cover Privacy Policy / Terms when that content is ready. SSR/prerendering stays deferred per the approved recommendation.
