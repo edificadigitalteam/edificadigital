@@ -1,17 +1,10 @@
 const MAX_EVIDENCE_SIZE = 20 * 1024 * 1024
-const ALLOWED_EVIDENCE_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'application/pdf',
-])
+const ALLOWED_EVIDENCE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
 
 const nullable = (value) => {
   const normalized = typeof value === 'string' ? value.trim() : value
   return normalized === '' || normalized === undefined ? null : normalized
 }
-
-const isEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(value ?? '')
 
 const sanitizeFileName = (name) => {
   const lastDot = name.lastIndexOf('.')
@@ -23,7 +16,6 @@ const sanitizeFileName = (name) => {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 80) || 'evidence'
-
   return `${base}${extension.replace(/[^.a-z0-9]/g, '')}`
 }
 
@@ -39,25 +31,22 @@ export class MonetarySubmissionError extends Error {
 export function createMonetaryReference(draft) {
   const currency = String(draft.originCurrency ?? 'XXX').toUpperCase().slice(0, 3).padEnd(3, 'X')
   const receivedDate = draft.receivedAt?.slice(0, 10).replaceAll('-', '') || '00000000'
-  const suffix = String(draft.submissionId ?? '')
-    .replace(/[^a-z0-9]/gi, '')
-    .slice(0, 8)
-    .toUpperCase()
-    .padEnd(8, '0')
+  const suffix = String(draft.submissionId ?? '').replace(/[^a-z0-9]/gi, '').slice(0, 8).toUpperCase().padEnd(8, '0')
   return `MON-${currency}-${receivedDate}-${suffix}`
 }
 
 export function buildMonetaryPayload(draft, attachments = []) {
-  const donorContact = nullable(draft.donorContact)
+  const anonymous = draft.donorType === 'anonymous' || draft.isAnonymous
   return {
     submission_key: draft.submissionId,
     reference_code: createMonetaryReference(draft),
     donor: {
-      name: draft.donorName.trim(),
-      email: donorContact && isEmail(donorContact) ? donorContact.toLowerCase() : null,
-      phone: donorContact && !isEmail(donorContact) ? donorContact : null,
+      name: anonymous ? 'Donante anónimo' : draft.donorName.trim(),
+      email: anonymous ? null : nullable(draft.donorEmail)?.toLowerCase() ?? null,
+      phone: anonymous ? null : nullable(draft.donorPhone),
+      country: anonymous ? null : nullable(draft.donorCountry),
       is_organization: draft.donorType === 'organization',
-      is_anonymous: Boolean(draft.isAnonymous),
+      is_anonymous: anonymous,
     },
     received_at: new Date(draft.receivedAt).toISOString(),
     payment_method: draft.paymentMethod,
@@ -89,12 +78,8 @@ export function createMonetaryEvidencePath(userId, submissionId, evidence) {
 
 export async function submitMonetaryDonation({ client, draft, evidence = [] }) {
   const userResponse = await client.auth.getUser()
-  if (userResponse.error || !userResponse.data?.user) {
-    throw new MonetarySubmissionError('authentication', userResponse.error)
-  }
-
+  if (userResponse.error || !userResponse.data?.user) throw new MonetarySubmissionError('authentication', userResponse.error)
   if (evidence.length === 0) throw new MonetarySubmissionError('evidence_required')
-
   const invalidEvidence = evidence.find(({ file }) => Object.keys(validateMonetaryEvidence(file)).length)
   if (invalidEvidence) throw new MonetarySubmissionError('evidence_validation')
 
@@ -106,34 +91,37 @@ export async function submitMonetaryDonation({ client, draft, evidence = [] }) {
       contentType: entry.file.type,
       upsert: true,
     })
-
     if (upload.error) throw new MonetarySubmissionError('evidence_upload', upload.error)
-
-    attachments.push({
-      attachment_type: entry.type,
-      storage_path: upload.data?.path ?? path,
-      file_name: entry.file.name,
-      notes: null,
-    })
+    attachments.push({ attachment_type: entry.type, storage_path: upload.data?.path ?? path, file_name: entry.file.name, notes: null })
   }
 
-  const response = await client.rpc('submit_monetary_donation', {
-    payload: buildMonetaryPayload(draft, attachments),
-  })
-
+  const response = await client.rpc('submit_monetary_donation', { payload: buildMonetaryPayload(draft, attachments) })
   if (response.error) throw new MonetarySubmissionError('record', response.error)
 
-  if (draft.projectId || draft.organizationId) {
-    const donationUpdate = await client
-      .from('donation')
-      .update({
-        project_id: draft.projectId || null,
-        organization_id: draft.organizationId || null,
-      })
-      .eq('id', response.data.donation_id)
+  const donationUpdate = await client
+    .from('donation')
+    .update({ project_id: draft.projectId || null, organization_id: draft.organizationId || null })
+    .eq('id', response.data.donation_id)
+  if (donationUpdate.error) throw new MonetarySubmissionError('record', donationUpdate.error)
 
-    if (donationUpdate.error) throw new MonetarySubmissionError('record', donationUpdate.error)
-  }
+  const { data: donationActor, error: actorLookupError } = await client
+    .from('donation')
+    .select('actor_id')
+    .eq('id', response.data.donation_id)
+    .single()
+  if (actorLookupError) throw new MonetarySubmissionError('record', actorLookupError)
+
+  const actorUpdate = await client
+    .from('actor')
+    .update({
+      country: nullable(draft.donorCountry),
+      email: nullable(draft.donorEmail)?.toLowerCase() ?? null,
+      phone: nullable(draft.donorPhone),
+      is_organization: draft.donorType === 'organization',
+      is_anonymous: draft.donorType === 'anonymous' || draft.isAnonymous,
+    })
+    .eq('id', donationActor.actor_id)
+  if (actorUpdate.error) throw new MonetarySubmissionError('record', actorUpdate.error)
 
   return { ...response.data, evidence_count: attachments.length }
 }
