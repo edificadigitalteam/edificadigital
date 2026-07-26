@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import DashboardApp from './features/dashboard/DashboardApp.jsx'
+import GlobalLanguageController from './i18n/GlobalLanguageController.jsx'
 import { ErrorBoundary } from './lib/ErrorBoundary.jsx'
 import { installGlobalErrorLogging } from './lib/logger.js'
 
@@ -51,10 +52,30 @@ function OperationalNavigationGuard() {
   return null
 }
 
+function PublicLoginGuard() {
+  useEffect(() => {
+    if (isDashboard || isOperationalForm) return undefined
+
+    const openLogin = (event) => {
+      const link = event.target.closest?.('a.nav-cta[href="/app"]')
+      if (!link) return
+      event.preventDefault()
+      window.location.assign(`/app?login=1&t=${Date.now()}`)
+    }
+
+    document.addEventListener('click', openLogin, true)
+    return () => document.removeEventListener('click', openLogin, true)
+  }, [])
+
+  return null
+}
+
 function RootApplication() {
   return (
     <>
+      <PublicLoginGuard />
       {isOperationalForm && <OperationalNavigationGuard />}
+      <GlobalLanguageController />
       {isDashboard ? <DashboardApp /> : <App />}
     </>
   )
