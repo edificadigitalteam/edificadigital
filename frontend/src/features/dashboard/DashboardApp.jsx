@@ -10,6 +10,7 @@ import ProjectsPanel from './ProjectsPanel.jsx'
 import VolunteerPanel from './VolunteerPanel.jsx'
 import './dashboard.css'
 import './dashboard-extensions.css'
+import './dashboard-summary.css'
 import './portal-shell.css'
 
 const typeLabels = { monetary: 'Monetaria', in_kind: 'En especies', mixed: 'Mixta' }
@@ -72,8 +73,19 @@ function formatDate(value) {
   return new Intl.DateTimeFormat('es-VE', { dateStyle: 'medium' }).format(new Date(value))
 }
 
+function formatMoney(amount, currency = 'USD') {
+  return new Intl.NumberFormat('es-ES', { style: 'currency', currency, maximumFractionDigits: 2 }).format(Number(amount || 0))
+}
+
+function formatInvestments(investmentByCurrency) {
+  const entries = Object.entries(investmentByCurrency ?? {})
+  if (!entries.length) return formatMoney(0, 'USD')
+  return entries.map(([currency, amount]) => formatMoney(amount, currency)).join(' · ')
+}
+
 function DashboardHome({ access }) {
   const [donations, setDonations] = useState([])
+  const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedId, setSelectedId] = useState('')
@@ -87,6 +99,8 @@ function DashboardHome({ access }) {
   const loadDonations = useCallback(async () => {
     if (!supabase || !access.userId) return
     setLoading(true)
+    setError('')
+
     let request = supabase
       .from('donation')
       .select('id, donation_type, status, reference_code, received_at, created_at, donor:actor(name)')
@@ -94,14 +108,26 @@ function DashboardHome({ access }) {
       .limit(50)
 
     if (access.role !== 'super_admin' && access.organizationId) request = request.eq('organization_id', access.organizationId)
-    const { data, error: queryError } = await request
 
-    if (queryError) {
-      setError(queryError.message)
+    const [donationResponse, summaryResponse] = await Promise.all([
+      request,
+      supabase.rpc('current_operations_summary', {
+        target_organization_id: access.organizationId || null,
+      }),
+    ])
+
+    if (donationResponse.error) {
       setDonations([])
+      setError(donationResponse.error.message)
     } else {
-      setError('')
-      setDonations(data ?? [])
+      setDonations(donationResponse.data ?? [])
+    }
+
+    if (summaryResponse.error) {
+      setSummary(null)
+      setError((current) => current || summaryResponse.error.message)
+    } else {
+      setSummary(summaryResponse.data ?? null)
     }
     setLoading(false)
   }, [access.organizationId, access.role, access.userId])
@@ -120,11 +146,20 @@ function DashboardHome({ access }) {
     }
   }, [selectedId])
 
-  const totals = useMemo(() => ({
+  const fallbackTotals = useMemo(() => ({
     all: donations.length,
     monetary: donations.filter((item) => item.donation_type === 'monetary').length,
     inKind: donations.filter((item) => item.donation_type === 'in_kind').length,
   }), [donations])
+
+  const totals = {
+    all: Number(summary?.donation_count ?? fallbackTotals.all),
+    monetary: Number(summary?.monetary_count ?? fallbackTotals.monetary),
+    inKind: Number(summary?.in_kind_count ?? fallbackTotals.inKind),
+    monetaryReceivedUsd: Number(summary?.monetary_received_usd ?? 0),
+    beneficiaries: Number(summary?.beneficiary_count ?? 0),
+    compliance: Number(summary?.compliance_percent ?? 0),
+  }
 
   const openDonation = useCallback(async (donationId, mode = 'detail') => {
     if (!supabase) return
@@ -137,7 +172,7 @@ function DashboardHome({ access }) {
     try {
       const { data: donationData, error: donationError } = await supabase
         .from('donation')
-        .select('id, donation_type, status, reference_code, organization_id, project_id, recorded_at, received_at, notes, created_at, donor:actor(name, email, phone, country, is_organization), project:project(name, code)')
+        .select('id, donation_type, status, reference_code, organization_id, project_id, recorded_at, received_at, notes, created_at, donor:actor(name, email, phone, country, is_organization, is_anonymous), project:project(name, code)')
         .eq('id', donationId)
         .single()
       if (donationError) throw donationError
@@ -205,10 +240,13 @@ function DashboardHome({ access }) {
         <div className="edifica-user-chip"><strong>{access.displayName || access.email}</strong><span>{roleLabels[access.role] ?? access.role}</span></div>
       </header>
 
-      <section className="edifica-metrics">
-        <article><span>Total registrado</span><strong>{totals.all}</strong></article>
-        <article><span>Donaciones monetarias</span><strong>{totals.monetary}</strong></article>
-        <article><span>Donaciones en especies</span><strong>{totals.inKind}</strong></article>
+      <section className="edifica-metrics operations-summary-metrics">
+        <article><span>Total registrado</span><strong>{totals.all}</strong><small>Donaciones de la organización</small></article>
+        <article><span>Fondos recibidos</span><strong>{formatMoney(totals.monetaryReceivedUsd, 'USD')}</strong><small>Base consolidada en USD</small></article>
+        <article><span>Inversión ejecutada</span><strong>{formatInvestments(summary?.investment_by_currency)}</strong><small>Gastos reportados o verificados</small></article>
+        <article><span>Cumplimiento físico</span><strong>{totals.compliance}%</strong><small>Promedio de metas entregadas</small></article>
+        <article><span>Personas beneficiadas</span><strong>{totals.beneficiaries}</strong><small>Registros agregados o nominales</small></article>
+        <article><span>Tipos de donación</span><strong>{totals.monetary} / {totals.inKind}</strong><small>Monetarias / en especies</small></article>
       </section>
 
       <section className="edifica-actions edifica-actions-expanded">
@@ -221,7 +259,7 @@ function DashboardHome({ access }) {
       <section className="edifica-records" id="registros">
         <div className="edifica-section-heading"><div><p className="edifica-kicker">ACTIVIDAD RECIENTE</p><h2>Registros de la organización</h2></div><span>{donations.length} registros</span></div>
         {loading ? <p className="edifica-empty">Cargando registros…</p> : error ? <p className="edifica-empty error">No se pudo cargar el listado: {error}</p> : donations.length === 0 ? <p className="edifica-empty">Todavía no existen donaciones registradas.</p> : (
-          <div className="edifica-table-wrap"><table><thead><tr><th>Fecha</th><th>Referencia</th><th>Tipo</th><th>Donante</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{donations.map((donation) => (
+          <div className="edifica-table-wrap"><table><thead><tr><th>Fecha</th><th>Referencia</th><th>Tipo</th><th>Donante o aliado</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{donations.map((donation) => (
             <tr key={donation.id} onClick={() => openDonation(donation.id, 'detail')}>
               <td>{formatDate(donation.received_at ?? donation.created_at)}</td>
               <td>{donation.reference_code ?? 'Sin referencia'}</td>
@@ -266,41 +304,23 @@ export default function DashboardApp() {
   return (
     <div className="edifica-dashboard-shell portal-dashboard-shell">
       <aside className="edifica-sidebar portal-sidebar">
-        <div className="portal-brand-block">
-          <a className="edifica-wordmark" href="/app">edifica<span>digital</span></a>
-          <small>PORTAL DE GESTIÓN</small>
-        </div>
-
-        <div className="portal-tenant-card">
-          <span>ORGANIZACIÓN ACTIVA</span>
-          <strong>{access.organizationName || 'Administración general'}</strong>
-          <small>{roleLabels[access.role] ?? access.role}</small>
-        </div>
-
+        <div className="portal-brand-block"><a className="edifica-wordmark" href="/app">edifica<span>digital</span></a><small>PORTAL DE GESTIÓN</small></div>
+        <div className="portal-tenant-card"><span>ORGANIZACIÓN ACTIVA</span><strong>{access.organizationName || 'Administración general'}</strong><small>{roleLabels[access.role] ?? access.role}</small></div>
         <nav className="edifica-primary-nav portal-primary-nav">
           <span className="portal-nav-section">OPERACIÓN</span>
           <NavLink active={homePage} href="/app" icon="home">Resumen</NavLink>
           <NavLink href="/donations/monetary/new" icon="money">Donación monetaria</NavLink>
           <NavLink href="/donations/in-kind/new" icon="package">Donación en especies</NavLink>
           <NavLink active={volunteersPage} href="/app/volunteers" icon="people">Voluntariado</NavLink>
-
           <span className="portal-nav-section portal-management-section">GESTIÓN Y CUMPLIMIENTO</span>
           <NavLink active={projectsPage} href="/app/projects" icon="project">Proyectos</NavLink>
           <NavLink active={compliancePage} href="/app/compliance" icon="report">Resultados e informes</NavLink>
         </nav>
-
         <div className="edifica-sidebar-footer portal-sidebar-footer">
-          {canAdmin && (
-            <nav className="edifica-admin-nav portal-admin-nav" aria-label="Administración">
-              <span className="portal-nav-section">ADMINISTRACIÓN</span>
-              <NavLink active={operatorsPage} href="/app/admin/operators" icon="users">Personas habilitadas</NavLink>
-              <NavLink active={organizationsPage} href="/app/admin/organizations" icon="organization">Organizaciones y hosts</NavLink>
-            </nav>
-          )}
+          {canAdmin && <nav className="edifica-admin-nav portal-admin-nav" aria-label="Administración"><span className="portal-nav-section">ADMINISTRACIÓN</span><NavLink active={operatorsPage} href="/app/admin/operators" icon="users">Personas habilitadas</NavLink><NavLink active={organizationsPage} href="/app/admin/organizations" icon="organization">Organizaciones y hosts</NavLink></nav>}
           <div className="portal-user-footer"><div><strong>{access.displayName || access.email}</strong><span>{access.email}</span></div><button className="edifica-signout" type="button" onClick={access.signOut}>Cerrar sesión</button></div>
         </div>
       </aside>
-
       <main className="edifica-dashboard-main">{page}</main>
     </div>
   )
