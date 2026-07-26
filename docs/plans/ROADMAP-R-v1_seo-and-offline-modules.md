@@ -18,7 +18,9 @@ Two feature requests to scope before implementation, per the plan-first rule in 
 
 ---
 
-## Part 1: SEO
+## Part 1: SEO — superseded
+
+> Superseded by [`SPRINT-S1-v1_landing-page-best-practices.md`](SPRINT-S1-v1_landing-page-best-practices.md), which resolves the SSR open question (deferred to a later phase) and scopes SEO alongside Open Graph, accessibility, legal, and analytics gaps found on the landing page. Kept below for history.
 
 ### Scope
 
