@@ -143,7 +143,6 @@ const translations = new Map(Object.entries({
   'Organización / financiador': 'Organization / funding partner',
   'Vigencia': 'Term',
   'Presupuesto': 'Budget',
-  'Cumplimiento': 'Compliance',
   'Cancelar edición': 'Cancel editing',
   'IDENTIFICACIÓN DEL PROYECTO': 'PROJECT IDENTIFICATION',
   'Organización usuaria': 'Client organization',
@@ -231,7 +230,6 @@ const translations = new Map(Object.entries({
   'Disponibilidad': 'Availability',
   'Contacto de emergencia': 'Emergency contact',
   'Especialidades': 'Specialties',
-  'Registrar voluntario': 'Register volunteer',
   'Cargando…': 'Loading…',
   'Cancelar': 'Cancel',
   'Eliminar': 'Remove',
@@ -296,7 +294,8 @@ function applyLanguage(root, language) {
       if (!element.hasAttribute(attribute)) return
       if (!(attribute in originals)) originals[attribute] = element.getAttribute(attribute)
       const original = originals[attribute]
-      element.setAttribute(attribute, language === 'en' ? translateValue(original) : original)
+      const next = language === 'en' ? translateValue(original) : original
+      if (element.getAttribute(attribute) !== next) element.setAttribute(attribute, next)
     })
   })
 }
@@ -318,7 +317,7 @@ export default function GlobalLanguageController() {
     const observer = new MutationObserver(() => {
       window.requestAnimationFrame(() => applyLanguage(document.getElementById('root'), language))
     })
-    observer.observe(document.getElementById('root'), { childList: true, subtree: true, characterData: true, attributes: true })
+    observer.observe(document.getElementById('root'), { childList: true, subtree: true, characterData: true })
     return () => observer.disconnect()
   }, [isPortal, language])
 
