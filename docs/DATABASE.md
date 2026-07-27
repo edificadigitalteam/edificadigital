@@ -18,6 +18,15 @@ All database identifiers and stored enum-like values use English `snake_case`. S
 | 6 | `20260719041213_monetary_beneficiary_foundation.sql` | `monetary_beneficiary_foundation` | Multi-currency receipt details, authenticated monetary submission, and protected beneficiary identity and participation |
 | 7 | `20260719042848_optimize_monetary_beneficiary_foreign_keys.sql` | `optimize_monetary_beneficiary_foreign_keys` | Covering indexes for the new reconciliation and beneficiary audit foreign keys |
 
+> Note: this table is known to be behind the deployed migration history (it stops
+> before the organization/tenant, billing, and project-execution migrations already
+> applied to `edifydb`). Flagged separately for a dedicated documentation pass; not
+> backfilled here to keep this change scoped to organization-admin provisioning.
+
+| — | `20260726000900_fix_impact_event_created_by.sql` | — | Corrective: adds `impact_event.created_by`, missing since the tenant-isolation migration backfills it but no prior migration created it |
+| — | `20260726002500_fix_missing_impact_donation_table.sql` | — | Corrective: recreates `public.impact_donation` (deployed to `edifydb` outside a versioned migration) so migration history replays from scratch |
+| — | `20260727010000_organization_admin_provisioning.sql` | — | `organization.contact_email` becomes required and unique; adds `operator_access` activation columns (`activation_token`, `activation_token_expires_at`, `email_confirmed_at`); `admin_save_organization` auto-provisions a pending `admin` operator for the new organization's contact email instead of self-assigning the calling super_admin; new `confirm_operator_activation(token)` RPC; `is_authorized_operator()` now also requires a confirmed email |
+
 DDL changes must be added as new migration files and applied through Supabase migration history. Existing applied migrations remain immutable.
 
 ## Operational model
@@ -120,9 +129,11 @@ Reports for international organizations must present cash received, in-kind refe
 ## Security model
 
 - RLS is enabled on all 18 public operational tables and both private beneficiary tables. RLS is forced on the private tables.
-- Every operational policy requires an authenticated identity whose email appears as active in `private.operator_access`.
-- Operator identities are provisioned directly in the protected Supabase environment; personal addresses stay outside Git history.
-- `private.is_authorized_operator()` is a protected security-definer function in a non-exposed schema and begins with an authenticated-user check.
+- Every operational policy requires an authenticated identity whose email appears as active **and email-confirmed** in `private.operator_access`.
+- Operator identities are provisioned directly in the protected Supabase environment; personal addresses stay outside Git history. The exception is an organization's own admin: creating an organization (`public.admin_save_organization`, super_admin only) auto-provisions an `operator_access` row for that organization's `contact_email` with `role = 'admin'`, `active = true`, and `email_confirmed_at = null` until the operator redeems a one-time activation token via `public.confirm_operator_activation(token)` (a `security definer` RPC granted to `anon`, since the operator has no session yet at that point).
+- `private.is_authorized_operator()` is a protected security-definer function in a non-exposed schema and begins with an authenticated-user check, and now also requires `email_confirmed_at is not null`.
+- Roles in `private.operator_access.role`: `operator`, `admin` (organization admin, tied to `organization_id`), `super_admin` (platform host, no `organization_id`, exempt from per-organization seat limits).
+- `public.organization.contact_email` is required and globally unique — it is the organization's access identifier.
 - `public.current_operator_access()` lets the authenticated application verify access without exposing the allow-list.
 - `anon` has no table privileges on operational data.
 - `inventory_lot_balance` uses `security_invoker` and inherits access from its source tables.
