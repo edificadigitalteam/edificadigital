@@ -334,3 +334,36 @@ provider. Flagged as a decision, not assumed.
   `organization.contact_email` unique constraint and the existing
   `operator_access (lower(email))` unique index to fail atomically; pgTAP
   must assert no partial state on conflict.
+
+## Addendum: organization language + email template polish (Phase 2c)
+
+Requested after Phase 2b's bilingual (ES/EN in one message) email shipped:
+
+- **`public.organization.language`** (`'es' | 'en'`, default `'en'`, dropdown
+  in `OrganizationAdminPanel.jsx`) — the organization's default language.
+  System email to that organization's operators is now single-language,
+  matching this field, instead of always bilingual.
+  `20260727040000_organization_language_preference.sql`: adds the column +
+  check constraint; `admin_save_organization` validates and persists it;
+  `admin_list_organizations` exposes it (needed a `drop function` first —
+  Postgres won't let `CREATE OR REPLACE` add a new OUT column to an existing
+  table-returning function); `private.notify_operator_invitation` forwards it
+  to the Edge Function, defaulting to `'en'` for the rare operator with no
+  organization yet (matching the column default).
+- **Email template updates** (`supabase/functions/send-operator-invitation/index.ts`):
+  a header with the Edifica Digital mark (`apple-touch-icon.png`, the only
+  existing hosted square logo asset — `og-image.png` is a 1200×630 social
+  banner, not suited to an email header); a plain-text fallback link shown
+  under the button in case it doesn't render; the organization name in
+  `<strong>`; and the switch from bilingual to single-language content
+  (driven by `organization.language`, see above).
+- **This ADR-driven documentation requirement**: `docs/adr/ADR-006-multitenant-infrastructure-decisions.md`
+  records the Resend/subdomain/Vault/`pg_net`/best-effort-notification
+  decisions from Phase 2b, plus this language decision, as a **living**
+  record — future infrastructure decisions of this kind get appended there
+  (or their own ADR) rather than left undocumented in a migration file or PR
+  description, mirroring how ADR-005 treats SEO as a standing requirement.
+- Tests: `supabase/tests/008_organization_language_preference_test.sql`
+  (7/7 green locally), plus a manual functional check: default language is
+  `'en'` when omitted, explicit `'es'` persists, and an invalid language code
+  (`'fr'`) is rejected.

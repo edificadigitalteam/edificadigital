@@ -13,7 +13,13 @@ const emptyForm = {
   contact_email: '',
   contact_phone: '',
   subscription_status: 'trial',
+  language: 'en',
   active: true,
+}
+
+const languageLabels = {
+  en: 'English',
+  es: 'Español',
 }
 
 const emptyHostForm = {
@@ -92,6 +98,7 @@ export default function OrganizationAdminPanel({ access }) {
       contact_email: organization.contact_email ?? '',
       contact_phone: organization.contact_phone ?? '',
       subscription_status: organization.subscription_status,
+      language: organization.language ?? 'en',
       active: organization.active,
     })
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -186,6 +193,7 @@ export default function OrganizationAdminPanel({ access }) {
             <label><span>Correo de contacto</span><input type="email" value={form.contact_email} onChange={(event) => setForm((current) => ({ ...current, contact_email: event.target.value }))} /></label>
             <label><span>Teléfono</span><input value={form.contact_phone} onChange={(event) => setForm((current) => ({ ...current, contact_phone: event.target.value }))} /></label>
             <label><span>Suscripción</span><select value={form.subscription_status} onChange={(event) => setForm((current) => ({ ...current, subscription_status: event.target.value }))}>{Object.entries(subscriptionLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            <label><span>Idioma predeterminado</span><select value={form.language} onChange={(event) => setForm((current) => ({ ...current, language: event.target.value }))}>{Object.entries(languageLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             <label className="operations-checkbox"><input type="checkbox" checked={form.active} onChange={(event) => setForm((current) => ({ ...current, active: event.target.checked }))} /><span>Organización activa</span></label>
             <button className="edifica-primary-button" type="submit" disabled={saving}>{saving ? 'Guardando…' : form.id ? 'Guardar cambios' : 'Crear organización'}</button>
           </form>
