@@ -1,6 +1,19 @@
 import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
 import ProjectBeneficiariesPanel from './ProjectBeneficiariesPanel.jsx'
+import { buildComplianceReportDocDefinition } from './complianceReportPdf.js'
+import {
+  donationStatusLabels,
+  donationTypeLabels,
+  donationValue,
+  expenseStatusLabels,
+  formatBreakdown,
+  formatDate,
+  formatMoney,
+  formatNumber,
+  outputStatusLabels,
+  percentage,
+} from './reportFormatting.js'
 import './operations.css'
 import './compliance.css'
 
@@ -40,62 +53,6 @@ const createEmptyExpense = () => ({
   status: 'reported',
 })
 
-const outputStatusLabels = {
-  planned: 'Planificado',
-  in_progress: 'En ejecución',
-  completed: 'Completado',
-  verified: 'Verificado',
-}
-
-const expenseStatusLabels = {
-  reported: 'Reportado',
-  verified: 'Verificado',
-  rejected: 'Rechazado',
-}
-
-const donationTypeLabels = {
-  monetary: 'Monetaria',
-  in_kind: 'En especies',
-  mixed: 'Mixta',
-}
-
-const donationStatusLabels = {
-  draft: 'Borrador',
-  announced: 'Anunciada',
-  received: 'Recibida',
-  verified: 'Verificada',
-  closed: 'Cerrada',
-}
-
-function formatMoney(amount, currency = 'USD') {
-  return new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: 2,
-  }).format(Number(amount || 0))
-}
-
-function formatNumber(value) {
-  return new Intl.NumberFormat('es-ES', { maximumFractionDigits: 3 }).format(Number(value || 0))
-}
-
-function formatDate(value) {
-  if (!value) return '—'
-  return new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium' }).format(new Date(value))
-}
-
-function formatBreakdown(values) {
-  const entries = Object.entries(values ?? {}).filter(([, amount]) => Number(amount) !== 0)
-  if (!entries.length) return '—'
-  return entries.map(([currency, amount]) => formatMoney(amount, currency)).join(' · ')
-}
-
-function percentage(value, target) {
-  const safeTarget = Number(target || 0)
-  if (safeTarget <= 0) return 0
-  return Math.min(999, Math.round((Number(value || 0) / safeTarget) * 100))
-}
-
 function sanitizeFileName(name) {
   const lastDot = name.lastIndexOf('.')
   const extension = lastDot >= 0 ? name.slice(lastDot).toLowerCase() : ''
@@ -121,22 +78,6 @@ function validateEvidence(file) {
   return ''
 }
 
-function donationValue(donation) {
-  if (donation.donation_type === 'monetary') {
-    return {
-      primary: formatMoney(donation.amount, donation.currency || 'USD'),
-      secondary: donation.usd_base_amount && donation.currency !== 'USD' ? `${formatMoney(donation.usd_base_amount, 'USD')} base USD` : '',
-    }
-  }
-  const value = donation.in_kind_reference_value && donation.in_kind_reference_currency
-    ? formatMoney(donation.in_kind_reference_value, donation.in_kind_reference_currency)
-    : 'Valor referencial pendiente'
-  return {
-    primary: donation.contents_summary || 'Carga en especies',
-    secondary: [donation.package_count ? `${formatNumber(donation.package_count)} ${donation.package_unit || 'unidades'}` : '', value].filter(Boolean).join(' · '),
-  }
-}
-
 export default function ProjectCompliancePanel({ access }) {
   const query = new URLSearchParams(window.location.search)
   const queryProject = query.get('project') ?? ''
@@ -157,6 +98,7 @@ export default function ProjectCompliancePanel({ access }) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [enablingBeneficiaries, setEnablingBeneficiaries] = useState(false)
+  const [exportingPdf, setExportingPdf] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
@@ -478,11 +420,44 @@ export default function ProjectCompliancePanel({ access }) {
   const executedAmount = Number(funding?.executed_amount ?? investment)
   const availableBalance = Number(funding?.balance_after_execution ?? receivedProjectCurrency - executedAmount)
 
+  const exportPdf = async () => {
+    if (!selectedProject || exportingPdf) return
+    setExportingPdf(true)
+    setError('')
+    try {
+      const { default: pdfMake } = await import('pdfmake/build/pdfmake.js')
+      const { default: pdfFonts } = await import('pdfmake/build/vfs_fonts.js')
+      pdfMake.vfs = pdfFonts
+      const docDefinition = buildComplianceReportDocDefinition({
+        project: selectedProject,
+        generatedAt: new Date(),
+        metrics: { investment, beneficiaries, averageCompliance, budgetCompliance },
+        funding: {
+          receivedProjectCurrency,
+          executedAmount,
+          availableBalance,
+          receivedByCurrency: funding?.received_by_currency,
+          inKindReferenceByCurrency: funding?.in_kind_reference_by_currency,
+          linkedDonations,
+        },
+        outputs,
+        expenses,
+      })
+      pdfMake.createPdf(docDefinition).download(`informe-cumplimiento-${selectedProject.code}.pdf`)
+    } catch (exportError) {
+      setError(exportError?.message ?? 'No fue posible generar el PDF del informe.')
+    }
+    setExportingPdf(false)
+  }
+
   return (
     <div className="operations-page compliance-page">
       <header className="edifica-dashboard-header compliance-header">
         <div><p className="edifica-kicker">CUMPLIMIENTO DEL PROYECTO</p><h1>Ejecución e informe final</h1><p className="operations-intro">Coteja lo aprobado, lo recibido y lo ejecutado; registra avances, personas beneficiadas, inversiones y evidencias.</p></div>
-        <button className="compliance-print" type="button" onClick={() => window.print()} disabled={!selectedProject}>Imprimir informe</button>
+        <div className="compliance-header-actions no-print">
+          <button className="compliance-export" type="button" onClick={exportPdf} disabled={!selectedProject || exportingPdf}>{exportingPdf ? 'Generando PDF…' : 'Exportar PDF'}</button>
+          <button className="compliance-print" type="button" onClick={() => window.print()} disabled={!selectedProject}>Imprimir informe</button>
+        </div>
       </header>
 
       <section className="compliance-selector operations-card">

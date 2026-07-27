@@ -22,7 +22,7 @@ Lightweight backlog for future work that does not yet have a plan in `docs/plans
 
 ## Reported by product owner (2026-07-26)
 
-- [ ] Mejorar la entrega de informes impresos (revisar formato, maquetación y flujo de exportación/impresión de los reportes actuales).
+- [x] Mejorar la entrega de informes impresos (revisar formato, maquetación y flujo de exportación/impresión de los reportes actuales). Se agregó un botón "Exportar PDF" (pdfmake) con encabezado repetido por página (nombre del proyecto, fecha de exportación, "Página X de Y") y se reforzó el CSS de impresión (saltos de página, encabezados de tabla repetidos). Ver `docs/plans/SPRINT-S2-v1_printed-reports-improvements.md`.
 - [ ] Al crear un tenant, la persona cuyo correo se registra debe crearse automáticamente como administrador de ese tenant.
 - [ ] Mejorar el proceso para crear aliados (suppliers/actores) y unificar la experiencia en todos los sitios donde se pueda buscar y/o crear un aliado, de forma simple y consistente.
 - [ ] Revisar la etiqueta del estimado de donantes (verificar redacción/precisión de la etiqueta mostrada en la interfaz).
