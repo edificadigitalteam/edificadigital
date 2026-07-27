@@ -54,6 +54,16 @@ export function percentage(value, target) {
   return Math.min(999, Math.round((Number(value || 0) / safeTarget) * 100))
 }
 
+export function buildReportTableOfContents({ hasEvidence }) {
+  const entries = [
+    { id: 'section-financial', label: 'Cotejo financiero' },
+    { id: 'section-physical', label: 'Ejecución física' },
+  ]
+  if (hasEvidence) entries.push({ id: 'section-evidence', label: 'Soportes multimedia' })
+  entries.push({ id: 'section-expenses', label: 'Ejecución financiera' })
+  return entries
+}
+
 export function donationValue(donation) {
   if (donation.donation_type === 'monetary') {
     return {

@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { donationValue, formatBreakdown, formatDate, formatMoney, percentage } from './reportFormatting.js'
+import { buildReportTableOfContents, donationValue, formatBreakdown, formatDate, formatMoney, percentage } from './reportFormatting.js'
 
 test('formatMoney renders a currency amount in es-ES style', () => {
   assert.match(formatMoney(1234.5, 'USD'), /1234,50/)
@@ -21,6 +21,14 @@ test('formatBreakdown drops zero-amount currencies and joins the rest', () => {
 test('formatDate returns an em dash for a missing value', () => {
   assert.equal(formatDate(null), '—')
   assert.match(formatDate('2026-07-27'), /2026/)
+})
+
+test('buildReportTableOfContents omits the evidence entry when there is none', () => {
+  const withoutEvidence = buildReportTableOfContents({ hasEvidence: false })
+  assert.deepEqual(withoutEvidence.map((entry) => entry.id), ['section-financial', 'section-physical', 'section-expenses'])
+
+  const withEvidence = buildReportTableOfContents({ hasEvidence: true })
+  assert.deepEqual(withEvidence.map((entry) => entry.id), ['section-financial', 'section-physical', 'section-evidence', 'section-expenses'])
 })
 
 test('donationValue reports the reference value for in-kind donations without one yet', () => {

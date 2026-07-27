@@ -1,4 +1,6 @@
 .compliance-page { gap: 24px; }
+.print-cover,
+.print-back-to-index { display: none; }
 .compliance-header { align-items: center; }
 .compliance-print {
   min-height: 44px;
@@ -221,9 +223,45 @@
   .edifica-dashboard-shell { display: block !important; min-height: 0; background: #fff; }
   .edifica-dashboard-main { width: 100% !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
   .compliance-page { width: 100% !important; display: block !important; margin: 0 !important; padding: 0 !important; }
-  .print-summary { width: 100%; grid-template-columns: repeat(4, 1fr); gap: 5mm; margin: 0 0 6mm; page-break-inside: avoid; }
-  .print-summary article { min-height: 24mm; padding: 4mm; border-radius: 3mm; box-shadow: none; }
-  .print-summary strong { font-size: 15pt; }
+  .print-summary { display: none !important; }
+  .print-cover {
+    display: block;
+    width: 100%;
+    padding: 10mm 9mm 6mm;
+    border: 1px solid #d8d1dd;
+    page-break-after: always;
+    break-after: page;
+  }
+  .print-cover-heading { margin: 0 0 8mm; text-align: center; }
+  .print-cover-heading .edifica-kicker { color: var(--ed-orange) !important; }
+  .print-cover-heading h1 { margin: 3mm 0; font-family: 'Source Serif 4', Georgia, serif; font-size: 26pt; color: var(--ed-purple-dark); }
+  .print-cover-heading span { color: var(--ed-muted); font-size: 10pt; }
+  .print-cover-body { display: flex; align-items: center; justify-content: center; gap: 12mm; margin: 0 0 8mm; }
+  .print-cover-gauge {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 46mm;
+    height: 46mm;
+    border-radius: 50%;
+    background: conic-gradient(var(--ed-purple) var(--gauge-value, 0%), #eee8f3 0);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .print-cover-gauge::before { content: ''; position: absolute; inset: 5mm; border-radius: 50%; background: #fff; }
+  .print-cover-gauge strong { position: relative; font-size: 20pt; color: var(--ed-purple-dark); }
+  .print-cover-gauge span { position: relative; grid-row: 2; max-width: 30mm; color: var(--ed-muted); font-size: 7.5pt; text-align: center; }
+  .print-cover-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5mm; }
+  .print-cover-metrics article { min-width: 40mm; padding: 4mm; border: 1px solid var(--ed-line); border-top: 2.5mm solid var(--ed-purple); border-radius: 3mm; }
+  .print-cover-metrics span { display: block; color: var(--ed-muted); font-size: 7.5pt; font-weight: 700; }
+  .print-cover-metrics strong { display: block; margin-top: 1.5mm; color: var(--ed-purple-dark); font-size: 12pt; }
+  .print-cover-objective { max-width: 150mm; margin: 0 auto 8mm; color: var(--ed-muted); font-size: 9pt; line-height: 1.5; text-align: center; }
+  .print-cover-index { max-width: 110mm; margin: 0 auto; padding: 6mm; border: 1px solid var(--ed-line); border-radius: 3mm; background: #faf7fd; }
+  .print-cover-index > span { display: block; margin-bottom: 3mm; color: var(--ed-purple); font-size: 9pt; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+  .print-cover-index ol { margin: 0; padding-left: 5mm; }
+  .print-cover-index li { margin-bottom: 2mm; font-size: 9.5pt; }
+  .print-cover-index a { color: var(--ed-purple-dark); text-decoration: none; }
+  .print-back-to-index { display: inline-block; color: var(--ed-purple); font-size: 7.5pt; font-weight: 800; text-decoration: none; }
   .final-report-card { width: 100% !important; min-height: 238mm; margin: 0 !important; border: 1px solid #d8d1dd; border-radius: 0; box-shadow: none; overflow: visible; page-break-inside: auto; }
   .final-report-heading { padding: 7mm; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .final-report-heading h2 { font-size: 22pt; }

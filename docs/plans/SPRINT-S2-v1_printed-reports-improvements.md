@@ -169,9 +169,48 @@ None. This is a presentation-layer change only.
 - Screenshots/attached PDF of the generated multi-page export included in
   the pull request, per the Git/release section of this guide.
 
+## Added requirement (2026-07-27, after first review): executive cover page + table of contents
+
+Product owner reviewed the first `window.print()` export and liked the
+rich visual output (colors, progress bars, evidence thumbnails), but asked
+for a restructure:
+
+1. **Page 1: a concise, highly visual executive summary** — project name,
+   overall compliance score, and the key financial/beneficiary figures at
+   a glance, not the current dense detail.
+2. **Following pages: the existing detailed report**, organized into
+   clearly labeled sections, with a table of contents on the cover linking
+   into each section, and a "back to index" link on each section so a
+   reader can jump around a long PDF.
+
+**Implementation.** This is a print/HTML restructuring, not a change to
+the `pdfmake` export (which stays as the separate compact export path).
+Added to `ProjectCompliancePanel.jsx`/`compliance.css`:
+
+- A new `#report-cover` section (`.print-cover`), hidden on screen, shown
+  only in print (`@media print`) with `page-break-after: always` so it is
+  guaranteed to be page 1 alone. Contains: project title/kicker, a CSS
+  conic-gradient compliance gauge, the four key metric cards (approved,
+  received, executed, beneficiaries), the objective text, and a table of
+  contents (`<nav class="print-cover-index">`) built from
+  `buildReportTableOfContents({ hasEvidence })` in `reportFormatting.js`
+  (a pure, unit-tested function so the evidence-section entry only
+  appears when there is evidence to show).
+- `id`s on each existing detail section (`section-financial`,
+  `section-physical`, `section-evidence`, `section-expenses`) so the TOC
+  links and anchor-based navigation work.
+- A `.print-back-to-index` link (hidden on screen, shown in print) at the
+  top of every detail section pointing back to `#report-cover`. Browser
+  "Save as PDF" preserves internal hash links as clickable links in the
+  resulting PDF, so this works both on paper (as a visual cue) and in a
+  digital PDF (as a real jump link) without any new dependency.
+- The old on-screen `print-summary` metrics row is now hidden in print
+  (`display: none`), since the new cover's metric cards replace it.
+
 ## Next step
 
-Confirmed by product owner (2026-07-27): proceed with the `pdfmake`-based
-export carrying a professional repeating header (project name, export
-date, "page X of Y"), plus the print-CSS pagination fixes for the existing
-browser-print path. Ready to move to the red/green implementation phase.
+Confirmed by product owner (2026-07-27): implemented both the `pdfmake`
+export and the cover-page/table-of-contents restructuring of the
+`window.print()` path. Awaiting manual confirmation from a real
+authenticated session (Vercel preview) that the printed/exported PDF
+matches expectations before closing out the plan.
