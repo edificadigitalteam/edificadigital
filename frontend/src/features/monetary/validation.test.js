@@ -9,6 +9,7 @@ import {
 
 const completeUsdCashDraft = () => ({
   ...createInitialMonetaryDraft(),
+  donorActorId: 'actor-community-donor',
   donorName: 'Community donor',
   receivedAt: '2026-07-19T10:30',
   paymentMethod: 'cash',
@@ -23,7 +24,7 @@ test('creates a continuous USD cash draft with retry identity', () => {
   const draft = createInitialMonetaryDraft()
 
   assert.equal(draft.donationType, 'monetary')
-  assert.equal(draft.paymentMethod, 'cash')
+  assert.equal(draft.paymentMethod, 'bank_transfer')
   assert.equal(draft.originCurrency, 'USD')
   assert.equal(draft.exchangeRateToUsd, '1')
   assert.match(draft.submissionId, /^[0-9a-f-]{36}$/i)
@@ -37,6 +38,9 @@ test('requires donor, receipt time, positive amounts, and final verification', (
     'donorName',
     'originAmount',
     'receivedAt',
+    'receiverAccountLabel',
+    'senderInstitution',
+    'transactionReference',
     'usdBaseAmount',
     'verificationAccepted',
   ])
