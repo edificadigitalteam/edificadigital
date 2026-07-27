@@ -443,6 +443,7 @@ export default function ProjectCompliancePanel({ access }) {
         outputs,
         expenses,
         evidenceByOutput,
+        organizationName: selectedProject.organization?.name ?? '',
       })
       pdfMake.createPdf(docDefinition).open()
     } catch (exportError) {

@@ -36,19 +36,26 @@ const baseReport = () => ({
     { id: 'e1', expense_date: '2026-06-01', supplier_name: 'Papelería Central', category: 'Materiales', description: 'Cuadernos y lápices', amount: 1200, currency: 'USD', status: 'reported' },
   ],
   hasEvidence: false,
+  organizationName: 'Fundación Ejemplo A.C.',
 })
 
-test('builds an A4 document definition whose header is suppressed on the cover page', () => {
+test('builds an A4 document definition whose header carries the brand mark and tenant name on every page, including the cover', () => {
   const doc = buildComplianceReportDocDefinition(baseReport())
 
   assert.equal(doc.pageSize, 'A4')
   assert.equal(typeof doc.header, 'function')
-  assert.ok(!doc.header(1, 5))
+  const coverHeaderText = JSON.stringify(doc.header(1, 5))
+  assert.match(coverHeaderText, /Edifica Digital/)
+  assert.match(coverHeaderText, /Fundación Ejemplo A\.C\./)
+  // the cover page's own big title covers the project name; the header shouldn't repeat it there
+  assert.doesNotMatch(coverHeaderText, /Página \d/)
 })
 
-test('header on detail pages carries the project name, export date, and page count', () => {
+test('header on detail pages carries the brand mark, tenant name, project name, export date, and page count', () => {
   const doc = buildComplianceReportDocDefinition(baseReport())
   const headerText = JSON.stringify(doc.header(2, 5))
+  assert.match(headerText, /Edifica Digital/)
+  assert.match(headerText, /Fundación Ejemplo A\.C\./)
   assert.match(headerText, /Kits escolares Zona Norte/)
   assert.match(headerText, /Página 2 de 5/)
   assert.match(headerText, /27 jul 2026|27\/07\/2026|jul\.? de 2026/)

@@ -13,20 +13,62 @@ import {
 
 const BRAND_PURPLE = '#5b3a8e'
 const BRAND_PURPLE_DARK = '#351653'
+const BRAND_ORANGE = '#e08a2c'
+const BRAND_YELLOW = '#ffd166'
+const BRAND_VIOLET = '#8d62bc'
 const MUTED_INK = '#6b6470'
+const LINE_COLOR = '#e4dce9'
+const PAPER_TINT = '#faf7fd'
 const GAUGE_TRACK = '#eee8f3'
+const CARD_BORDER_LAYOUT = {
+  hLineWidth: () => 1,
+  vLineWidth: () => 1,
+  hLineColor: () => LINE_COLOR,
+  vLineColor: () => LINE_COLOR,
+  paddingLeft: () => 0,
+  paddingRight: () => 0,
+  paddingTop: () => 0,
+  paddingBottom: () => 0,
+}
 
-function headerBlock(projectName, generatedAt) {
+const EDIFICA_MARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <g transform="skewY(-8)">
+    <rect x="4" y="17" width="7" height="9" rx="1.4" fill="${BRAND_YELLOW}"/>
+    <rect x="13" y="12" width="7" height="14" rx="1.4" fill="${BRAND_ORANGE}"/>
+    <rect x="22" y="6" width="7" height="20" rx="1.4" fill="${BRAND_PURPLE}"/>
+  </g>
+</svg>`
+
+function brandBar(organizationName) {
+  return {
+    columns: [
+      {
+        width: 'auto',
+        columns: [
+          { width: 12, svg: EDIFICA_MARK_SVG },
+          { width: 'auto', text: 'Edifica Digital', style: 'brandName', margin: [4, 1, 0, 0] },
+        ],
+      },
+      { width: '*', text: organizationName || '', style: 'brandOrg', alignment: 'right' },
+    ],
+  }
+}
+
+function headerBlock(projectName, generatedAt, organizationName) {
   return (currentPage, pageCount) => {
-    if (currentPage === 1) return null
+    if (currentPage === 1) {
+      return { margin: [40, 18, 40, 0], stack: [brandBar(organizationName)] }
+    }
     return {
-      margin: [40, 20, 40, 0],
+      margin: [40, 14, 40, 0],
       stack: [
+        brandBar(organizationName),
         {
           columns: [
             { text: projectName, style: 'headerTitle' },
             { text: `Página ${currentPage} de ${pageCount}`, style: 'headerMeta', alignment: 'right' },
           ],
+          margin: [0, 6, 0, 0],
         },
         {
           columns: [
@@ -53,6 +95,23 @@ function buildGaugeSvg(percent) {
     <text x="60" y="57" font-size="22" font-family="Helvetica" font-weight="bold" fill="${BRAND_PURPLE_DARK}" text-anchor="middle">${safe}%</text>
     <text x="60" y="74" font-size="7.5" font-family="Helvetica" fill="${MUTED_INK}" text-anchor="middle">cumplimiento</text>
   </svg>`
+}
+
+function metricCard(label, value, accent, width = 160) {
+  return {
+    width,
+    table: {
+      widths: ['*'],
+      body: [[{
+        stack: [
+          { canvas: [{ type: 'rect', x: 0, y: 0, w: width, h: 3, color: accent }] },
+          { text: label, style: 'coverMetricLabel', margin: [10, 8, 10, 2] },
+          { text: value, style: 'coverMetricValue', margin: [10, 0, 10, 10] },
+        ],
+      }]],
+    },
+    layout: CARD_BORDER_LAYOUT,
+  }
 }
 
 function backToIndexLink() {
@@ -83,44 +142,52 @@ function buildCover({ project, metrics, funding, tableOfContents }) {
     {
       columns: [
         { width: '*', text: '' },
-        {
-          width: 340,
-          table: {
-            widths: [170, 170],
-            body: [
-              [
-                { text: `Aprobado u otorgado\n${formatMoney(project.approved_budget, currency)}`, style: 'coverMetric' },
-                { text: `Recibido\n${formatMoney(funding?.receivedProjectCurrency, currency)}`, style: 'coverMetric' },
-              ],
-              [
-                { text: `Ejecutado\n${formatMoney(funding?.executedAmount ?? metrics?.investment, currency)}`, style: 'coverMetric' },
-                { text: `Personas beneficiadas\n${formatNumber(metrics?.beneficiaries)}`, style: 'coverMetric' },
-              ],
-            ],
-          },
-          layout: 'noBorders',
-        },
+        metricCard('APROBADO U OTORGADO', formatMoney(project.approved_budget, currency), BRAND_PURPLE),
+        { width: 10, text: '' },
+        metricCard('RECIBIDO', formatMoney(funding?.receivedProjectCurrency, currency), BRAND_ORANGE),
+        { width: '*', text: '' },
+      ],
+      margin: [0, 0, 0, 8],
+    },
+    {
+      columns: [
+        { width: '*', text: '' },
+        metricCard('EJECUTADO', formatMoney(funding?.executedAmount ?? metrics?.investment, currency), BRAND_YELLOW),
+        { width: 10, text: '' },
+        metricCard('PERSONAS BENEFICIADAS', formatNumber(metrics?.beneficiaries), BRAND_VIOLET),
         { width: '*', text: '' },
       ],
       margin: [0, 0, 0, 20],
     },
     { text: project.objective || '', style: 'coverObjective', margin: [40, 0, 40, 24] },
     {
-      style: 'coverIndex',
-      table: {
-        widths: ['*'],
-        body: [[{
-          stack: [
-            { text: 'ÍNDICE', style: 'coverIndexHeading' },
-            {
-              ol: tableOfContents.map((entry) => ({ text: entry.label, linkToDestination: entry.id })),
-              style: 'coverIndexList',
-            },
-          ],
-        }]],
-      },
-      layout: { defaultBorder: false },
-      margin: [90, 0, 90, 0],
+      columns: [
+        { width: '*', text: '' },
+        {
+          width: 340,
+          table: {
+            widths: ['*'],
+            body: [[{
+              stack: [
+                { text: 'ÍNDICE', style: 'coverIndexHeading' },
+                {
+                  ol: tableOfContents.map((entry) => ({ text: entry.label, linkToDestination: entry.id })),
+                  style: 'coverIndexList',
+                },
+              ],
+              margin: [16, 12, 16, 12],
+            }]],
+          },
+          layout: {
+            hLineWidth: () => 1.2,
+            vLineWidth: () => 1.2,
+            hLineColor: () => BRAND_PURPLE,
+            vLineColor: () => BRAND_PURPLE,
+            fillColor: () => PAPER_TINT,
+          },
+        },
+        { width: '*', text: '' },
+      ],
     },
     { text: '', pageBreak: 'after' },
   ]
@@ -211,7 +278,7 @@ function expensesTable(expenses) {
   }
 }
 
-export function buildComplianceReportDocDefinition({ project, generatedAt, metrics, funding, outputs = [], expenses = [], evidenceByOutput = new Map(), hasEvidence = false }) {
+export function buildComplianceReportDocDefinition({ project, generatedAt, metrics, funding, outputs = [], expenses = [], evidenceByOutput = new Map(), hasEvidence = false, organizationName = '' }) {
   if (!project) throw new Error('A project is required to build the compliance report PDF.')
 
   const currency = project.currency
@@ -221,8 +288,8 @@ export function buildComplianceReportDocDefinition({ project, generatedAt, metri
 
   return {
     pageSize: 'A4',
-    pageMargins: [40, 90, 40, 40],
-    header: headerBlock(project.name, generatedAt ?? new Date()),
+    pageMargins: [40, 105, 40, 40],
+    header: headerBlock(project.name, generatedAt ?? new Date(), organizationName),
     content: [
       ...buildCover({ project, metrics, funding, tableOfContents }),
 
@@ -267,10 +334,13 @@ export function buildComplianceReportDocDefinition({ project, generatedAt, metri
       coverKicker: { fontSize: 10, bold: true, color: '#e08a2c', characterSpacing: 1 },
       coverTitle: { fontSize: 24, bold: true, color: BRAND_PURPLE_DARK, margin: [0, 6, 0, 4] },
       coverMeta: { fontSize: 10, color: MUTED_INK },
-      coverMetric: { fontSize: 10, alignment: 'center', margin: [0, 0, 0, 8] },
+      coverMetricLabel: { fontSize: 7.5, bold: true, color: MUTED_INK, alignment: 'center' },
+      coverMetricValue: { fontSize: 12, bold: true, color: BRAND_PURPLE_DARK, alignment: 'center' },
       coverObjective: { fontSize: 9.5, italics: true, color: MUTED_INK, alignment: 'center' },
       coverIndexHeading: { fontSize: 9, bold: true, color: BRAND_PURPLE, characterSpacing: 1, margin: [0, 0, 0, 6] },
       coverIndexList: { fontSize: 11, color: BRAND_PURPLE_DARK },
+      brandName: { fontSize: 10, bold: true, color: BRAND_PURPLE_DARK },
+      brandOrg: { fontSize: 9, color: MUTED_INK },
       headerTitle: { fontSize: 13, bold: true, color: BRAND_PURPLE },
       headerSubtitle: { fontSize: 8, color: MUTED_INK },
       headerMeta: { fontSize: 8, color: MUTED_INK },

@@ -251,8 +251,51 @@ browser `Ctrl+P`, since that is independent of our own buttons.
 client-side fetching of the signed Storage URLs and base64 conversion,
 which is straightforward but out of scope for this pass.
 
+## Refined again (2026-07-27, third review): colored metric cards, boxed index, and a persistent brand header
+
+Two more requests after seeing the centered-but-plain cover:
+
+1. **Visual weight on the cover.** The four key metrics should look like
+   the colored, bordered cards from the very first `window.print()`
+   mockup (not plain centered text), and the table of contents should sit
+   inside its own colored/bordered box, not bare text.
+2. **A persistent brand header on every page**, including the cover: the
+   Edifica Digital mark + wordmark on the left, the donor/organization
+   (tenant) name on the right — the header row that already carried the
+   project name/date/page-count now sits *below* this brand row on pages
+   2+; on the cover it's the only header content (the cover's own big
+   title already covers the project name).
+
+**Implementation in `complianceReportPdf.js`:**
+- `metricCard(label, value, accentColor)` builds each metric as its own
+  bordered `table` cell with a thin colored top bar (`canvas` rect) in the
+  same four brand colors the on-screen cards already use (purple, orange,
+  yellow, violet from `compliance.css`'s `.compliance-metrics
+  article:nth-child(n)`), so the PDF cards read as the same visual family
+  as the in-app dashboard.
+- The table-of-contents block is wrapped in a table with a solid
+  brand-purple border and a light-purple (`#faf7fd`) fill — same "paper"
+  tint used elsewhere in the app (`.evidence-report-grid > article >
+  header`, etc.) — instead of a borderless block of text.
+- `brandBar(organizationName)` renders the actual `favicon.svg` mark
+  (three skewed bars, inlined as SVG so no network fetch/build-time asset
+  pipeline is needed) plus "Edifica Digital" on the left, and the tenant's
+  organization name on the right. `headerBlock()` now always returns this
+  row (cover included); the project-specific title/date/page-count stack
+  is appended below it only from page 2 onward. `pageMargins` top grew
+  from 90 to 105 to fit the extra row.
+- `organizationName` is a new input to `buildComplianceReportDocDefinition`,
+  sourced from `selectedProject.organization?.name` in
+  `ProjectCompliancePanel.jsx` (already fetched by the existing project
+  query's `organization:organization(name)` join — no new query needed).
+
+Tests updated: the header test now asserts the brand mark/tenant name
+appear on every page (including the cover, where the project-name/page-
+count row must NOT appear), and still asserts the full stack from page 2.
+
 ## Next step
 
 Awaiting manual confirmation from a real authenticated session (Vercel
-preview) that "Exportar PDF" — cover, gauge centering, TOC links, and the
-detail pages — matches expectations before closing out the plan.
+preview) that "Exportar PDF" — brand header, cover cards/index styling,
+gauge centering, TOC links, and the detail pages — matches expectations
+before closing out the plan.
