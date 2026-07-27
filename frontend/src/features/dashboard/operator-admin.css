@@ -43,6 +43,7 @@
 .edifica-access-state { display: inline-flex; border-radius: 999px; padding: 6px 10px; font-size: .75rem; font-weight: 800; }
 .edifica-access-state.active { background: #eee6f6; color: var(--ed-purple); }
 .edifica-access-state.inactive { background: #f3f0f4; color: #817786; }
+.edifica-access-state.pending { background: #fdf1d8; color: #8a6116; margin-left: 6px; }
 .edifica-admin-row-actions { display: flex; gap: 8px; }
 .edifica-admin-row-actions button { border: 1px solid var(--ed-line); border-radius: 9px; padding: 8px 10px; background: transparent; color: var(--ed-purple); font-size: .76rem; font-weight: 800; cursor: pointer; }
 .edifica-admin-row-actions button:disabled { opacity: .4; cursor: default; }

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import DashboardApp from './features/dashboard/DashboardApp.jsx'
+import ActivateAccountPage from './features/auth/ActivateAccountPage.jsx'
 import GlobalLanguageController from './i18n/GlobalLanguageController.jsx'
 import { ErrorBoundary } from './lib/ErrorBoundary.jsx'
 import { installGlobalErrorLogging } from './lib/logger.js'
@@ -11,6 +12,7 @@ installGlobalErrorLogging()
 
 const isDashboard = window.location.pathname === '/app' || window.location.pathname.startsWith('/app/')
 const isOperationalForm = window.location.pathname.startsWith('/donations/')
+const isActivationPage = window.location.pathname === '/activar'
 
 function OperationalNavigationGuard() {
   useEffect(() => {
@@ -71,6 +73,15 @@ function PublicLoginGuard() {
 }
 
 function RootApplication() {
+  if (isActivationPage) {
+    return (
+      <>
+        <GlobalLanguageController />
+        <ActivateAccountPage />
+      </>
+    )
+  }
+
   return (
     <>
       <PublicLoginGuard />
