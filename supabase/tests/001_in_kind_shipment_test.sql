@@ -14,35 +14,83 @@ select col_type_is('public', 'shipment_item', 'declared_quantity', 'numeric(14,3
 select col_type_is('public', 'inventory_lot', 'dietary_attributes', 'text[]', 'dietary attributes use a text array');
 select col_type_is('public', 'inventory_movement', 'quantity', 'numeric(14,3)', 'movement quantity preserves three decimals');
 
-select has_check('public', 'shipment', 'shipment_status_check', 'shipment lifecycle is constrained');
-select has_check('public', 'shipment', 'shipment_arrival_after_departure_check', 'arrival follows departure');
-select has_check('public', 'shipment_item', 'shipment_item_declared_quantity_check', 'declared quantity is positive');
-select has_check('public', 'inventory_lot', 'inventory_lot_quantity_check', 'received quantity is positive');
-select has_check('public', 'inventory_lot', 'inventory_lot_accepted_damaged_check', 'accepted and damaged quantities reconcile');
-select has_check('public', 'inventory_movement', 'inventory_movement_quantity_check', 'inventory movement rejects zero');
+select ok(
+  exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.shipment'::regclass
+      and conname = 'shipment_status_check'
+      and contype = 'c'
+  ),
+  'shipment lifecycle is constrained'
+);
+select ok(
+  exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.shipment'::regclass
+      and conname = 'shipment_arrival_after_departure_check'
+      and contype = 'c'
+  ),
+  'arrival follows departure'
+);
+select ok(
+  exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.shipment_item'::regclass
+      and conname = 'shipment_item_declared_quantity_check'
+      and contype = 'c'
+  ),
+  'declared quantity is positive'
+);
+select ok(
+  exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.inventory_lot'::regclass
+      and conname = 'inventory_lot_quantity_check'
+      and contype = 'c'
+  ),
+  'received quantity is positive'
+);
+select ok(
+  exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.inventory_lot'::regclass
+      and conname = 'inventory_lot_accepted_damaged_check'
+      and contype = 'c'
+  ),
+  'accepted and damaged quantities reconcile'
+);
+select ok(
+  exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.inventory_movement'::regclass
+      and conname = 'inventory_movement_quantity_check'
+      and contype = 'c'
+  ),
+  'inventory movement rejects zero'
+);
 
 select policies_are(
   'public',
   'shipment',
-  array['Authenticated users manage shipments'],
+  array['Tenant operators manage shipments'],
   'shipment has the MVP authenticated policy'
 );
 select policies_are(
   'public',
   'shipment_item',
-  array['Authenticated users manage shipment items'],
+  array['Tenant operators manage shipment items'],
   'shipment_item has the MVP authenticated policy'
 );
 select policies_are(
   'public',
   'inventory_lot',
-  array['Authenticated users manage inventory lots'],
+  array['Tenant operators manage inventory lots'],
   'inventory_lot has the MVP authenticated policy'
 );
 select policies_are(
   'public',
   'inventory_movement',
-  array['Authenticated users manage inventory movements'],
+  array['Tenant operators manage inventory movements'],
   'inventory_movement has the MVP authenticated policy'
 );
 

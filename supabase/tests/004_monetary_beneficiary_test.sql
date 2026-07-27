@@ -96,10 +96,12 @@ select ok(
   'beneficiary retry key is unique per creator'
 );
 
-select hasnt_constraint(
-  'public',
-  'donation',
-  'donation_received_at_check',
+select ok(
+  not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.donation'::regclass
+      and conname = 'donation_received_at_check'
+  ),
   'business receipt time may precede system recording time'
 );
 
