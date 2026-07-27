@@ -1,17 +1,18 @@
 .compliance-page { gap: 24px; }
 .compliance-header { align-items: center; }
-.compliance-print {
+.compliance-header-actions { display: flex; gap: 10px; }
+.compliance-export {
   min-height: 44px;
   padding: 0 18px;
   border: 1px solid var(--ed-purple);
   border-radius: 10px;
-  background: #fff;
-  color: var(--ed-purple);
+  background: var(--ed-purple);
+  color: #fff;
   font-weight: 800;
   cursor: pointer;
 }
-.compliance-print:hover { background: var(--ed-purple); color: #fff; }
-.compliance-print:disabled { opacity: .45; cursor: default; }
+.compliance-export:hover { background: var(--ed-purple-dark); }
+.compliance-export:disabled { opacity: .45; cursor: default; }
 .compliance-selector {
   display: flex;
   align-items: end;
@@ -200,7 +201,6 @@
   body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .edifica-sidebar,
   .no-print,
-  .compliance-print,
   .compliance-selector,
   .compliance-header,
   .operations-feedback,
@@ -221,11 +221,17 @@
   .edifica-section-heading { padding: 4.5mm; }
   .edifica-section-heading h2 { font-size: 14pt; }
   .compliance-table { table-layout: auto; }
+  .compliance-table thead { display: table-header-group; }
+  .compliance-table tr { break-inside: avoid; page-break-inside: avoid; }
   .compliance-table th,
   .compliance-table td { padding: 2.7mm 2.4mm; font-size: 7.5pt; white-space: normal; }
   .compliance-table th { font-size: 6.5pt; }
   .compliance-table td:first-child { min-width: 0; }
   .compliance-progress { min-width: 22mm; }
+  .funding-comparison-grid { break-inside: avoid; page-break-inside: avoid; }
+  .final-report-project-data { break-inside: avoid; page-break-inside: avoid; }
+  .final-report-heading { break-inside: avoid; page-break-inside: avoid; }
+  .edifica-section-heading { break-after: avoid; page-break-after: avoid; }
   .evidence-report-grid { grid-template-columns: 1fr; gap: 3mm; padding: 4mm; }
   .evidence-report-grid > article { break-inside: avoid; }
   .evidence-report-grid > article > div { grid-template-columns: repeat(4, 1fr); gap: 2.5mm; padding: 3mm; }

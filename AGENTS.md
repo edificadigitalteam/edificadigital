@@ -77,6 +77,15 @@ For urgent work, compress feedback loops while preserving the order above.
 - Nominal beneficiary identity belongs in the private schema. Public and international reports use aggregate impact data and non-identifying codes.
 - Beneficiary intake requires privacy acknowledgement and collects only the operational identity and contact fields defined in the protected schema.
 
+### Compliance report export
+
+- The project compliance report's "Exportar PDF" action is the single supported export path — there is no separate "Imprimir informe"/`window.print()` button.
+- The PDF is generated client-side with `pdfmake` (`frontend/src/features/dashboard/complianceReportPdf.js`) from the same report data already loaded on screen, and opens in a new tab (`.open()`), which serves as a preview using the browser's native PDF viewer.
+- Page 1 is a concise executive cover (title, compliance gauge, colored metric cards, objective, table of contents); the detailed sections (financial reconciliation, physical execution, evidence, financial execution) follow on later pages.
+- Every page carries a persistent brand header — the Edifica Digital mark/wordmark on the left, the organization/tenant name on the right — with the project name, export date, and page count added below it from page 2 onward.
+- Cover and section navigation uses pdfmake's native `id`/`linkToDestination` (real internal PDF links), not browser hash anchors.
+- See `docs/plans/SPRINT-S2-v1_printed-reports-improvements.md` for the full decision history.
+
 ## Supabase rules
 
 The authorized Edifica Digital project is `edifydb`, reference `rrqyihsjftlloizsccvi`. Other visible Supabase projects are outside scope unless the user explicitly identifies them.
@@ -168,6 +177,6 @@ Merges to `main` publish automatically to `edificadigital.vercel.app` and `somos
 
 ---
 
-**Version:** 2.2
-**Last updated:** 2026-07-26
+**Version:** 2.3
+**Last updated:** 2026-07-27
 **Maintained by:** Product owners and project contributors

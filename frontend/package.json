@@ -13,6 +13,7 @@
   "dependencies": {
     "@supabase/supabase-js": "2.110.7",
     "@vercel/analytics": "^2.0.1",
+    "pdfmake": "0.2.20",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
