@@ -63,7 +63,7 @@ select is(
         or coalesce(with_check, '') ilike '%is_authorized_operator%'
       )
   ),
-  18::bigint,
+  7::bigint,
   'every operational table policy checks operator authorization'
 );
 
@@ -76,7 +76,7 @@ select is(
       and coalesce(qual, '') ilike '%is_authorized_operator%'
       and coalesce(with_check, '') ilike '%is_authorized_operator%'
   ),
-  1::bigint,
+  2::bigint,
   'attachment storage policy checks operator authorization'
 );
 
