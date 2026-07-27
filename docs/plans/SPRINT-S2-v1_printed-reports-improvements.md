@@ -293,9 +293,13 @@ Tests updated: the header test now asserts the brand mark/tenant name
 appear on every page (including the cover, where the project-name/page-
 count row must NOT appear), and still asserts the full stack from page 2.
 
-## Next step
+## Status: done (2026-07-27)
 
-Awaiting manual confirmation from a real authenticated session (Vercel
-preview) that "Exportar PDF" — brand header, cover cards/index styling,
-gauge centering, TOC links, and the detail pages — matches expectations
-before closing out the plan.
+Product owner confirmed the result is satisfactory after reviewing sample
+PDFs generated with the final builder (brand header, colored metric
+cards, boxed index, gauge centering, TOC/back-links, detail pages).
+`docs/TODO.md`, `AGENTS.md`, `CLAUDE.md`, and `docs/ARCHITECTURE.md` were
+updated to record the final decisions. No further changes planned for
+this pass; the deferred item (embedding evidence images/thumbnails in the
+PDF instead of a text summary) remains a candidate for a future,
+separately scoped pass.

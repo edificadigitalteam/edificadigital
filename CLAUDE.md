@@ -170,6 +170,8 @@ The monetary workflow uses one continuous bilingual form. It retains its draft, 
 
 The next operational workflow begins at physical receipt. It must collect warehouse, received, accepted, damaged, condition, verification, expiry, and responsible-actor information before creating inventory lots and movements. Preserve the announcement record and declared quantities as the comparison baseline.
 
+The project compliance report's only export path is "Exportar PDF" (`ProjectCompliancePanel.jsx` + `complianceReportPdf.js`), a client-side `pdfmake` document built from the same data already on screen, opened in a new tab via `.open()` for preview. There is no separate print button. Page 1 is an executive cover (gauge, colored metric cards, objective, table of contents); the detailed sections follow. Every page carries a brand header (Edifica Digital mark/wordmark left, organization/tenant name right), with the project name/date/page count added below it from page 2 on. See `docs/plans/SPRINT-S2-v1_printed-reports-improvements.md`.
+
 ## Git and release
 
 - Branch from an up-to-date `main`.
@@ -193,5 +195,5 @@ When code and documentation differ, verify deployed behavior and update both in 
 
 ---
 
-**Version:** 2.2
-**Last updated:** 2026-07-26
+**Version:** 2.3
+**Last updated:** 2026-07-27

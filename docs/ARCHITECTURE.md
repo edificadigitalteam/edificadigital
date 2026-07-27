@@ -83,6 +83,10 @@ International organizations may request bilingual reports built from these measu
 
 The budget module requires a dedicated schema and migration. Operational donation and shipment records remain independent from budget records.
 
+### Project compliance report export
+
+`ProjectCompliancePanel.jsx`'s "Exportar PDF" action builds a client-side PDF with `pdfmake` from `complianceReportPdf.js`, mapping the same data already loaded on screen (no DOM screenshot). The document opens in a new tab via `pdfMake.createPdf(docDefinition).open()`, which doubles as a preview using the browser's native PDF viewer — there is no separate "Imprimir informe"/`window.print()` action. Page 1 is an executive cover (project title, an inline-SVG compliance gauge, the four key metrics as colored bordered cards, the objective, and a table of contents); pages 2+ hold the existing detailed sections. Every page, including the cover, carries a persistent brand header (the Edifica Digital mark and wordmark on the left, the organization/tenant name on the right); from page 2 onward it is followed by the project name, export date, and a "Página X de Y" counter. Cover/TOC entries and section headings use pdfmake's native `id`/`linkToDestination`, producing real internal PDF links rather than browser hash anchors. See `docs/plans/SPRINT-S2-v1_printed-reports-improvements.md` for the decision history (why `pdfmake` over a headless-Chromium renderer, and why the cover moved out of the plain print path).
+
 ## Interaction principles
 
 - Spanish and English cover every visible label, instruction, validation message, status, and report heading.
