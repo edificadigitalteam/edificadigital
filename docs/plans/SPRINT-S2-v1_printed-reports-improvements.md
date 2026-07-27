@@ -1,6 +1,6 @@
 # Plan: Improve printed/exported compliance report delivery
 
-**Status:** Draft
+**Status:** Done (2026-07-27) — implemented and approved by product owner
 **Reported by:** Product owner, 2026-07-26 (`docs/TODO.md`)
 **Branch:** `feature/printed-reports-improvements`
 
