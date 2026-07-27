@@ -56,7 +56,6 @@ function buildConsolidatedItems(draft) {
 }
 
 export function buildSubmissionPayload(draft, attachments = []) {
-  const anonymous = draft.donorType === 'anonymous'
   const items = buildConsolidatedItems(draft)
   return {
     submission_key: draft.submissionId,
@@ -65,10 +64,10 @@ export function buildSubmissionPayload(draft, attachments = []) {
     project_id: nullable(draft.projectId),
     donor_actor_id: draft.donorActorId,
     sender: {
-      name: anonymous ? 'Donante anónimo' : draft.donorName.trim(),
-      email: anonymous ? null : nullable(draft.donorEmail)?.toLowerCase() ?? null,
-      phone: anonymous ? null : nullable(draft.donorPhone),
-      country: anonymous ? null : nullable(draft.donorCountry || draft.originCountry),
+      name: draft.donorName.trim(),
+      email: nullable(draft.donorEmail)?.toLowerCase() ?? null,
+      phone: nullable(draft.donorPhone),
+      country: nullable(draft.donorCountry || draft.originCountry),
       is_organization: draft.donorType === 'organization',
     },
     shipment: {

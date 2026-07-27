@@ -13,9 +13,14 @@ import { createInitialDraft } from './validation.js'
 const completeDraft = () => ({
   ...createInitialDraft(),
   submissionId: '550e8400-e29b-41d4-a716-446655440000',
-  senderName: 'Partner Organization Germany',
-  senderType: 'organization',
-  senderContact: 'logistics@example.org',
+  organizationId: 'org-1',
+  projectId: '',
+  donorActorId: 'actor-partner-germany',
+  donorName: 'Partner Organization Germany',
+  donorType: 'organization',
+  donorEmail: 'logistics@example.org',
+  donorPhone: '',
+  donorCountry: '',
   originCountry: 'Germany',
   originCity: 'Hamburg',
   destinationCountry: 'Venezuela',
@@ -68,7 +73,8 @@ test('builds the atomic RPC payload from the bilingual form draft', () => {
 test('maps a non-email sender contact to the optional phone field', () => {
   const payload = buildSubmissionPayload({
     ...completeDraft(),
-    senderContact: '+49 40 123456',
+    donorEmail: '',
+    donorPhone: '+49 40 123456',
   })
 
   assert.equal(payload.sender.email, null)
@@ -132,6 +138,11 @@ test('uploads evidence before calling the atomic RPC and returns the persisted r
         error: null,
       }
     },
+    from: () => ({
+      update: () => ({
+        eq: async () => ({ data: null, error: null }),
+      }),
+    }),
   }
   const evidence = [{
     id: 'proof-1',
@@ -144,7 +155,7 @@ test('uploads evidence before calling the atomic RPC and returns the persisted r
   assert.equal(calls.uploads.length, 1)
   assert.equal(calls.uploads[0].bucket, 'attachments')
   assert.equal(calls.uploads[0].options.upsert, true)
-  assert.equal(calls.rpc[0].name, 'submit_in_kind_shipment')
+  assert.equal(calls.rpc[0].name, 'submit_in_kind_shipment_v2')
   assert.equal(calls.rpc[0].args.payload.attachments[0].storage_path, calls.uploads[0].path)
   assert.equal(result.reference_code, 'INK-DE-20260817-550E8400')
   assert.equal(result.evidence_count, 1)
@@ -167,8 +178,13 @@ test('uses the same evidence path and submission key during a retry', async () =
     },
     rpc: async (_name, args) => {
       keys.push(args.payload.submission_key)
-      return { data: { reference_code: args.payload.reference_code, created: keys.length === 1 }, error: null }
+      return { data: { reference_code: args.payload.reference_code, shipment_id: 'shipment-1', created: keys.length === 1 }, error: null }
     },
+    from: () => ({
+      update: () => ({
+        eq: async () => ({ data: null, error: null }),
+      }),
+    }),
   }
   const evidence = [{
     id: 'proof-1',
