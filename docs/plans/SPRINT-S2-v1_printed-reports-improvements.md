@@ -207,10 +207,52 @@ Added to `ProjectCompliancePanel.jsx`/`compliance.css`:
 - The old on-screen `print-summary` metrics row is now hidden in print
   (`display: none`), since the new cover's metric cards replace it.
 
+## Revised again (2026-07-27, second review): cover page moves into the pdfmake export; "Imprimir informe" removed
+
+Product owner clarified after seeing the `window.print()` mockup that the
+cover/table-of-contents should live in the **"Exportar PDF"** action itself
+(the `pdfmake` document), not in the separate browser-print path, and asked
+to either drop the "Imprimir informe" button or turn "Exportar PDF" into a
+preview. Decision: both — the plain `window.print()` button is removed, and
+`pdfMake.createPdf(docDefinition).open()` opens the generated PDF in a new
+browser tab (the browser's native PDF viewer), which doubles as a preview
+and gives print/save controls for free, with no separate viewer to build.
+
+**What moved into `complianceReportPdf.js`:**
+- The executive cover is now `pdfmake` content: project title, a compliance
+  gauge rendered as inline SVG (`{ svg: '<svg>...</svg>' }`, since pdfmake
+  0.2.x supports SVG content nodes), the four key metrics centered in a
+  borderless 2×2 table, the objective, and a table of contents built from
+  `buildReportTableOfContents()`.
+- Real PDF-native navigation: cover metric/TOC entries and every section
+  heading carry a pdfmake `id`, and links use `linkToDestination` —
+  producing actual internal PDF links/bookmarks in any PDF viewer, not
+  hash-anchor links that only work through a browser's print-to-PDF step.
+  This is strictly better than the earlier CSS-anchor approach.
+- `header()` returns `null` on page 1 (the cover already carries the
+  title), and the normal repeating header (project name, export date,
+  "Página X de Y") only appears from page 2 onward.
+- Centering fix: the compliance gauge and the metrics grid are each wrapped
+  in a `columns: [{width:'*'}, content, {width:'*'}]` pattern so they sit
+  centered on the page rather than left-aligned next to other content —
+  addresses the "alineación que no me gusta" feedback on the first gauge
+  layout.
+
+**What was removed** (now redundant, since the cover lives in the PDF):
+the `print-cover`/`print-back-to-index` JSX and CSS added in the previous
+iteration, the `.compliance-print`/"Imprimir informe" button, and the
+section `id`s that only existed to support the CSS-anchor navigation. The
+general print-hardening (repeated table headers, `break-inside: avoid`,
+hiding sidebar/nav chrome) stays as a harmless fallback for a manual
+browser `Ctrl+P`, since that is independent of our own buttons.
+
+**Deferred:** embedding actual evidence images/thumbnails in the PDF
+(currently a text summary of evidence counts per activity) — would need
+client-side fetching of the signed Storage URLs and base64 conversion,
+which is straightforward but out of scope for this pass.
+
 ## Next step
 
-Confirmed by product owner (2026-07-27): implemented both the `pdfmake`
-export and the cover-page/table-of-contents restructuring of the
-`window.print()` path. Awaiting manual confirmation from a real
-authenticated session (Vercel preview) that the printed/exported PDF
-matches expectations before closing out the plan.
+Awaiting manual confirmation from a real authenticated session (Vercel
+preview) that "Exportar PDF" — cover, gauge centering, TOC links, and the
+detail pages — matches expectations before closing out the plan.

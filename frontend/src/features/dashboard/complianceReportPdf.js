@@ -1,4 +1,5 @@
 import {
+  buildReportTableOfContents,
   donationStatusLabels,
   donationTypeLabels,
   donationValue,
@@ -11,27 +12,118 @@ import {
 } from './reportFormatting.js'
 
 const BRAND_PURPLE = '#5b3a8e'
+const BRAND_PURPLE_DARK = '#351653'
 const MUTED_INK = '#6b6470'
+const GAUGE_TRACK = '#eee8f3'
 
 function headerBlock(projectName, generatedAt) {
-  return (currentPage, pageCount) => ({
-    margin: [40, 20, 40, 0],
-    stack: [
-      {
-        columns: [
-          { text: projectName, style: 'headerTitle' },
-          { text: `Página ${currentPage} de ${pageCount}`, style: 'headerMeta', alignment: 'right' },
-        ],
+  return (currentPage, pageCount) => {
+    if (currentPage === 1) return null
+    return {
+      margin: [40, 20, 40, 0],
+      stack: [
+        {
+          columns: [
+            { text: projectName, style: 'headerTitle' },
+            { text: `Página ${currentPage} de ${pageCount}`, style: 'headerMeta', alignment: 'right' },
+          ],
+        },
+        {
+          columns: [
+            { text: 'Informe de cumplimiento', style: 'headerSubtitle' },
+            { text: `Generado el ${formatDate(generatedAt)}`, style: 'headerMeta', alignment: 'right' },
+          ],
+        },
+        { canvas: [{ type: 'line', x1: 0, y1: 4, x2: 515, y2: 4, lineWidth: 1, lineColor: BRAND_PURPLE }] },
+      ],
+    }
+  }
+}
+
+function buildGaugeSvg(percent) {
+  const safe = Math.min(Math.max(Math.round(percent || 0), 0), 100)
+  const radius = 46
+  const circumference = 2 * Math.PI * radius
+  const dash = (safe / 100) * circumference
+  return `<svg width="150" height="150" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="60" cy="60" r="${radius}" fill="none" stroke="${GAUGE_TRACK}" stroke-width="14" />
+    <circle cx="60" cy="60" r="${radius}" fill="none" stroke="${BRAND_PURPLE}" stroke-width="14"
+      stroke-dasharray="${dash.toFixed(2)} ${circumference.toFixed(2)}" stroke-linecap="round"
+      transform="rotate(-90 60 60)" />
+    <text x="60" y="57" font-size="22" font-family="Helvetica" font-weight="bold" fill="${BRAND_PURPLE_DARK}" text-anchor="middle">${safe}%</text>
+    <text x="60" y="74" font-size="7.5" font-family="Helvetica" fill="${MUTED_INK}" text-anchor="middle">cumplimiento</text>
+  </svg>`
+}
+
+function backToIndexLink() {
+  return { text: '↑ Volver al índice', linkToDestination: 'report-cover', style: 'backLink', margin: [0, 0, 0, 4] }
+}
+
+function buildCover({ project, metrics, funding, tableOfContents }) {
+  const currency = project.currency
+  return [
+    {
+      id: 'report-cover',
+      stack: [
+        { text: 'INFORME DE CUMPLIMIENTO', style: 'coverKicker' },
+        { text: project.name, style: 'coverTitle' },
+        { text: `${project.code} · ${project.funding_partner || ''}`, style: 'coverMeta' },
+      ],
+      alignment: 'center',
+      margin: [0, 10, 0, 20],
+    },
+    {
+      columns: [
+        { width: '*', text: '' },
+        { width: 150, svg: buildGaugeSvg(metrics?.averageCompliance) },
+        { width: '*', text: '' },
+      ],
+      margin: [0, 0, 0, 16],
+    },
+    {
+      columns: [
+        { width: '*', text: '' },
+        {
+          width: 340,
+          table: {
+            widths: [170, 170],
+            body: [
+              [
+                { text: `Aprobado u otorgado\n${formatMoney(project.approved_budget, currency)}`, style: 'coverMetric' },
+                { text: `Recibido\n${formatMoney(funding?.receivedProjectCurrency, currency)}`, style: 'coverMetric' },
+              ],
+              [
+                { text: `Ejecutado\n${formatMoney(funding?.executedAmount ?? metrics?.investment, currency)}`, style: 'coverMetric' },
+                { text: `Personas beneficiadas\n${formatNumber(metrics?.beneficiaries)}`, style: 'coverMetric' },
+              ],
+            ],
+          },
+          layout: 'noBorders',
+        },
+        { width: '*', text: '' },
+      ],
+      margin: [0, 0, 0, 20],
+    },
+    { text: project.objective || '', style: 'coverObjective', margin: [40, 0, 40, 24] },
+    {
+      style: 'coverIndex',
+      table: {
+        widths: ['*'],
+        body: [[{
+          stack: [
+            { text: 'ÍNDICE', style: 'coverIndexHeading' },
+            {
+              ol: tableOfContents.map((entry) => ({ text: entry.label, linkToDestination: entry.id })),
+              style: 'coverIndexList',
+            },
+          ],
+        }]],
       },
-      {
-        columns: [
-          { text: 'Informe de cumplimiento', style: 'headerSubtitle' },
-          { text: `Generado el ${formatDate(generatedAt)}`, style: 'headerMeta', alignment: 'right' },
-        ],
-      },
-      { canvas: [{ type: 'line', x1: 0, y1: 4, x2: 515, y2: 4, lineWidth: 1, lineColor: BRAND_PURPLE }] },
-    ],
-  })
+      layout: { defaultBorder: false },
+      margin: [90, 0, 90, 0],
+    },
+    { text: '', pageBreak: 'after' },
+  ]
 }
 
 function donationsTable(linkedDonations) {
@@ -80,6 +172,24 @@ function outputsTable(outputs) {
   }
 }
 
+function evidenceSummary(outputs, evidenceByOutput) {
+  const rows = outputs
+    .map((output) => [output.name, (evidenceByOutput.get(output.id) ?? []).length])
+    .filter(([, count]) => count > 0)
+  if (!rows.length) return null
+  return {
+    table: {
+      headerRows: 1,
+      widths: ['*', 'auto'],
+      body: [
+        ['Actividad / producto', 'Evidencias'].map((text) => ({ text, style: 'tableHeader' })),
+        ...rows.map(([name, count]) => [name, String(count)]),
+      ],
+    },
+    layout: 'lightHorizontalLines',
+  }
+}
+
 function expensesTable(expenses) {
   if (!expenses.length) return { text: 'Todavía faltan inversiones o gastos por registrar.', style: 'empty' }
   return {
@@ -101,17 +211,21 @@ function expensesTable(expenses) {
   }
 }
 
-export function buildComplianceReportDocDefinition({ project, generatedAt, metrics, funding, outputs = [], expenses = [] }) {
+export function buildComplianceReportDocDefinition({ project, generatedAt, metrics, funding, outputs = [], expenses = [], evidenceByOutput = new Map(), hasEvidence = false }) {
   if (!project) throw new Error('A project is required to build the compliance report PDF.')
 
   const currency = project.currency
   const linkedDonations = Array.isArray(funding?.linkedDonations) ? funding.linkedDonations : []
+  const evidenceRows = evidenceSummary(outputs, evidenceByOutput)
+  const tableOfContents = buildReportTableOfContents({ hasEvidence: hasEvidence || Boolean(evidenceRows) })
 
   return {
     pageSize: 'A4',
     pageMargins: [40, 90, 40, 40],
     header: headerBlock(project.name, generatedAt ?? new Date()),
     content: [
+      ...buildCover({ project, metrics, funding, tableOfContents }),
+
       { text: `${project.code} · ${project.funding_partner || ''}`, style: 'projectMeta' },
       {
         columns: [
@@ -121,7 +235,8 @@ export function buildComplianceReportDocDefinition({ project, generatedAt, metri
       },
       { text: `Exigencias de reporte: ${project.reporting_requirements || 'Según convenio del proyecto'}`, style: 'projectDataItem', margin: [0, 0, 0, 12] },
 
-      { text: 'Cotejo financiero — otorgado, recibido y ejecutado', style: 'sectionHeading' },
+      { id: 'section-financial', text: 'Cotejo financiero — otorgado, recibido y ejecutado', style: 'sectionHeading' },
+      backToIndexLink(),
       {
         columns: [
           { text: `Aprobado u otorgado\n${formatMoney(project.approved_budget, currency)}`, style: 'metric' },
@@ -134,21 +249,35 @@ export function buildComplianceReportDocDefinition({ project, generatedAt, metri
       funding?.receivedByCurrency ? { text: formatBreakdown(funding.receivedByCurrency), style: 'empty', margin: [0, 0, 0, 6] } : null,
       donationsTable(linkedDonations),
 
-      { text: 'Ejecución física — metas y avances', style: 'sectionHeading', margin: [0, 16, 0, 6] },
+      { id: 'section-physical', text: 'Ejecución física — metas y avances', style: 'sectionHeading', margin: [0, 16, 0, 6] },
+      backToIndexLink(),
       outputsTable(outputs),
 
-      { text: 'Ejecución financiera — inversión y comprobantes', style: 'sectionHeading', margin: [0, 16, 0, 6] },
+      evidenceRows ? { id: 'section-evidence', text: 'Soportes multimedia — evidencias de ejecución', style: 'sectionHeading', margin: [0, 16, 0, 6] } : null,
+      evidenceRows ? backToIndexLink() : null,
+      evidenceRows,
+
+      { id: 'section-expenses', text: 'Ejecución financiera — inversión y comprobantes', style: 'sectionHeading', margin: [0, 16, 0, 6] },
+      backToIndexLink(),
       expensesTable(expenses),
 
       { text: `Cumplimiento físico promedio: ${metrics?.averageCompliance ?? 0}%  ·  Cumplimiento presupuestal: ${metrics?.budgetCompliance ?? 0}%  ·  Personas beneficiadas: ${formatNumber(metrics?.beneficiaries)}`, style: 'summaryLine', margin: [0, 16, 0, 0] },
     ].filter(Boolean),
     styles: {
+      coverKicker: { fontSize: 10, bold: true, color: '#e08a2c', characterSpacing: 1 },
+      coverTitle: { fontSize: 24, bold: true, color: BRAND_PURPLE_DARK, margin: [0, 6, 0, 4] },
+      coverMeta: { fontSize: 10, color: MUTED_INK },
+      coverMetric: { fontSize: 10, alignment: 'center', margin: [0, 0, 0, 8] },
+      coverObjective: { fontSize: 9.5, italics: true, color: MUTED_INK, alignment: 'center' },
+      coverIndexHeading: { fontSize: 9, bold: true, color: BRAND_PURPLE, characterSpacing: 1, margin: [0, 0, 0, 6] },
+      coverIndexList: { fontSize: 11, color: BRAND_PURPLE_DARK },
       headerTitle: { fontSize: 13, bold: true, color: BRAND_PURPLE },
       headerSubtitle: { fontSize: 8, color: MUTED_INK },
       headerMeta: { fontSize: 8, color: MUTED_INK },
       projectMeta: { fontSize: 9, color: MUTED_INK, margin: [0, 0, 0, 8] },
       projectDataItem: { fontSize: 9, margin: [0, 0, 0, 4] },
       sectionHeading: { fontSize: 11, bold: true, color: BRAND_PURPLE },
+      backLink: { fontSize: 8, bold: true, color: BRAND_PURPLE, margin: [0, 2, 0, 6] },
       tableHeader: { bold: true, fontSize: 8, color: MUTED_INK },
       metric: { fontSize: 9 },
       empty: { fontSize: 8, italics: true, color: MUTED_INK },
