@@ -13,9 +13,11 @@ import { createInitialMonetaryDraft } from './validation.js'
 const completeDraft = () => ({
   ...createInitialMonetaryDraft(),
   submissionId: '550e8400-e29b-41d4-a716-446655440000',
+  organizationId: 'org-1',
+  donorActorId: 'actor-donante-local',
   donorName: 'Donante local',
   donorType: 'person',
-  donorContact: '000 000 0000',
+  donorPhone: '000 000 0000',
   isAnonymous: false,
   receivedAt: '2026-07-19T10:30',
   paymentMethod: 'bank_transfer',
@@ -41,6 +43,8 @@ test('builds a four-measure monetary RPC payload', () => {
 
   assert.equal(payload.submission_key, '550e8400-e29b-41d4-a716-446655440000')
   assert.equal(payload.reference_code, 'MON-VES-20260719-550E8400')
+  assert.equal(payload.organization_id, 'org-1')
+  assert.equal(payload.donor_actor_id, 'actor-donante-local')
   assert.equal(payload.donor.phone, '000 000 0000')
   assert.equal(payload.donor.email, null)
   assert.equal(payload.origin_amount, 3650)
@@ -125,7 +129,7 @@ test('uploads payment evidence before the atomic monetary RPC', async () => {
 
   assert.equal(calls.uploads[0].bucket, 'attachments')
   assert.equal(calls.uploads[0].options.upsert, true)
-  assert.equal(calls.rpc[0].name, 'submit_monetary_donation')
+  assert.equal(calls.rpc[0].name, 'submit_monetary_donation_v2')
   assert.equal(calls.rpc[0].args.payload.attachments[0].storage_path, calls.uploads[0].path)
   assert.equal(result.reference_code, 'MON-VES-20260719-550E8400')
   assert.equal(result.evidence_count, 1)
