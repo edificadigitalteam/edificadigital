@@ -23,7 +23,7 @@ Lightweight backlog for future work that does not yet have a plan in `docs/plans
 ## Reported by product owner (2026-07-26)
 
 - [x] Mejorar la entrega de informes impresos (revisar formato, maquetación y flujo de exportación/impresión de los reportes actuales). "Exportar PDF" (pdfmake) es ahora el único camino de exportación (se retiró "Imprimir informe"/`window.print()`): genera un PDF con portada ejecutiva (medidor de cumplimiento, tarjetas de métricas por color, índice en recuadro), secciones de detalle con enlaces internos de navegación, y un encabezado de marca (Edifica Digital + organización/tenant) repetido en cada página; se abre en pestaña nueva como vista previa. Ver `docs/plans/SPRINT-S2-v1_printed-reports-improvements.md`.
-- [ ] Al crear un tenant, la persona cuyo correo se registra debe crearse automáticamente como administrador de ese tenant.
+- [x] Al crear un tenant, la persona cuyo correo se registra debe crearse automáticamente como administrador de ese tenant. Done in `#35` (`admin_save_organization` now auto-provisions a pending `private.operator_access` admin row for the org's `contact_email`, with activation-token confirmation). See `docs/plans/SPRINT-S2-v1_organization-tenant-admin-provisioning.md`.
 - [ ] Mejorar el proceso para crear aliados (suppliers/actores) y unificar la experiencia en todos los sitios donde se pueda buscar y/o crear un aliado, de forma simple y consistente.
 - [ ] Revisar la etiqueta del estimado de donantes (verificar redacción/precisión de la etiqueta mostrada en la interfaz).
 - [ ] Ajustar la parte visual del resumen: actualmente se ve muy amontonado; revisar espaciado y jerarquía visual.
