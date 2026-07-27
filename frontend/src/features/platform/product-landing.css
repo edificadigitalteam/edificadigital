@@ -44,8 +44,8 @@
 .product-header nav button { display: flex; gap: 4px; border: 0; background: transparent; color: #716877; font: inherit; cursor: pointer; }
 .product-header nav button b { color: var(--product-purple); }
 .product-contact-link { padding-left: 6px; }
-.product-login { display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; padding: 12px 16px; background: var(--product-purple); color: #fff; box-shadow: 0 12px 28px rgba(91,46,145,.2); }
-.product-login:hover { background: var(--product-purple-dark); }
+a.product-login { display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; padding: 12px 16px; background: var(--product-purple); color: #fff; box-shadow: 0 12px 28px rgba(91,46,145,.2); }
+a.product-login:hover { background: var(--product-purple-dark); }
 .product-menu-button { display: none; width: 42px; height: 42px; border: 1px solid var(--product-line); border-radius: 10px; background: #fff; }
 .product-menu-button span { display: block; width: 18px; height: 2px; margin: 4px auto; background: var(--product-purple-dark); }
 
