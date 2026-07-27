@@ -51,9 +51,61 @@ to go:
   server-side (e.g. emailing a report, batch export, or a report a
   beneficiary/donor never opens the app to see).
 
+## Added requirement (2026-07-27): professional repeating header with page count
+
+Product owner also wants every printed page to carry a header with: the
+project name as title, the print date, and a "page X of Y" counter.
+
+**Why this changes the recommendation above.** A repeating header/footer
+driven by real pagination (`counter(page)` / `counter(pages)` inside CSS
+Paged Media `@page` margin boxes) is part of the CSS spec, but Chrome and
+Firefox do not implement `@page` margin-box content — only dedicated paged
+renderers (Prince, WeasyPrint) do. Chrome's print dialog has a built-in
+"Headers and footers" toggle, but it is generic browser chrome (URL,
+`document.title`, browser-formatted date) that we cannot restyle, cannot
+guarantee is switched on by the user, and cannot make "the project name"
+specifically (it reads `document.title`, shared with the tab).
+
+**Revised recommendation:** keep the on-screen report exactly as-is (HTML +
+`ProjectCompliancePanel.jsx` + `compliance.css`), but generate the
+*exported/printed* artifact with a small, purpose-built PDF layer using
+[`pdfmake`](https://pdfmake.github.io/docs/) fed from the same report data
+(not a DOM screenshot). `pdfmake` documents declare `header`/`footer` as
+functions of `(currentPage, pageCount)`, so a repeating header with the
+project name, the export date, and an accurate "Página X de Y" / "Page X
+of Y" (bilingual, matching the active language) comes for free and is
+correct across every printed page without relying on browser-specific paged
+-media support. This is the smallest dependency that gets a real,
+text-selectable, vector PDF with reliable running headers — `jsPDF`'s
+`.html()` and `html2canvas` were considered and rejected because they
+rasterize the DOM (no repeating header without manual page-splitting math,
+and text stops being selectable/searchable).
+
+- The existing "Imprimir informe" / `window.print()` path stays as a
+  secondary option for a quick on-screen print without the new header
+  treatment (or is superseded entirely by the new "Exportar PDF" button —
+  to be decided during implementation based on how much duplicate
+  maintenance the two paths cost).
+- The `pdfmake` document definition reuses the exact same data already
+  loaded by `ProjectCompliancePanel.jsx` (project data, financial
+  reconciliation, physical execution, expenses) — no new data fetching.
+- Header content per page: project name (title, larger/bold), export date
+  (`Intl.DateTimeFormat` in the active locale), and page counter, right- or
+  center-aligned per the existing report's visual language (serif heading
+  font, `--ed-purple` accent).
+- Bilingual: header labels ("Página X de Y" / "Page X of Y", date
+  formatting) follow the report's current language, consistent with the
+  rest of the bilingual UI requirement.
+
 ## Scope of this change
 
-1. **Layout/pagination fixes** in `compliance.css`'s `@media print` block:
+1. **New dependency:** add `pdfmake` to `frontend/package.json` and build a
+   `buildComplianceReportPdf(project, reconciliation, ...)` document
+   definition (mapping existing report data to a `pdfmake` structure) plus
+   a `header`/`footer` callback rendering project name + date + page count.
+   Wire it to a new "Exportar PDF" action in `ProjectCompliancePanel.jsx`.
+2. **Layout/pagination fixes** in `compliance.css`'s `@media print` block
+   (kept for the plain browser-print path, see above):
    - Add `break-inside: avoid` / `page-break-inside: avoid` on cards, table
      rows, and the media evidence gallery so content is not clipped mid-row
      across a page boundary.
@@ -64,23 +116,25 @@ to go:
      they span multiple pages.
    - Confirm bilingual (ES/EN) label lengths do not overflow fixed-width
      print cells.
-2. **Export flow clarity**:
-   - Rename/relabel the current "Imprimir informe" action if user testing
-     shows confusion between "print" and "save as PDF" (likely: keep one
-     button, but confirm the browser print dialog opens with "Save as PDF"
-     discoverable, and consider a short inline hint next to the button).
-   - No new dependencies; this is markup/CSS/copy only.
-3. **Out of scope**: any new report type (international/aggregate impact
+3. **Export flow clarity**:
+   - Add the new "Exportar PDF" action alongside (or replacing) "Imprimir
+     informe"; label both clearly if kept side by side so the user
+     understands which gets the professional header/page-count treatment.
+4. **Out of scope**: any new report type (international/aggregate impact
    report) — that remains an unbuilt module per `docs/ARCHITECTURE.md`.
-   A dedicated PDF-generation service is deferred per the recommendation
-   above.
+   A dedicated server-side rendering service (headless Chromium) is still
+   deferred — `pdfmake` runs entirely client-side, so this does not add
+   backend infrastructure.
 
 ## Affected files
 
-- `frontend/src/features/dashboard/compliance.css` (primary)
-- `frontend/src/features/dashboard/ProjectCompliancePanel.jsx` (markup
-  adjustments only if pagination fixes require restructuring wrapper
-  elements; no data/logic changes expected)
+- `frontend/package.json` / lockfile (add `pdfmake`)
+- `frontend/src/features/dashboard/complianceReportPdf.js` (new — document
+  definition builder + header/footer callback)
+- `frontend/src/features/dashboard/ProjectCompliancePanel.jsx` (new
+  "Exportar PDF" action; markup adjustments only if print-CSS pagination
+  fixes require restructuring wrapper elements)
+- `frontend/src/features/dashboard/compliance.css` (print pagination/margins)
 - `docs/TODO.md` (close out the item once verified)
 
 ## Database impact
@@ -101,18 +155,23 @@ None. This is a presentation-layer change only.
 - Manual: open the compliance report for a project with (a) few donations/
   short tables and (b) many donations/expenses forcing multi-page output;
   print-preview and "Save as PDF" in Chrome and Firefox; confirm no clipped
-  rows/cards, consistent margins, and correct page breaks.
-- `pnpm lint` / `pnpm build` (no test suite currently covers print CSS;
-  this is a visual/manual verification area per `AGENTS.md`).
-- Screenshots of the generated PDF (multi-page) attached to the pull
-  request, per the Git/release section of this guide.
+  rows/cards, consistent margins, and correct page breaks (for the
+  `window.print()` path).
+- Manual: generate the `pdfmake` export for the same two projects; confirm
+  every page carries the project name, correct export date, and accurate
+  "Page X of Y" (including a project whose report spans 3+ pages so the
+  counter is genuinely tested, not just "1 of 1"); confirm ES/EN header
+  labels switch with the active language.
+- `pnpm lint` / `pnpm build`. `pdfmake` document-definition mapping is a
+  pure function of report data and can get a focused unit test (e.g.
+  asserting the header callback returns the right page count/labels)
+  even though visual print-CSS output stays manual per `AGENTS.md`.
+- Screenshots/attached PDF of the generated multi-page export included in
+  the pull request, per the Git/release section of this guide.
 
 ## Next step
 
-Confirm this recommendation (HTML + refined print CSS, no new PDF library)
-with the product owner before implementation, since it declines the literal
-"pasarlo a PDF" framing in favor of the pipeline already in place. If the
-product owner instead wants a one-click "download PDF" button independent
-of the browser dialog (e.g. for emailing or offline use without a print
-dialog), that changes scope to a small client-side capture library and
-should be called out explicitly before implementation starts.
+Confirmed by product owner (2026-07-27): proceed with the `pdfmake`-based
+export carrying a professional repeating header (project name, export
+date, "page X of Y"), plus the print-CSS pagination fixes for the existing
+browser-print path. Ready to move to the red/green implementation phase.
