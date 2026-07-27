@@ -50,20 +50,45 @@ session cannot create:**
     admin form gets a token; list exposes pending state; resend rotates the
     token; resend on an already-confirmed operator is rejected).
 
-- **Phase 2b (blocked, deferred):** the actual email send.
-  - Needs a Resend account, a verified `somosedificadigital.com` domain
-    (SPF/DKIM), and an API key — product owner to set up and hand over the
-    key; not something this agent can create or pay for.
-  - Once available: a new Supabase Edge Function (`supabase/functions/send-operator-invitation/`)
-    calls the Resend API; `admin_save_organization`, `admin_save_operator_access`
-    (insert path), and `resend_operator_activation` each call it via `pg_net`
-    (requires enabling the `pg_net` extension) so the token stays server-side.
-  - The email links to a **new frontend page** at
-    `somosedificadigital.com/activar?token=...` (bilingual, per interface
-    guidance) that calls `confirm_operator_activation(token)` — this page
-    does not exist yet either and is part of Phase 2b.
-  - Not yet applied to `edifydb`; will need its own migration (`pg_net`
-    extension + trigger/call wiring) once the provider is ready.
+- **Phase 2b (done):** actual email delivery.
+  - Product owner set up Resend with the `mail.somosedificadigital.com`
+    subdomain (SPF/DKIM verified) and supplied the API key directly as an
+    Edge Function secret (never seen by this agent or committed anywhere).
+    Sender: `no-responder@mail.somosedificadigital.com` (one-way, no mailbox
+    needed — confirmed this doesn't touch the existing Zoho MX setup on the
+    root domain).
+  - `supabase/functions/send-operator-invitation/index.ts` — Deno Edge
+    Function, `verify_jwt: true` (default; only callable with a valid
+    Supabase JWT, e.g. the service_role key used by the SQL caller). Sends a
+    bilingual (ES/EN) HTML email via the Resend API linking to
+    `https://somosedificadigital.com/activar?token=...`.
+  - `20260727030000_operator_invitation_email_delivery.sql`: enables
+    `pg_net`; new `private.notify_operator_invitation(operator_id)` reads
+    `project_url`/`service_role_key` from Supabase Vault (set up by the
+    product owner directly in the Dashboard — this migration never contains
+    the values) and calls the Edge Function; no-ops silently if either
+    secret is missing, so email delivery can never block organization/
+    operator creation. Wired into `admin_save_organization`,
+    `admin_save_operator_access` (insert path), and
+    `resend_operator_activation`.
+  - `20260727031500_move_pg_net_to_extensions_schema.sql`: corrective —
+    `pg_net` doesn't support `ALTER EXTENSION ... SET SCHEMA`, so it was
+    reinstalled directly in the `extensions` schema to clear the Supabase
+    "extension in public" security advisory. `net.http_post` lives in its
+    own `net` schema either way, so no application code needed to change.
+  - `frontend/src/features/auth/ActivateAccountPage.jsx` — new public,
+    bilingual page at `/activar`, reads `?token=`, calls
+    `confirm_operator_activation`, shows checking/success/invalid/missing
+    states. Wired into `frontend/src/main.jsx`'s path-based routing (this
+    app has no router library; routing is plain `window.location.pathname`
+    checks, matching the existing `/app` and `/donations/` patterns).
+  - Verified end-to-end against production: created a real test
+    organization as an authenticated super_admin, confirmed the Edge
+    Function logged a `200` response, and the product owner confirmed the
+    email arrived correctly (subject, bilingual body, working link, correct
+    sender). Test organization and its operator row were deleted afterward.
+  - Applied to `edifydb` with explicit authorization on 2026-07-27, alongside
+    the Edge Function deployment.
 
 ## Context
 
