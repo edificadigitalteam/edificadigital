@@ -2,14 +2,68 @@
 
 **Branch:** `feat/organization-tenant-admin-provisioning`
 
-**Status:** Done. Verified locally (pgTAP green, functional smoke test passed,
-`pnpm lint`/`pnpm build` clean, `pnpm test` unaffected pre-existing failure
-confirmed unrelated) and applied to `edifydb` (production) with explicit user
-authorization on 2026-07-27. Post-apply checks: all 4 pre-existing operators
-confirmed (`email_confirmed_at` backfilled, none locked out); security/
-performance advisors show only the expected `confirm_operator_activation`
-anon-`security definer` warning (by design — see RPC section) plus pre-existing,
-unrelated findings.
+**Status:** Phase 1 (schema + auto-provisioning) done and applied to `edifydb`.
+Verified locally (pgTAP green, functional smoke test passed, `pnpm lint`/
+`pnpm build` clean, `pnpm test` unaffected pre-existing failure confirmed
+unrelated) and applied with explicit user authorization on 2026-07-27.
+Post-apply checks: all 4 pre-existing operators confirmed (`email_confirmed_at`
+backfilled, none locked out); security/performance advisors show only the
+expected `confirm_operator_activation` anon-`security definer` warning (by
+design — see RPC section) plus pre-existing, unrelated findings.
+
+## Addendum: invitation email + resend action (Phase 2)
+
+Requested after Phase 1 shipped: (1) actually send an activation email to a
+newly-provisioned admin, (2) a "Reenviar invitación" (resend invitation)
+button in the operator list for pending/expired confirmations.
+
+**Decisions confirmed with product owner:**
+- Email delivery: a dedicated transactional provider (e.g. Resend), not the
+  Zoho SMTP relay already used for Supabase Auth's own magic-link email.
+- Trigger mechanism: `pg_net` called directly from the SQL functions, so the
+  activation token never passes through the calling super_admin's browser.
+- Resend permission: `super_admin` only (not tenant admins, even for their
+  own organization's operators).
+
+**Scope split, because sending real email needs an external account this
+session cannot create:**
+
+- **Phase 2a (done, this session):** `supabase/migrations/20260727020000_operator_invitation_management.sql`
+  - Fixed a real bug found while building this: `admin_save_operator_access`'s
+    insert path never set an `activation_token`, so any operator added via the
+    plain "add operator" admin form (not organization creation) got
+    `email_confirmed_at = null` forever and was permanently locked out by
+    Phase 1's confirmation check. Now provisions a token on insert, matching
+    `admin_save_organization`.
+  - `admin_list_operator_access` now returns `email_confirmed_at` and
+    `can_resend_invitation` (true only when the caller is `super_admin` and
+    the row is unconfirmed).
+  - New `resend_operator_activation(operator_id)` RPC (`super_admin` only):
+    rotates `activation_token`/`activation_token_expires_at` for an
+    unconfirmed operator; rejects (`22023`) if already confirmed. Does **not**
+    send an email yet — see Phase 2b.
+  - Frontend: `OperatorAdminPanel.jsx` shows a "Confirmación pendiente" badge
+    and a "Reenviar invitación" button (visible only when
+    `can_resend_invitation` is true) that calls the new RPC.
+  - Tests: `supabase/tests/006_operator_invitation_management_test.sql` (9/9
+    green locally), plus a manual functional smoke test (new operator via the
+    admin form gets a token; list exposes pending state; resend rotates the
+    token; resend on an already-confirmed operator is rejected).
+
+- **Phase 2b (blocked, deferred):** the actual email send.
+  - Needs a Resend account, a verified `somosedificadigital.com` domain
+    (SPF/DKIM), and an API key — product owner to set up and hand over the
+    key; not something this agent can create or pay for.
+  - Once available: a new Supabase Edge Function (`supabase/functions/send-operator-invitation/`)
+    calls the Resend API; `admin_save_organization`, `admin_save_operator_access`
+    (insert path), and `resend_operator_activation` each call it via `pg_net`
+    (requires enabling the `pg_net` extension) so the token stays server-side.
+  - The email links to a **new frontend page** at
+    `somosedificadigital.com/activar?token=...` (bilingual, per interface
+    guidance) that calls `confirm_operator_activation(token)` — this page
+    does not exist yet either and is part of Phase 2b.
+  - Not yet applied to `edifydb`; will need its own migration (`pg_net`
+    extension + trigger/call wiring) once the provider is ready.
 
 ## Context
 

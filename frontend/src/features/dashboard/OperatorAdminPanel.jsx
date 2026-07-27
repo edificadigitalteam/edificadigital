@@ -144,6 +144,22 @@ export default function OperatorAdminPanel({ access }) {
     setSaving(false)
   }
 
+  const resendInvitation = async (operator) => {
+    if (!operator.can_resend_invitation || !supabase) return
+    setSaving(true)
+    setError('')
+    setMessage('')
+    const { error: requestError } = await supabase.rpc('resend_operator_activation', {
+      target_operator_id: operator.id,
+    })
+    if (requestError) setError(requestError.message)
+    else {
+      setMessage(`Invitación reenviada a ${operator.email}.`)
+      await loadOperators()
+    }
+    setSaving(false)
+  }
+
   const seatLimitReached = Boolean(billingOverview?.seat_limit && billingOverview.active_users >= billingOverview.seat_limit && !form.id)
 
   return (
@@ -179,7 +195,7 @@ export default function OperatorAdminPanel({ access }) {
         <div className="edifica-section-heading"><div><p className="edifica-kicker">DIRECTORIO</p><h2>Usuarios del sistema</h2></div><span>{operators.length} personas</span></div>
         {loading ? <p className="edifica-empty">Cargando personas habilitadas…</p> : operators.length === 0 ? <p className="edifica-empty">Todavía no existen personas habilitadas.</p> : (
           <div className="edifica-table-wrap"><table className="edifica-admin-table"><thead><tr><th>Persona</th><th>Organización</th><th>Rol</th><th>Estado</th><th>Actualizado</th><th>Acciones</th></tr></thead><tbody>{operators.map((operator) => (
-            <tr key={operator.id}><td><strong>{operator.display_name}</strong><span>{operator.email}</span></td><td>{operator.organization_name ?? 'Sin asignar'}</td><td>{roleLabels[operator.role] ?? operator.role}</td><td><span className={`edifica-access-state ${operator.active ? 'active' : 'inactive'}`}>{operator.active ? 'Activo' : 'Suspendido'}</span></td><td>{formatDate(operator.updated_at)}</td><td><div className="edifica-admin-row-actions"><button type="button" onClick={() => editOperator(operator)} disabled={!operator.can_edit || saving}>Editar</button><button type="button" onClick={() => toggleOperator(operator)} disabled={!operator.can_edit || saving}>{operator.active ? 'Suspender' : 'Reactivar'}</button></div></td></tr>
+            <tr key={operator.id}><td><strong>{operator.display_name}</strong><span>{operator.email}</span></td><td>{operator.organization_name ?? 'Sin asignar'}</td><td>{roleLabels[operator.role] ?? operator.role}</td><td><span className={`edifica-access-state ${operator.active ? 'active' : 'inactive'}`}>{operator.active ? 'Activo' : 'Suspendido'}</span>{!operator.email_confirmed_at && <span className="edifica-access-state pending">Confirmación pendiente</span>}</td><td>{formatDate(operator.updated_at)}</td><td><div className="edifica-admin-row-actions"><button type="button" onClick={() => editOperator(operator)} disabled={!operator.can_edit || saving}>Editar</button><button type="button" onClick={() => toggleOperator(operator)} disabled={!operator.can_edit || saving}>{operator.active ? 'Suspender' : 'Reactivar'}</button>{operator.can_resend_invitation && <button type="button" onClick={() => resendInvitation(operator)} disabled={saving}>Reenviar invitación</button>}</div></td></tr>
           ))}</tbody></table></div>
         )}
       </section>
