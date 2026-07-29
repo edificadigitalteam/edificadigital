@@ -38,12 +38,21 @@ export default function VolunteerPanel({ access }) {
   const [projects, setProjects] = useState([])
   const [organizations, setOrganizations] = useState([])
   const [form, setForm] = useState({ ...emptyForm, organization_id: access.organizationId || '' })
+  const [formOpen, setFormOpen] = useState(false)
+  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
   const activeCount = useMemo(() => volunteers.filter((item) => item.status === 'active').length, [volunteers])
+  const filteredVolunteers = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    if (!query) return volunteers
+    return volunteers.filter((volunteer) => [volunteer.full_name, volunteer.email, volunteer.phone, volunteer.organization?.name, volunteer.project?.name]
+      .filter(Boolean)
+      .some((value) => value.toLowerCase().includes(query)))
+  }, [volunteers, search])
 
   const load = useCallback(async () => {
     if (!supabase) return
@@ -75,6 +84,14 @@ export default function VolunteerPanel({ access }) {
 
   const reset = () => {
     setForm({ ...emptyForm, organization_id: access.organizationId || organizations[0]?.id || '' })
+    setFormOpen(false)
+    setError('')
+    setMessage('')
+  }
+
+  const startNew = () => {
+    setForm({ ...emptyForm, organization_id: access.organizationId || organizations[0]?.id || '' })
+    setFormOpen(true)
     setError('')
     setMessage('')
   }
@@ -107,6 +124,7 @@ export default function VolunteerPanel({ access }) {
       status: volunteer.status,
       notes: volunteer.notes ?? '',
     })
+    setFormOpen(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -171,8 +189,12 @@ export default function VolunteerPanel({ access }) {
 
       {!access.organizationId && access.role !== 'super_admin' && <p className="operations-empty-note">Tu usuario necesita una organización asignada para registrar voluntarios.</p>}
 
+      {message && <p className="operations-feedback success">{message}</p>}
+      {!formOpen && error && <p className="operations-feedback error">{error}</p>}
+
+      {formOpen && (
       <section className="operations-card">
-        <div className="operations-card-heading"><div><p className="edifica-kicker">{form.id ? 'EDITAR VOLUNTARIO' : 'NUEVO VOLUNTARIO'}</p><h2>{form.id ? 'Actualizar registro' : 'Registrar voluntario'}</h2></div>{form.id && <button type="button" onClick={reset}>Cancelar edición</button>}</div>
+        <div className="operations-card-heading"><div><p className="edifica-kicker">{form.id ? 'EDITAR VOLUNTARIO' : 'NUEVO VOLUNTARIO'}</p><h2>{form.id ? 'Actualizar registro' : 'Registrar voluntario'}</h2></div><button type="button" onClick={reset}>Cancelar</button></div>
         <form className="operations-form" onSubmit={save}>
           {access.role === 'super_admin' && <label><span>Organización</span><select value={form.organization_id} onChange={(event) => setForm((current) => ({ ...current, organization_id: event.target.value, project_id: '' }))} required><option value="">Seleccionar</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
           <label><span>Proyecto relacionado</span><select value={form.project_id} onChange={(event) => setForm((current) => ({ ...current, project_id: event.target.value }))}><option value="">Sin proyecto específico</option>{availableProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label>
@@ -193,14 +215,19 @@ export default function VolunteerPanel({ access }) {
           <label className="wide"><span>Observaciones</span><textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} /></label>
           <button className="edifica-primary-button" type="submit" disabled={saving}>{saving ? 'Guardando…' : form.id ? 'Guardar cambios' : 'Registrar voluntario'}</button>
         </form>
-        {message && <p className="operations-feedback success">{message}</p>}
         {error && <p className="operations-feedback error">{error}</p>}
+      </section>
+      )}
+
+      <section className="module-search-bar operations-card">
+        <label><span>Buscar</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, correo, teléfono, organización o proyecto" /></label>
+        <button type="button" onClick={() => setSearch('')}>Limpiar</button>
       </section>
 
       <section className="operations-card">
-        <div className="edifica-section-heading"><div><p className="edifica-kicker">DIRECTORIO</p><h2>Voluntarios registrados</h2></div><span>{volunteers.length} personas</span></div>
-        {loading ? <p className="edifica-empty">Cargando voluntarios…</p> : volunteers.length === 0 ? <p className="edifica-empty">Todavía no existen voluntarios registrados.</p> : (
-          <div className="edifica-table-wrap"><table className="operations-table"><thead><tr><th>Voluntario</th><th>Tipo</th><th>Especialidades</th><th>Proyecto</th><th>Acciones</th></tr></thead><tbody>{volunteers.map((volunteer) => (
+        <div className="module-list-heading"><div><p className="edifica-kicker">DIRECTORIO</p><h2>Voluntarios registrados</h2></div><div className="module-list-actions"><span>{filteredVolunteers.length} personas</span><button type="button" onClick={startNew}>＋ Nuevo voluntario</button></div></div>
+        {loading ? <p className="edifica-empty">Cargando voluntarios…</p> : filteredVolunteers.length === 0 ? <p className="edifica-empty">Todavía no existen voluntarios registrados.</p> : (
+          <div className="edifica-table-wrap"><table className="operations-table"><thead><tr><th>Voluntario</th><th>Tipo</th><th>Especialidades</th><th>Proyecto</th><th>Acciones</th></tr></thead><tbody>{filteredVolunteers.map((volunteer) => (
             <tr key={volunteer.id}><td><strong>{volunteer.full_name}</strong><span>{volunteer.phone || volunteer.email || volunteer.organization?.name}</span></td><td>{volunteer.volunteer_type === 'general' ? 'General' : 'Especializado'}</td><td><div className="volunteer-specialties">{(volunteer.specialties ?? []).length ? volunteer.specialties.map((item) => <span key={item}>{specialties[item] ?? item}</span>) : <span>Apoyo general</span>}</div></td><td>{volunteer.project?.name ?? 'Disponibilidad general'}</td><td><button type="button" onClick={() => edit(volunteer)}>Editar</button></td></tr>
           ))}</tbody></table></div>
         )}

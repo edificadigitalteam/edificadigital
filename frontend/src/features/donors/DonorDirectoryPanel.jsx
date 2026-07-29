@@ -141,10 +141,10 @@ export default function DonorDirectoryPanel({ access }) {
         <div className="operations-summary"><strong>{donors.filter((donor) => donor.active).length}</strong><span>registros activos</span></div>
       </header>
 
-      <section className="operations-card donor-directory-toolbar">
+      <section className="module-search-bar operations-card">
         <label><span>Buscar</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, correo, teléfono o país" /></label>
         {access.role === 'super_admin' && <label><span>Organización</span><select value={organizationId} onChange={(event) => { setOrganizationId(event.target.value); setFormOpen(false) }}><option value="">Seleccionar</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
-        <button type="button" onClick={startNew} disabled={!organizationId}>＋ Crear aliado o donante</button>
+        <button type="button" onClick={() => setSearch('')}>Limpiar</button>
       </section>
 
       {formOpen && (
@@ -165,7 +165,7 @@ export default function DonorDirectoryPanel({ access }) {
       {!formOpen && error && <p className="operations-feedback error">{error}</p>}
 
       <section className="operations-card">
-        <div className="edifica-section-heading"><div><p className="edifica-kicker">DIRECTORIO</p><h2>Registros disponibles</h2></div><span>{filtered.length} registros</span></div>
+        <div className="module-list-heading"><div><p className="edifica-kicker">DIRECTORIO</p><h2>Registros disponibles</h2></div><div className="module-list-actions"><span>{filtered.length} registros</span><button type="button" onClick={startNew} disabled={!organizationId}>＋ Crear aliado o donante</button></div></div>
         {loading ? <p className="edifica-empty">Cargando aliados y donantes…</p> : filtered.length === 0 ? <p className="edifica-empty">Todavía faltan aliados o donantes por registrar.</p> : (
           <div className="edifica-table-wrap"><table className="operations-table donor-directory-table"><thead><tr><th>Aliado o donante</th><th>Contacto</th><th>País</th><th>Uso</th><th>Estado</th><th>Acción</th></tr></thead><tbody>{filtered.map((donor) => (
             <tr key={donor.id}>

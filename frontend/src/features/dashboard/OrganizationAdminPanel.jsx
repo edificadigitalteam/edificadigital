@@ -42,7 +42,11 @@ export default function OrganizationAdminPanel({ access }) {
   const [organizations, setOrganizations] = useState([])
   const [hosts, setHosts] = useState([])
   const [form, setForm] = useState(emptyForm)
+  const [formOpen, setFormOpen] = useState(false)
   const [hostForm, setHostForm] = useState(emptyHostForm)
+  const [hostFormOpen, setHostFormOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const [hostSearch, setHostSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -50,6 +54,20 @@ export default function OrganizationAdminPanel({ access }) {
 
   const activeCount = useMemo(() => organizations.filter((item) => item.active).length, [organizations])
   const canEdit = access.role === 'super_admin'
+  const filteredOrganizations = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    if (!query) return organizations
+    return organizations.filter((organization) => [organization.name, organization.code, organization.legal_name, organization.country, organization.city]
+      .filter(Boolean)
+      .some((value) => value.toLowerCase().includes(query)))
+  }, [organizations, search])
+  const filteredHosts = useMemo(() => {
+    const query = hostSearch.trim().toLowerCase()
+    if (!query) return hosts
+    return hosts.filter((host) => [host.hostname, host.organization_name]
+      .filter(Boolean)
+      .some((value) => value.toLowerCase().includes(query)))
+  }, [hosts, hostSearch])
 
   const loadOrganizations = useCallback(async () => {
     if (!supabase) return
@@ -75,12 +93,28 @@ export default function OrganizationAdminPanel({ access }) {
 
   const reset = () => {
     setForm(emptyForm)
+    setFormOpen(false)
+    setError('')
+    setMessage('')
+  }
+
+  const startNew = () => {
+    setForm(emptyForm)
+    setFormOpen(true)
     setError('')
     setMessage('')
   }
 
   const resetHost = () => {
     setHostForm({ ...emptyHostForm, organization_id: organizations[0]?.id || '' })
+    setHostFormOpen(false)
+    setError('')
+    setMessage('')
+  }
+
+  const startNewHost = () => {
+    setHostForm({ ...emptyHostForm, organization_id: organizations[0]?.id || '' })
+    setHostFormOpen(true)
     setError('')
     setMessage('')
   }
@@ -101,6 +135,7 @@ export default function OrganizationAdminPanel({ access }) {
       language: organization.language ?? 'en',
       active: organization.active,
     })
+    setFormOpen(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -112,6 +147,7 @@ export default function OrganizationAdminPanel({ access }) {
       is_primary: host.is_primary,
       active: host.active,
     })
+    setHostFormOpen(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -136,6 +172,7 @@ export default function OrganizationAdminPanel({ access }) {
     } else {
       setMessage(form.id ? 'Organización actualizada.' : 'Organización creada y asignada a tu perfil.')
       setForm(emptyForm)
+      setFormOpen(false)
       await loadOrganizations()
     }
     setSaving(false)
@@ -177,11 +214,14 @@ export default function OrganizationAdminPanel({ access }) {
         <div className="operations-summary"><strong>{activeCount}</strong><span>organizaciones activas</span></div>
       </header>
 
-      {canEdit && (
+      {message && <p className="operations-feedback success">{message}</p>}
+      {!formOpen && !hostFormOpen && error && <p className="operations-feedback error">{error}</p>}
+
+      {canEdit && formOpen && (
         <section className="operations-card">
           <div className="operations-card-heading">
             <div><p className="edifica-kicker">{form.id ? 'EDITAR ORGANIZACIÓN' : 'NUEVA ORGANIZACIÓN'}</p><h2>{form.id ? 'Actualizar tenant' : 'Crear tenant'}</h2></div>
-            {form.id && <button type="button" onClick={reset}>Cancelar edición</button>}
+            <button type="button" onClick={reset}>Cancelar</button>
           </div>
           <form className="operations-form" onSubmit={save}>
             <label><span>Nombre visible</span><input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} required /></label>
@@ -197,16 +237,15 @@ export default function OrganizationAdminPanel({ access }) {
             <label className="operations-checkbox"><input type="checkbox" checked={form.active} onChange={(event) => setForm((current) => ({ ...current, active: event.target.checked }))} /><span>Organización activa</span></label>
             <button className="edifica-primary-button" type="submit" disabled={saving}>{saving ? 'Guardando…' : form.id ? 'Guardar cambios' : 'Crear organización'}</button>
           </form>
-          {message && <p className="operations-feedback success">{message}</p>}
           {error && <p className="operations-feedback error">{error}</p>}
         </section>
       )}
 
-      {canEdit && organizations.length > 0 && (
+      {canEdit && hostFormOpen && (
         <section className="operations-card">
           <div className="operations-card-heading">
             <div><p className="edifica-kicker">HOST Y TENANT</p><h2>Dominio de acceso</h2></div>
-            {hostForm.id && <button type="button" onClick={resetHost}>Cancelar edición</button>}
+            <button type="button" onClick={resetHost}>Cancelar</button>
           </div>
           <form className="operations-form" onSubmit={saveHost}>
             <label><span>Organización</span><select value={hostForm.organization_id} onChange={(event) => setHostForm((current) => ({ ...current, organization_id: event.target.value }))} required><option value="">Seleccionar</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>
@@ -216,27 +255,40 @@ export default function OrganizationAdminPanel({ access }) {
             <button className="edifica-primary-button" type="submit" disabled={saving}>{saving ? 'Guardando…' : hostForm.id ? 'Guardar host' : 'Asociar host'}</button>
           </form>
           <p className="operations-empty-note">El host identifica el tenant antes del inicio de sesión. La autorización del usuario y las políticas RLS confirman después que su organización coincide con la cuenta solicitada.</p>
+          {error && <p className="operations-feedback error">{error}</p>}
         </section>
       )}
 
+      <section className="module-search-bar operations-card">
+        <label><span>Buscar</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, código, país o ciudad" /></label>
+        <button type="button" onClick={() => setSearch('')}>Limpiar</button>
+      </section>
+
       <section className="operations-card">
-        <div className="edifica-section-heading"><div><p className="edifica-kicker">CUENTAS</p><h2>Organizaciones registradas</h2></div><span>{organizations.length} registros</span></div>
-        {loading ? <p className="edifica-empty">Cargando organizaciones…</p> : organizations.length === 0 ? <p className="edifica-empty">Crea la primera organización para comenzar a asociar usuarios y proyectos.</p> : (
-          <div className="edifica-table-wrap"><table className="operations-table"><thead><tr><th>Organización</th><th>Ubicación</th><th>Suscripción</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{organizations.map((organization) => (
+        <div className="module-list-heading"><div><p className="edifica-kicker">CUENTAS</p><h2>Organizaciones registradas</h2></div><div className="module-list-actions"><span>{filteredOrganizations.length} registros</span>{canEdit && <button type="button" onClick={startNew}>＋ Nueva organización</button>}</div></div>
+        {loading ? <p className="edifica-empty">Cargando organizaciones…</p> : filteredOrganizations.length === 0 ? <p className="edifica-empty">Crea la primera organización para comenzar a asociar usuarios y proyectos.</p> : (
+          <div className="edifica-table-wrap"><table className="operations-table"><thead><tr><th>Organización</th><th>Ubicación</th><th>Suscripción</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{filteredOrganizations.map((organization) => (
             <tr key={organization.id}><td><strong>{organization.name}</strong><span>{organization.legal_name || organization.code}</span></td><td>{[organization.city, organization.country].filter(Boolean).join(', ') || '—'}</td><td>{subscriptionLabels[organization.subscription_status] ?? organization.subscription_status}</td><td><span className={`edifica-access-state ${organization.active ? 'active' : 'inactive'}`}>{organization.active ? 'Activa' : 'Inactiva'}</span></td><td><button type="button" onClick={() => edit(organization)} disabled={!organization.can_edit}>Editar</button></td></tr>
           ))}</tbody></table></div>
         )}
       </section>
 
       {canEdit && (
-        <section className="operations-card">
-          <div className="edifica-section-heading"><div><p className="edifica-kicker">ENRUTAMIENTO</p><h2>Hosts registrados</h2></div><span>{hosts.length} hosts</span></div>
-          {hosts.length === 0 ? <p className="edifica-empty">Todavía no existen dominios o subdominios asociados.</p> : (
-            <div className="edifica-table-wrap"><table className="operations-table"><thead><tr><th>Hostname</th><th>Organización</th><th>Tipo</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{hosts.map((host) => (
-              <tr key={host.id}><td><strong>{host.hostname}</strong><span>https://{host.hostname}</span></td><td>{host.organization_name}</td><td>{host.is_primary ? 'Principal' : 'Alternativo'}</td><td><span className={`edifica-access-state ${host.active ? 'active' : 'inactive'}`}>{host.active ? 'Activo' : 'Inactivo'}</span></td><td><button type="button" onClick={() => editHost(host)}>Editar</button></td></tr>
-            ))}</tbody></table></div>
-          )}
-        </section>
+        <>
+          <section className="module-search-bar operations-card">
+            <label><span>Buscar</span><input type="search" value={hostSearch} onChange={(event) => setHostSearch(event.target.value)} placeholder="Hostname u organización" /></label>
+            <button type="button" onClick={() => setHostSearch('')}>Limpiar</button>
+          </section>
+
+          <section className="operations-card">
+            <div className="module-list-heading"><div><p className="edifica-kicker">ENRUTAMIENTO</p><h2>Hosts registrados</h2></div><div className="module-list-actions"><span>{filteredHosts.length} hosts</span><button type="button" onClick={startNewHost} disabled={organizations.length === 0}>＋ Asociar host</button></div></div>
+            {filteredHosts.length === 0 ? <p className="edifica-empty">Todavía no existen dominios o subdominios asociados.</p> : (
+              <div className="edifica-table-wrap"><table className="operations-table"><thead><tr><th>Hostname</th><th>Organización</th><th>Tipo</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{filteredHosts.map((host) => (
+                <tr key={host.id}><td><strong>{host.hostname}</strong><span>https://{host.hostname}</span></td><td>{host.organization_name}</td><td>{host.is_primary ? 'Principal' : 'Alternativo'}</td><td><span className={`edifica-access-state ${host.active ? 'active' : 'inactive'}`}>{host.active ? 'Activo' : 'Inactivo'}</span></td><td><button type="button" onClick={() => editHost(host)}>Editar</button></td></tr>
+              ))}</tbody></table></div>
+            )}
+          </section>
+        </>
       )}
     </div>
   )
