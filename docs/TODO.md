@@ -15,19 +15,33 @@ Lightweight backlog for future work that does not yet have a plan in `docs/plans
 
 ## Email deliverability
 
-- [ ] Verify spam filtering on transactional email (magic link) sent via the Zoho custom SMTP sender. Magic-link emails initially landed in spam. Findings and status:
+- [x] Verify spam filtering on transactional email (magic link) sent via the Zoho custom SMTP sender. Magic-link emails initially landed in spam. Findings and status:
   - SPF (`v=spf1 include:zohomail.com ~all`) and DKIM (`zmail._domainkey.somosedificadigital.com`) were already published and aligned to `somosedificadigital.com`.
   - DMARC was missing entirely. Added `_dmarc.somosedificadigital.com` as `v=DMARC1; p=none; rua=mailto:contacto@somosedificadigital.com; pct=100` (monitor mode) in Cloudflare DNS.
-  - Remaining: re-send a magic link after DNS propagation and confirm inbox placement (not spam). If it still lands in spam, next lever is customizing the default Supabase magic-link email template (`Authentication > Emails > Templates`), since the stock template is generic.
+  - Confirmed by product owner as resolved.
 
 ## Reported by product owner (2026-07-26)
 
 - [x] Mejorar la entrega de informes impresos (revisar formato, maquetación y flujo de exportación/impresión de los reportes actuales). "Exportar PDF" (pdfmake) es ahora el único camino de exportación (se retiró "Imprimir informe"/`window.print()`): genera un PDF con portada ejecutiva (medidor de cumplimiento, tarjetas de métricas por color, índice en recuadro), secciones de detalle con enlaces internos de navegación, y un encabezado de marca (Edifica Digital + organización/tenant) repetido en cada página; se abre en pestaña nueva como vista previa. Ver `docs/plans/SPRINT-S2-v1_printed-reports-improvements.md`.
 - [x] Al crear un tenant, la persona cuyo correo se registra debe crearse automáticamente como administrador de ese tenant. Done in `#35` (`admin_save_organization` now auto-provisions a pending `private.operator_access` admin row for the org's `contact_email`, with activation-token confirmation). See `docs/plans/SPRINT-S2-v1_organization-tenant-admin-provisioning.md`.
-- [ ] Mejorar el proceso para crear aliados (suppliers/actores) y unificar la experiencia en todos los sitios donde se pueda buscar y/o crear un aliado, de forma simple y consistente.
+- [x] Mejorar el proceso para crear aliados (suppliers/actores) y unificar la experiencia en todos los sitios donde se pueda buscar y/o crear un aliado, de forma simple y consistente. Causa raíz: `DonorPicker`'s inline create block rendered its own nested `<form>` inside the parent flow's `<form>` (donación monetaria, en especie, nuevo proyecto), y los navegadores no disparan `submit` para un `<form>` anidado, así que "Guardar y seleccionar" no hacía nada. Corregido, junto con: consistencia de autorización backend (`current_operator_profile()` vs `is_authorized_operator()`), bloqueo de login antes de confirmar correo, y sistema de toasts para feedback de éxito/error. Ver `docs/plans/SPRINT-S2-v1_donor-picker-auth-consistency-and-toast-notifications.md` (#39).
 - [ ] Revisar la etiqueta del estimado de donantes (verificar redacción/precisión de la etiqueta mostrada en la interfaz).
 - [ ] Ajustar la parte visual del resumen: actualmente se ve muy amontonado; revisar espaciado y jerarquía visual.
 - [ ] Evaluar una funcionalidad de calendario de disponibilidad para voluntarios.
+
+## Reported by product owner (2026-07-30)
+
+- [ ] Revisar el estándar de creación/edición de registros a nivel visual: definir cuándo debe ser modal, cuándo página completa y cuándo inline, y aplicarlo de forma consistente en todos los módulos. Relacionado con `docs/DESIGN.md` "Module Panel Layout Standard" (#40), que ya estandarizó el layout de listado/búsqueda pero no resolvió cuál mecanismo de edición usar en cada caso.
+- [ ] Separar los módulos visibles según el rol: qué ve un superadmin, qué ve un admin de organización, y qué ve un operador. Relacionado con el fix de scoping por organización en "Personas habilitadas" (#41), que corrigió el acceso a datos pero no revisó de forma integral qué módulos/entradas de navegación debería ver cada rol.
+- [ ] Agrupar "Donaciones" como un módulo configurable (el usuario decide qué incluir) en vez de una entrada de menú fija por sí sola.
+- [ ] Revisar qué se muestra en el dashboard principal (resumen de operaciones al entrar a la app).
+- [ ] Agregar contactos a los aliados (CRM básico): permitir registrar uno o más contactos por aliado con nombre, teléfono, correo y cargo. Se agrega principalmente desde el módulo de Aliados y donantes; requiere una tabla nueva (`actor_contact` o similar, uno-a-muchos con `public.actor`) y su propio flujo de creación/edición dentro del panel del aliado.
+- [ ] Regla de negocio: los asientos disponibles por organización (`seat_limit`) ya solo cuentan usuarios `active = true` (`private.enforce_organization_seat_limit()`), esto ya está correcto en backend. Pendiente ajustar la UI: el checkbox "Acceso activo" no debería mostrarse en las vistas de creación ni edición (el valor por defecto siempre es `true` al crear), y el único camino para desactivar un acceso debe ser la acción "Suspender" ya existente en el listado. Afecta a `OperatorAdminPanel.jsx` (y revisar si `DonorDirectoryPanel.jsx`/otros formularios con un checkbox "activo" tienen el mismo patrón a corregir).
+- [ ] Estándar de UI: todo botón debe tener un tooltip breve (`title` u otro mecanismo accesible) explicando qué hace. Revisar todos los botones de ícono/texto corto en el dashboard y agregar el patrón a `docs/DESIGN.md`.
+- [ ] Buscar un nombre en español más agradable para "donación en especie" (la etiqueta actual no convence); revisar en toda la UI, reportes y copy bilingüe donde aparece.
+- [ ] Modelo de voluntariado: permitir que un voluntario esté registrado a nivel de organización (general) y, por separado, asignado a uno o más proyectos específicos — la misma persona puede tener ambos. Ejemplo: se registra a Ana Pérez como voluntaria de la organización; luego, cuando existe un proyecto, se le agrega como voluntaria de ese proyecto puntual. Requiere revisar el modelo de datos actual de `volunteer` (hoy vinculado a un solo `project_id` opcional) para soportar la relación muchos-a-muchos entre voluntario y proyecto sin perder el registro general por organización.
+- [ ] Al registrar un voluntario, la organización se asigna automáticamente según el tenant del usuario (regla del tenant) — no debe pedirse al usuario que la seleccione (ya es así para admins de organización en `VolunteerPanel.jsx`; confirmar que se mantenga así al implementar el punto anterior y que no se le pida de nuevo la organización al agregarlo a un proyecto).
+- [ ] Evaluar un módulo de proveedores (suppliers) independiente de "Aliados y donantes" — por ejemplo proveedores de transporte, alimentación u otros insumos/servicios que la organización necesite contratar, distinto del donante/aliado que aporta fondos o especies.
 
 ## Product strategy: modular ecosystem
 
