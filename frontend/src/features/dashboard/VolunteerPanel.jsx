@@ -219,19 +219,23 @@ export default function VolunteerPanel({ access }) {
       </section>
       )}
 
-      <section className="module-search-bar operations-card">
-        <label><span>Buscar</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, correo, teléfono, organización o proyecto" /></label>
-        <button type="button" onClick={() => setSearch('')} title="Limpiar la búsqueda">Limpiar</button>
-      </section>
+      {!formOpen && (
+        <>
+          <section className="module-search-bar operations-card">
+            <label><span>Buscar</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, correo, teléfono, organización o proyecto" /></label>
+            <button type="button" onClick={() => setSearch('')} title="Limpiar la búsqueda">Limpiar</button>
+          </section>
 
-      <section className="operations-card">
-        <div className="module-list-heading"><div><p className="edifica-kicker">DIRECTORIO</p><h2>Voluntarios registrados</h2></div><div className="module-list-actions"><span>{filteredVolunteers.length} personas</span><button type="button" onClick={startNew} title="Registrar un nuevo voluntario">＋ Nuevo voluntario</button></div></div>
-        {loading ? <p className="edifica-empty">Cargando voluntarios…</p> : filteredVolunteers.length === 0 ? <p className="edifica-empty">Todavía no existen voluntarios registrados.</p> : (
-          <div className="edifica-table-wrap"><table className="operations-table"><thead><tr><th>Voluntario</th><th>Tipo</th><th>Especialidades</th><th>Proyecto</th><th>Acciones</th></tr></thead><tbody>{filteredVolunteers.map((volunteer) => (
-            <tr key={volunteer.id}><td><strong>{volunteer.full_name}</strong><span>{volunteer.phone || volunteer.email || volunteer.organization?.name}</span></td><td>{volunteer.volunteer_type === 'general' ? 'General' : 'Especializado'}</td><td><div className="volunteer-specialties">{(volunteer.specialties ?? []).length ? volunteer.specialties.map((item) => <span key={item}>{specialties[item] ?? item}</span>) : <span>Apoyo general</span>}</div></td><td>{volunteer.project?.name ?? 'Disponibilidad general'}</td><td><button type="button" onClick={() => edit(volunteer)} title={`Editar a ${volunteer.full_name}`}>Editar</button></td></tr>
-          ))}</tbody></table></div>
-        )}
-      </section>
+          <section className="operations-card">
+            <div className="module-list-heading"><div><p className="edifica-kicker">DIRECTORIO</p><h2>Voluntarios registrados</h2></div><div className="module-list-actions"><span>{filteredVolunteers.length} personas</span><button type="button" onClick={startNew} title="Registrar un nuevo voluntario">＋ Nuevo voluntario</button></div></div>
+            {loading ? <p className="edifica-empty">Cargando voluntarios…</p> : filteredVolunteers.length === 0 ? <p className="edifica-empty">Todavía no existen voluntarios registrados.</p> : (
+              <div className="edifica-table-wrap"><table className="operations-table"><thead><tr><th>Voluntario</th><th>Tipo</th><th>Especialidades</th><th>Proyecto</th><th>Acciones</th></tr></thead><tbody>{filteredVolunteers.map((volunteer) => (
+                <tr key={volunteer.id}><td><strong>{volunteer.full_name}</strong><span>{volunteer.phone || volunteer.email || volunteer.organization?.name}</span></td><td>{volunteer.volunteer_type === 'general' ? 'General' : 'Especializado'}</td><td><div className="volunteer-specialties">{(volunteer.specialties ?? []).length ? volunteer.specialties.map((item) => <span key={item}>{specialties[item] ?? item}</span>) : <span>Apoyo general</span>}</div></td><td>{volunteer.project?.name ?? 'Disponibilidad general'}</td><td><button type="button" onClick={() => edit(volunteer)} title={`Editar a ${volunteer.full_name}`}>Editar</button></td></tr>
+              ))}</tbody></table></div>
+            )}
+          </section>
+        </>
+      )}
     </div>
   )
 }
