@@ -151,6 +151,7 @@ export default function DonorDirectoryPanel({ access }) {
 
       {formOpen && (
         <section className="operations-card donor-directory-form">
+          <div className="module-form-breadcrumb"><button type="button" onClick={cancel} title="Volver al listado de aliados y donantes">Aliados y donantes</button><span>/</span><strong>{form.id ? 'Editar' : 'Crear'}</strong></div>
           <form className="operations-form" onSubmit={save}>
             <label><span>Tipo</span><select value={form.donor_type} onChange={(event) => setForm((current) => ({ ...current, donor_type: event.target.value }))}><option value="organization">Organización</option><option value="person">Persona</option><option value="anonymous">Anónimo</option></select></label>
             {form.donor_type !== 'anonymous' && <label className="wide"><span>Nombre *</span><input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} required /></label>}

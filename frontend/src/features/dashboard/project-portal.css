@@ -20,8 +20,6 @@
 .project-row-actions button { border: 1px solid var(--ed-purple-soft); border-radius: 8px; padding: 8px 10px; background: #fff; color: var(--ed-purple); font-size: .75rem; font-weight: 800; cursor: pointer; }
 .project-row-actions a:first-child { background: var(--ed-purple); color: #fff; border-color: var(--ed-purple); }
 .project-form-portal { display: grid; gap: 0; }
-.project-form-breadcrumb { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; color: var(--ed-muted); font-size: .82rem; }
-.project-form-breadcrumb button { border: 0; padding: 0; background: transparent; color: var(--ed-purple); text-decoration: underline; cursor: pointer; }
 .project-form-portal form { display: grid; gap: 16px; }
 .project-form-section { overflow: hidden; border: 1px solid var(--ed-line); border-radius: 14px; background: #fff; box-shadow: 0 8px 24px rgba(52, 21, 80, .05); }
 .project-form-section > header { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 17px 20px; border-bottom: 1px solid var(--ed-line); background: #fcfbfd; }

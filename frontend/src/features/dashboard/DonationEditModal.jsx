@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
+import Modal from './Modal.jsx'
 
 const paymentMethods = {
   cash: 'Efectivo',
@@ -146,15 +147,7 @@ export default function DonationEditModal({ donation, onClose, onSaved }) {
   }
 
   return (
-    <div className="edifica-modal-backdrop" role="presentation" onMouseDown={(event) => {
-      if (event.target === event.currentTarget) onClose()
-    }}>
-      <section className="edifica-modal edifica-edit-modal" role="dialog" aria-modal="true" aria-labelledby="edit-donation-title">
-        <header className="edifica-modal-header">
-          <div><p className="edifica-kicker">EDITAR REGISTRO</p><h2 id="edit-donation-title">{donation.reference_code ?? 'Donación'}</h2></div>
-          <button className="edifica-modal-close" type="button" onClick={onClose} aria-label="Cerrar edición" title="Cerrar edición">×</button>
-        </header>
-
+    <Modal titleId="edit-donation-title" kicker="EDITAR REGISTRO" title={donation.reference_code ?? 'Donación'} onClose={onClose} closeLabel="Cerrar edición" className="edifica-edit-modal">
         <form className="edifica-edit-form" onSubmit={save}>
           <section><h3>Información general</h3><div className="edifica-edit-grid">
             <label className="wide"><span>Proyecto relacionado</span><select value={form.project_id} onChange={(event) => update('project_id', event.target.value)}><option value="">Sin proyecto específico</option>{projects.map((project) => <option key={project.id} value={project.id}>{project.code} · {project.name}</option>)}</select></label>
@@ -203,7 +196,6 @@ export default function DonationEditModal({ donation, onClose, onSaved }) {
           {error && <p className="operations-feedback error">{error}</p>}
           <div className="edifica-edit-actions"><button type="button" onClick={onClose} title="Cerrar sin guardar">Cancelar</button><button className="edifica-primary-button" type="submit" disabled={saving} title="Guardar los cambios de esta donación">{saving ? 'Guardando…' : 'Guardar cambios'}</button></div>
         </form>
-      </section>
-    </div>
+    </Modal>
   )
 }
