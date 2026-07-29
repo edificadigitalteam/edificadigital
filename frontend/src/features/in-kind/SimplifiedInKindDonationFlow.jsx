@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react'
 import DonorPicker from '../donors/DonorPicker.jsx'
 import { supabase } from '../../lib/supabase.js'
+import { useToast } from '../notifications/ToastProvider.jsx'
 import { useOperatorAccess } from './useOperatorAccess.js'
 import { OperatorAccessScreen } from './OperatorAccess.jsx'
 import { submitInKindShipment, validateEvidence } from './submission.js'
@@ -88,6 +89,7 @@ function Section({ data, children }) { return <section className="monetary-secti
 
 export default function SimplifiedInKindDonationFlow() {
   const access = useOperatorAccess()
+  const { notify } = useToast()
   const [language, setLanguage] = useState(loadLanguage)
   const [draft, setDraft] = useState(() => loadDraft(access))
   const [organizations, setOrganizations] = useState([])
@@ -162,7 +164,13 @@ export default function SimplifiedInKindDonationFlow() {
     if (!validate() || saving) return
     setSaving(true); setMessage('')
     try { const result = await submitInKindShipment({ client: supabase, draft, evidence }); window.localStorage.removeItem(DRAFT_KEY); setReference(result.reference_code) }
-    catch (requestError) { setMessage(language === 'es' ? `No fue posible guardar la donación: ${requestError.message}` : `The donation could not be saved: ${requestError.message}`) }
+    catch (requestError) {
+      const friendlyMessage = requestError?.code === '42501'
+        ? (language === 'en' ? 'You do not have access for this action. Confirm your email or contact your administrator.' : 'No tienes acceso para esta acción. Confirma tu correo o contacta al administrador.')
+        : (language === 'es' ? `No fue posible guardar la donación: ${requestError.message}` : `The donation could not be saved: ${requestError.message}`)
+      setMessage(friendlyMessage)
+      notify({ type: 'error', message: friendlyMessage })
+    }
     finally { setSaving(false) }
   }
 

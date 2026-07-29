@@ -5,6 +5,7 @@ import App from './App.jsx'
 import DashboardApp from './features/dashboard/DashboardApp.jsx'
 import ActivateAccountPage from './features/auth/ActivateAccountPage.jsx'
 import GlobalLanguageController from './i18n/GlobalLanguageController.jsx'
+import { ToastProvider } from './features/notifications/ToastProvider.jsx'
 import { ErrorBoundary } from './lib/ErrorBoundary.jsx'
 import { installGlobalErrorLogging } from './lib/logger.js'
 
@@ -95,7 +96,9 @@ function RootApplication() {
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ErrorBoundary>
-      <RootApplication />
+      <ToastProvider>
+        <RootApplication />
+      </ToastProvider>
     </ErrorBoundary>
   </StrictMode>,
 )

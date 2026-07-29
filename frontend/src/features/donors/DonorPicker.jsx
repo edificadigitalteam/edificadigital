@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
+import { useToast } from '../notifications/ToastProvider.jsx'
 import './donors.css'
 
 const copy = {
@@ -19,6 +20,8 @@ const copy = {
     cancel: 'Cancelar',
     loading: 'Cargando directorio…',
     required: 'Selecciona o crea un aliado o donante.',
+    created: 'Aliado creado y seleccionado.',
+    accessDenied: 'No tienes acceso para esta acción. Confirma tu correo o contacta al administrador.',
   },
   en: {
     label: 'Partner or donor',
@@ -36,6 +39,8 @@ const copy = {
     cancel: 'Cancel',
     loading: 'Loading directory…',
     required: 'Select or create a partner or donor.',
+    created: 'Partner created and selected.',
+    accessDenied: 'You do not have access for this action. Confirm your email or contact your administrator.',
   },
 }
 
@@ -57,6 +62,7 @@ export default function DonorPicker({
   allowCreate = true,
 }) {
   const text = copy[language] ?? copy.es
+  const { notify } = useToast()
   const [donors, setDonors] = useState([])
   const [loading, setLoading] = useState(false)
   const [creating, setCreating] = useState(false)
@@ -100,7 +106,7 @@ export default function DonorPicker({
   }
 
   const saveQuick = async (event) => {
-    event.preventDefault()
+    event?.preventDefault()
     if (!supabase || !organizationId || saving) return
     const anonymous = quickForm.donor_type === 'anonymous'
     if (!anonymous && !quickForm.name.trim()) {
@@ -122,13 +128,16 @@ export default function DonorPicker({
       },
     })
     if (requestError) {
-      setError(requestError.message)
+      const friendlyMessage = requestError.code === '42501' ? text.accessDenied : requestError.message
+      setError(friendlyMessage)
+      notify({ type: 'error', message: friendlyMessage })
     } else {
       const saved = data
       setDonors((current) => [...current.filter((item) => item.id !== saved.id), saved].sort((a, b) => a.name.localeCompare(b.name)))
       onChange?.(saved)
       setCreating(false)
       setQuickForm(emptyQuickForm)
+      notify({ type: 'success', message: text.created })
     }
     setSaving(false)
   }
@@ -156,14 +165,19 @@ export default function DonorPicker({
       )}
 
       {creating && (
-        <form className="donor-quick-form" onSubmit={saveQuick}>
+        // Rendered as a <div>, not a <form>: DonorPicker is itself always used
+        // inside another form (monetary/in-kind/project), and browsers do not
+        // fire submit events for a <form> nested inside another <form> --
+        // clicking "save" silently did nothing. saveQuick is called directly
+        // from the button's onClick instead of relying on form submission.
+        <div className="donor-quick-form">
           <label><span>{text.type}</span><select value={quickForm.donor_type} onChange={(event) => setQuickForm((current) => ({ ...current, donor_type: event.target.value }))}><option value="organization">{text.organization}</option><option value="person">{text.person}</option><option value="anonymous">{text.anonymous}</option></select></label>
-          {quickForm.donor_type !== 'anonymous' && <label className="wide"><span>{text.name} *</span><input value={quickForm.name} onChange={(event) => setQuickForm((current) => ({ ...current, name: event.target.value }))} required /></label>}
+          {quickForm.donor_type !== 'anonymous' && <label className="wide"><span>{text.name} *</span><input value={quickForm.name} onChange={(event) => setQuickForm((current) => ({ ...current, name: event.target.value }))} /></label>}
           {quickForm.donor_type !== 'anonymous' && <><label><span>{text.email}</span><input type="email" value={quickForm.email} onChange={(event) => setQuickForm((current) => ({ ...current, email: event.target.value }))} /></label><label><span>{text.phone}</span><input value={quickForm.phone} onChange={(event) => setQuickForm((current) => ({ ...current, phone: event.target.value }))} /></label></>}
           <label><span>{text.country}</span><input value={quickForm.country} onChange={(event) => setQuickForm((current) => ({ ...current, country: event.target.value }))} /></label>
           {error && <p className="donor-picker-error wide">{error}</p>}
-          <div className="donor-quick-actions wide"><button type="button" onClick={() => { setCreating(false); setError('') }}>{text.cancel}</button><button type="submit" disabled={saving}>{saving ? '…' : text.save}</button></div>
-        </form>
+          <div className="donor-quick-actions wide"><button type="button" onClick={() => { setCreating(false); setError('') }}>{text.cancel}</button><button type="button" onClick={saveQuick} disabled={saving}>{saving ? '…' : text.save}</button></div>
+        </div>
       )}
 
       {!creating && error && <p className="donor-picker-error">{error}</p>}

@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import DonorPicker from '../donors/DonorPicker.jsx'
+import { useToast } from '../notifications/ToastProvider.jsx'
 import { supabase } from '../../lib/supabase.js'
 import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
@@ -74,6 +75,7 @@ function Field({ label, error, children, className = '' }) { return <label class
 
 export default function UnifiedMonetaryDonationFlow() {
   const access = useOperatorAccess()
+  const { notify } = useToast()
   const [language, setLanguage] = useState(loadLanguage)
   const [draft, setDraft] = useState(loadDraft)
   const [organizations, setOrganizations] = useState([])
@@ -150,7 +152,13 @@ export default function UnifiedMonetaryDonationFlow() {
     if (Object.keys(nextErrors).length || saving) return
     setSaving(true); setMessage('')
     try { const saved = await submitMonetaryDonation({ client: supabase, draft, evidence }); window.localStorage.removeItem(DRAFT_KEY); setReference(saved.reference_code) }
-    catch (requestError) { setMessage(requestError?.message || copy.errors.default) }
+    catch (requestError) {
+      const friendlyMessage = requestError?.code === '42501'
+        ? (language === 'en' ? 'You do not have access for this action. Confirm your email or contact your administrator.' : 'No tienes acceso para esta acción. Confirma tu correo o contacta al administrador.')
+        : (requestError?.message || copy.errors.default)
+      setMessage(friendlyMessage)
+      notify({ type: 'error', message: friendlyMessage })
+    }
     finally { setSaving(false) }
   }
 

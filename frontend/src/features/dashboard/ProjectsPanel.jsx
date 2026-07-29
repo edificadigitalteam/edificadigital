@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import DonorPicker from '../donors/DonorPicker.jsx'
 import { supabase } from '../../lib/supabase.js'
+import { useToast } from '../notifications/ToastProvider.jsx'
 import './operations.css'
 import './project-portal.css'
 
@@ -44,6 +45,7 @@ function formatDate(value) {
 }
 
 export default function ProjectsPanel({ access }) {
+  const { notify } = useToast()
   const [projects, setProjects] = useState([])
   const [organizations, setOrganizations] = useState([])
   const [form, setForm] = useState({ ...emptyForm, organization_id: access.organizationId || '' })
@@ -177,12 +179,19 @@ export default function ProjectsPanel({ access }) {
     }
     const request = form.id ? supabase.from('project').update(payload).eq('id', form.id) : supabase.from('project').insert(payload)
     const { error: requestError } = await request
-    if (requestError) setError(requestError.message)
-    else {
-      setMessage(form.id ? 'Proyecto actualizado correctamente.' : 'Proyecto registrado correctamente.')
+    if (requestError) {
+      const friendlyMessage = requestError.code === '42501'
+        ? 'No tienes acceso para esta acción. Confirma tu correo o contacta al administrador.'
+        : requestError.message
+      setError(friendlyMessage)
+      notify({ type: 'error', message: friendlyMessage })
+    } else {
+      const successMessage = form.id ? 'Proyecto actualizado correctamente.' : 'Proyecto registrado correctamente.'
+      setMessage(successMessage)
       setForm({ ...emptyForm, organization_id: access.organizationId || organizations[0]?.id || '' })
       setFormOpen(false)
       await load()
+      notify({ type: 'success', message: successMessage })
     }
     setSaving(false)
   }
