@@ -141,11 +141,13 @@ export default function DonorDirectoryPanel({ access }) {
         <div className="operations-summary"><strong>{donors.filter((donor) => donor.active).length}</strong><span>registros activos</span></div>
       </header>
 
-      <section className="module-search-bar operations-card">
-        <label><span>Buscar</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, correo, teléfono o país" /></label>
-        {access.role === 'super_admin' && <label><span>Organización</span><select value={organizationId} onChange={(event) => { setOrganizationId(event.target.value); setFormOpen(false) }}><option value="">Seleccionar</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
-        <button type="button" onClick={() => setSearch('')} title="Limpiar la búsqueda">Limpiar</button>
-      </section>
+      {!formOpen && (
+        <section className="module-search-bar operations-card">
+          <label><span>Buscar</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, correo, teléfono o país" /></label>
+          {access.role === 'super_admin' && <label><span>Organización</span><select value={organizationId} onChange={(event) => { setOrganizationId(event.target.value); setFormOpen(false) }}><option value="">Seleccionar</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
+          <button type="button" onClick={() => setSearch('')} title="Limpiar la búsqueda">Limpiar</button>
+        </section>
+      )}
 
       {formOpen && (
         <section className="operations-card donor-directory-form">
@@ -164,21 +166,23 @@ export default function DonorDirectoryPanel({ access }) {
       {message && <p className="operations-feedback success">{message}</p>}
       {!formOpen && error && <p className="operations-feedback error">{error}</p>}
 
-      <section className="operations-card">
-        <div className="module-list-heading"><div><p className="edifica-kicker">DIRECTORIO</p><h2>Registros disponibles</h2></div><div className="module-list-actions"><span>{filtered.length} registros</span><button type="button" onClick={startNew} disabled={!organizationId} title="Crear un nuevo aliado o donante">＋ Crear aliado o donante</button></div></div>
-        {loading ? <p className="edifica-empty">Cargando aliados y donantes…</p> : filtered.length === 0 ? <p className="edifica-empty">Todavía faltan aliados o donantes por registrar.</p> : (
-          <div className="edifica-table-wrap"><table className="operations-table donor-directory-table"><thead><tr><th>Aliado o donante</th><th>Contacto</th><th>País</th><th>Uso</th><th>Estado</th><th>Acción</th></tr></thead><tbody>{filtered.map((donor) => (
-            <tr key={donor.id}>
-              <td><strong>{donor.name}</strong><span className="donor-type-chip">{donor.is_anonymous ? 'Anónimo' : donor.is_organization ? 'Organización' : 'Persona'}</span></td>
-              <td><span>{donor.email || '—'}</span><span>{donor.phone || '—'}</span></td>
-              <td>{donor.country || '—'}</td>
-              <td><span>{donor.project_count} proyectos</span><span>{donor.donation_count} donaciones</span></td>
-              <td><span className={`edifica-access-state ${donor.active ? 'active' : 'inactive'}`}>{donor.active ? 'Activo' : 'Inactivo'}</span></td>
-              <td><button type="button" onClick={() => edit(donor)} title={`Editar a ${donor.name}`}>Editar</button></td>
-            </tr>
-          ))}</tbody></table></div>
-        )}
-      </section>
+      {!formOpen && (
+        <section className="operations-card">
+          <div className="module-list-heading"><div><p className="edifica-kicker">DIRECTORIO</p><h2>Registros disponibles</h2></div><div className="module-list-actions"><span>{filtered.length} registros</span><button type="button" onClick={startNew} disabled={!organizationId} title="Crear un nuevo aliado o donante">＋ Crear aliado o donante</button></div></div>
+          {loading ? <p className="edifica-empty">Cargando aliados y donantes…</p> : filtered.length === 0 ? <p className="edifica-empty">Todavía faltan aliados o donantes por registrar.</p> : (
+            <div className="edifica-table-wrap"><table className="operations-table donor-directory-table"><thead><tr><th>Aliado o donante</th><th>Contacto</th><th>País</th><th>Uso</th><th>Estado</th><th>Acción</th></tr></thead><tbody>{filtered.map((donor) => (
+              <tr key={donor.id}>
+                <td><strong>{donor.name}</strong><span className="donor-type-chip">{donor.is_anonymous ? 'Anónimo' : donor.is_organization ? 'Organización' : 'Persona'}</span></td>
+                <td><span>{donor.email || '—'}</span><span>{donor.phone || '—'}</span></td>
+                <td>{donor.country || '—'}</td>
+                <td><span>{donor.project_count} proyectos</span><span>{donor.donation_count} donaciones</span></td>
+                <td><span className={`edifica-access-state ${donor.active ? 'active' : 'inactive'}`}>{donor.active ? 'Activo' : 'Inactivo'}</span></td>
+                <td><button type="button" onClick={() => edit(donor)} title={`Editar a ${donor.name}`}>Editar</button></td>
+              </tr>
+            ))}</tbody></table></div>
+          )}
+        </section>
+      )}
     </div>
   )
 }
