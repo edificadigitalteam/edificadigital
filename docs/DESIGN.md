@@ -238,6 +238,33 @@ Not required for MVP, but design for light mode should be dark-mode compatible:
 - **Font sizes:** Never below 12px for body text
 - **Touch targets:** Minimum 44px x 44px for buttons on mobile
 
+## Button Tooltip Standard
+
+Every actionable button (icon-only or text) must carry a native `title`
+attribute with a short (2–6 word) description of what it does. This is the
+one required baseline — no custom tooltip component, no extra CSS/JS: a
+plain `title="..."` attribute, which the browser renders on hover and
+exposes as the accessible name fallback for screen readers when the button
+has no visible text (icon-only buttons).
+
+- Icon-only buttons (e.g. nav icons, the toast close `×`): `title` is
+  mandatory — without it there is no accessible name at all.
+- Text buttons whose label is already the full action (e.g. "＋ Nuevo
+  voluntario", "Guardar cambios"): still add `title` restating or slightly
+  expanding the action ("Registrar un nuevo voluntario en esta
+  organización") so hover behavior is consistent across the app — but do
+  not restate the label verbatim with no added information; if there is
+  nothing useful to add beyond the visible label, a short restatement is
+  still acceptable and preferred over an inconsistent gap.
+- Row-action buttons whose meaning depends on context (e.g. "Editar",
+  "Suspender", "Reactivar" in a table row) should name the record they act
+  on when practical (`title="Editar a Ana Pérez"`), not just repeat the
+  generic verb.
+- Do not use `title` as a substitute for a visible label on buttons that
+  should have one per the rest of this standard (touch targets, short
+  instructions) — it is a supplementary hover/accessibility hint, not a
+  replacement for on-screen text.
+
 ## Icon System
 
 Use one of:

@@ -96,7 +96,7 @@ export default function GlobalLanguageController() {
   if (!isPortal) return null
 
   return (
-    <button className="global-language-control" type="button" onClick={() => setLanguage((current) => current === 'es' ? 'en' : 'es')} aria-label={language === 'es' ? 'Change language to English' : 'Cambiar idioma a español'} data-no-translate>
+    <button className="global-language-control" type="button" onClick={() => setLanguage((current) => current === 'es' ? 'en' : 'es')} aria-label={language === 'es' ? 'Change language to English' : 'Cambiar idioma a español'} title={language === 'es' ? 'Change language to English' : 'Cambiar idioma a español'} data-no-translate>
       <span className={language === 'es' ? 'active' : ''}>ES</span><i>/</i><span className={language === 'en' ? 'active' : ''}>EN</span>
     </button>
   )

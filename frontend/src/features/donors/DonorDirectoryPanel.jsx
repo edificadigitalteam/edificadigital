@@ -144,7 +144,7 @@ export default function DonorDirectoryPanel({ access }) {
       <section className="module-search-bar operations-card">
         <label><span>Buscar</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, correo, teléfono o país" /></label>
         {access.role === 'super_admin' && <label><span>Organización</span><select value={organizationId} onChange={(event) => { setOrganizationId(event.target.value); setFormOpen(false) }}><option value="">Seleccionar</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
-        <button type="button" onClick={() => setSearch('')}>Limpiar</button>
+        <button type="button" onClick={() => setSearch('')} title="Limpiar la búsqueda">Limpiar</button>
       </section>
 
       {formOpen && (
@@ -156,7 +156,7 @@ export default function DonorDirectoryPanel({ access }) {
             <label><span>País</span><input value={form.country} onChange={(event) => setForm((current) => ({ ...current, country: event.target.value }))} /></label>
             <label className="operations-checkbox"><input type="checkbox" checked={form.active} onChange={(event) => setForm((current) => ({ ...current, active: event.target.checked }))} /><span>Registro activo</span></label>
             {error && <p className="operations-feedback error wide">{error}</p>}
-            <div className="compliance-form-actions"><button type="button" onClick={cancel}>Cancelar</button><button className="edifica-primary-button" type="submit" disabled={saving}>{saving ? 'Guardando…' : form.id ? 'Guardar cambios' : 'Crear y guardar'}</button></div>
+            <div className="compliance-form-actions"><button type="button" onClick={cancel} title="Cerrar este formulario sin guardar">Cancelar</button><button className="edifica-primary-button" type="submit" disabled={saving} title={form.id ? 'Guardar los cambios de este aliado o donante' : 'Crear este aliado o donante'}>{saving ? 'Guardando…' : form.id ? 'Guardar cambios' : 'Crear y guardar'}</button></div>
           </form>
         </section>
       )}
@@ -165,7 +165,7 @@ export default function DonorDirectoryPanel({ access }) {
       {!formOpen && error && <p className="operations-feedback error">{error}</p>}
 
       <section className="operations-card">
-        <div className="module-list-heading"><div><p className="edifica-kicker">DIRECTORIO</p><h2>Registros disponibles</h2></div><div className="module-list-actions"><span>{filtered.length} registros</span><button type="button" onClick={startNew} disabled={!organizationId}>＋ Crear aliado o donante</button></div></div>
+        <div className="module-list-heading"><div><p className="edifica-kicker">DIRECTORIO</p><h2>Registros disponibles</h2></div><div className="module-list-actions"><span>{filtered.length} registros</span><button type="button" onClick={startNew} disabled={!organizationId} title="Crear un nuevo aliado o donante">＋ Crear aliado o donante</button></div></div>
         {loading ? <p className="edifica-empty">Cargando aliados y donantes…</p> : filtered.length === 0 ? <p className="edifica-empty">Todavía faltan aliados o donantes por registrar.</p> : (
           <div className="edifica-table-wrap"><table className="operations-table donor-directory-table"><thead><tr><th>Aliado o donante</th><th>Contacto</th><th>País</th><th>Uso</th><th>Estado</th><th>Acción</th></tr></thead><tbody>{filtered.map((donor) => (
             <tr key={donor.id}>
@@ -174,7 +174,7 @@ export default function DonorDirectoryPanel({ access }) {
               <td>{donor.country || '—'}</td>
               <td><span>{donor.project_count} proyectos</span><span>{donor.donation_count} donaciones</span></td>
               <td><span className={`edifica-access-state ${donor.active ? 'active' : 'inactive'}`}>{donor.active ? 'Activo' : 'Inactivo'}</span></td>
-              <td><button type="button" onClick={() => edit(donor)}>Editar</button></td>
+              <td><button type="button" onClick={() => edit(donor)} title={`Editar a ${donor.name}`}>Editar</button></td>
             </tr>
           ))}</tbody></table></div>
         )}

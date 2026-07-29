@@ -152,7 +152,7 @@ export default function DonationEditModal({ donation, onClose, onSaved }) {
       <section className="edifica-modal edifica-edit-modal" role="dialog" aria-modal="true" aria-labelledby="edit-donation-title">
         <header className="edifica-modal-header">
           <div><p className="edifica-kicker">EDITAR REGISTRO</p><h2 id="edit-donation-title">{donation.reference_code ?? 'Donación'}</h2></div>
-          <button className="edifica-modal-close" type="button" onClick={onClose} aria-label="Cerrar edición">×</button>
+          <button className="edifica-modal-close" type="button" onClick={onClose} aria-label="Cerrar edición" title="Cerrar edición">×</button>
         </header>
 
         <form className="edifica-edit-form" onSubmit={save}>
@@ -201,7 +201,7 @@ export default function DonationEditModal({ donation, onClose, onSaved }) {
           </div></section>}
 
           {error && <p className="operations-feedback error">{error}</p>}
-          <div className="edifica-edit-actions"><button type="button" onClick={onClose}>Cancelar</button><button className="edifica-primary-button" type="submit" disabled={saving}>{saving ? 'Guardando…' : 'Guardar cambios'}</button></div>
+          <div className="edifica-edit-actions"><button type="button" onClick={onClose} title="Cerrar sin guardar">Cancelar</button><button className="edifica-primary-button" type="submit" disabled={saving} title="Guardar los cambios de esta donación">{saving ? 'Guardando…' : 'Guardar cambios'}</button></div>
         </form>
       </section>
     </div>

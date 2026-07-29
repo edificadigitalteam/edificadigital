@@ -144,7 +144,7 @@ export default function ProjectBeneficiariesPanel({ project, onChanged }) {
         <label className="wide"><span>Observaciones</span><textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} /></label>
         <label className="operations-checkbox"><input type="checkbox" checked={form.active} onChange={(event) => setForm((current) => ({ ...current, active: event.target.checked }))} /><span>Registro activo</span></label>
         <label className="operations-checkbox wide"><input type="checkbox" checked={form.privacy_notice_acknowledged} onChange={(event) => setForm((current) => ({ ...current, privacy_notice_acknowledged: event.target.checked }))} required /><span>Confirmo que la persona fue informada sobre el uso y resguardo de sus datos.</span></label>
-        <div className="compliance-form-actions"><button type="button" onClick={reset}>{form.id ? 'Cancelar edición' : 'Limpiar'}</button><button className="edifica-primary-button" type="submit" disabled={saving}>{saving ? 'Guardando…' : form.id ? 'Guardar cambios' : 'Registrar persona'}</button></div>
+        <div className="compliance-form-actions"><button type="button" onClick={reset} title={form.id ? 'Cerrar sin guardar' : 'Limpiar este formulario'}>{form.id ? 'Cancelar edición' : 'Limpiar'}</button><button className="edifica-primary-button" type="submit" disabled={saving} title={form.id ? 'Guardar los cambios de este beneficiario' : 'Registrar este beneficiario'}>{saving ? 'Guardando…' : form.id ? 'Guardar cambios' : 'Registrar persona'}</button></div>
       </form>
 
       {message && <p className="operations-feedback success">{message}</p>}
@@ -152,7 +152,7 @@ export default function ProjectBeneficiariesPanel({ project, onChanged }) {
 
       {loading ? <p className="edifica-empty">Cargando personas beneficiadas…</p> : beneficiaries.length === 0 ? <p className="edifica-empty">Todavía no existen personas registradas para este proyecto.</p> : (
         <div className="edifica-table-wrap"><table className="operations-table beneficiary-table"><thead><tr><th>Persona</th><th>Contacto</th><th>Ubicación</th><th>Beneficio</th><th>Estado</th><th>Acción</th></tr></thead><tbody>{beneficiaries.map((beneficiary) => (
-          <tr key={beneficiary.id}><td><strong>{beneficiary.full_name}</strong><span>{beneficiary.identification_number || 'Sin identificación'}</span></td><td>{beneficiary.email || beneficiary.phone || '—'}</td><td>{[beneficiary.residence_area, beneficiary.residence_country].filter(Boolean).join(', ') || '—'}</td><td>{beneficiary.benefit_received || '—'}</td><td><span className={`edifica-access-state ${beneficiary.active ? 'active' : 'inactive'}`}>{beneficiary.active ? 'Activo' : 'Inactivo'}</span></td><td><button type="button" onClick={() => edit(beneficiary)}>Editar</button></td></tr>
+          <tr key={beneficiary.id}><td><strong>{beneficiary.full_name}</strong><span>{beneficiary.identification_number || 'Sin identificación'}</span></td><td>{beneficiary.email || beneficiary.phone || '—'}</td><td>{[beneficiary.residence_area, beneficiary.residence_country].filter(Boolean).join(', ') || '—'}</td><td>{beneficiary.benefit_received || '—'}</td><td><span className={`edifica-access-state ${beneficiary.active ? 'active' : 'inactive'}`}>{beneficiary.active ? 'Activo' : 'Inactivo'}</span></td><td><button type="button" onClick={() => edit(beneficiary)} title={`Editar a ${beneficiary.full_name}`}>Editar</button></td></tr>
         ))}</tbody></table></div>
       )}
     </section>

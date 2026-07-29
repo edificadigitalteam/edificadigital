@@ -202,7 +202,7 @@ export default function OperatorAdminPanel({ access }) {
       <section className="module-search-bar operations-card">
         <label><span>Buscar</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, correo u organización" /></label>
         {isSuperAdmin && <label><span>Organización</span><select value={organizationFilter} onChange={(event) => setOrganizationFilter(event.target.value)}><option value="all">Todas las organizaciones</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
-        <button type="button" onClick={() => { setSearch(''); setOrganizationFilter('all') }}>Limpiar</button>
+        <button type="button" onClick={() => { setSearch(''); setOrganizationFilter('all') }} title="Limpiar la búsqueda y el filtro de organización">Limpiar</button>
       </section>
 
       {message && <p className="edifica-admin-feedback success">{message}</p>}
@@ -210,24 +210,24 @@ export default function OperatorAdminPanel({ access }) {
 
       {formOpen && (
         <section className="edifica-admin-form-card">
-          <div className="edifica-admin-card-heading"><div><p className="edifica-kicker">{form.id ? 'EDITAR ACCESO' : 'NUEVO ACCESO'}</p><h2>{form.id ? 'Actualizar persona' : 'Habilitar una persona'}</h2></div><button type="button" onClick={resetForm}>Cancelar</button></div>
+          <div className="edifica-admin-card-heading"><div><p className="edifica-kicker">{form.id ? 'EDITAR ACCESO' : 'NUEVO ACCESO'}</p><h2>{form.id ? 'Actualizar persona' : 'Habilitar una persona'}</h2></div><button type="button" onClick={resetForm} title="Cerrar este formulario sin guardar">Cancelar</button></div>
           <form className="edifica-admin-form" onSubmit={saveOperator}>
             <label><span>Nombre</span><input type="text" value={form.display_name} onChange={(event) => setForm((current) => ({ ...current, display_name: event.target.value }))} placeholder="Nombre y apellido" required /></label>
             <label><span>Correo electrónico</span><input type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} placeholder="persona@organizacion.org" required /></label>
             <label><span>Organización</span><select value={form.organization_id} onChange={(event) => setForm((current) => ({ ...current, organization_id: event.target.value }))} disabled={!isSuperAdmin}><option value="">Sin asignar</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>
             <label><span>Rol</span><select value={form.role} onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))} disabled={!isSuperAdmin}><option value="operator">Operador</option>{isSuperAdmin && <option value="admin">Administrador</option>}{isSuperAdmin && <option value="super_admin">Superadministrador</option>}</select></label>
             <label className="edifica-admin-checkbox"><input type="checkbox" checked={form.active} onChange={(event) => setForm((current) => ({ ...current, active: event.target.checked }))} /><span>Acceso activo</span></label>
-            <button className="edifica-primary-button" type="submit" disabled={saving || seatLimitReached}>{saving ? 'Guardando…' : seatLimitReached ? 'Cupo de usuarios completo' : form.id ? 'Guardar cambios' : 'Habilitar persona'}</button>
+            <button className="edifica-primary-button" type="submit" disabled={saving || seatLimitReached} title={form.id ? 'Guardar los cambios de este acceso' : 'Habilitar el acceso de esta persona'}>{saving ? 'Guardando…' : seatLimitReached ? 'Cupo de usuarios completo' : form.id ? 'Guardar cambios' : 'Habilitar persona'}</button>
           </form>
           {error && <p className="edifica-admin-feedback error">{error}</p>}
         </section>
       )}
 
       <section className="edifica-admin-list-card">
-        <div className="module-list-heading"><div><p className="edifica-kicker">DIRECTORIO</p><h2>Usuarios del sistema</h2></div><div className="module-list-actions"><span>{filteredOperators.length} personas</span><button type="button" onClick={startNew}>＋ Habilitar persona</button></div></div>
+        <div className="module-list-heading"><div><p className="edifica-kicker">DIRECTORIO</p><h2>Usuarios del sistema</h2></div><div className="module-list-actions"><span>{filteredOperators.length} personas</span><button type="button" onClick={startNew} title="Habilitar el acceso de una nueva persona">＋ Habilitar persona</button></div></div>
         {loading ? <p className="edifica-empty">Cargando personas habilitadas…</p> : filteredOperators.length === 0 ? <p className="edifica-empty">Todavía no existen personas habilitadas.</p> : (
           <div className="edifica-table-wrap"><table className="edifica-admin-table"><thead><tr><th>Persona</th><th>Organización</th><th>Rol</th><th>Estado</th><th>Actualizado</th><th>Acciones</th></tr></thead><tbody>{filteredOperators.map((operator) => (
-            <tr key={operator.id}><td><strong>{operator.display_name}</strong><span>{operator.email}</span></td><td>{operator.organization_name ?? 'HOST'}</td><td>{roleLabels[operator.role] ?? operator.role}</td><td><span className={`edifica-access-state ${operator.active ? 'active' : 'inactive'}`}>{operator.active ? 'Activo' : 'Suspendido'}</span>{!operator.email_confirmed_at && <span className="edifica-access-state pending">Confirmación pendiente</span>}</td><td>{formatDate(operator.updated_at)}</td><td><div className="edifica-admin-row-actions"><button type="button" onClick={() => editOperator(operator)} disabled={!operator.can_edit || saving}>Editar</button><button type="button" onClick={() => toggleOperator(operator)} disabled={!operator.can_edit || saving}>{operator.active ? 'Suspender' : 'Reactivar'}</button>{operator.can_resend_invitation && <button type="button" onClick={() => resendInvitation(operator)} disabled={saving}>Reenviar invitación</button>}</div></td></tr>
+            <tr key={operator.id}><td><strong>{operator.display_name}</strong><span>{operator.email}</span></td><td>{operator.organization_name ?? 'HOST'}</td><td>{roleLabels[operator.role] ?? operator.role}</td><td><span className={`edifica-access-state ${operator.active ? 'active' : 'inactive'}`}>{operator.active ? 'Activo' : 'Suspendido'}</span>{!operator.email_confirmed_at && <span className="edifica-access-state pending">Confirmación pendiente</span>}</td><td>{formatDate(operator.updated_at)}</td><td><div className="edifica-admin-row-actions"><button type="button" onClick={() => editOperator(operator)} disabled={!operator.can_edit || saving} title={`Editar a ${operator.display_name}`}>Editar</button><button type="button" onClick={() => toggleOperator(operator)} disabled={!operator.can_edit || saving} title={operator.active ? `Suspender el acceso de ${operator.display_name}` : `Reactivar el acceso de ${operator.display_name}`}>{operator.active ? 'Suspender' : 'Reactivar'}</button>{operator.can_resend_invitation && <button type="button" onClick={() => resendInvitation(operator)} disabled={saving} title={`Reenviar el correo de invitación a ${operator.email}`}>Reenviar invitación</button>}</div></td></tr>
           ))}</tbody></table></div>
         )}
       </section>

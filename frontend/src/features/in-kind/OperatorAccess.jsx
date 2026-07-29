@@ -41,7 +41,7 @@ export function OperatorAccessScreen({ access, copy = {}, language, onLanguageCh
       <section className="operator-card" aria-live="polite">
         <div className="operator-card-top">
           <span className="operator-brand">somos<span>edifica</span>digital</span>
-          <button className="intake-language" type="button" aria-label={copy.languageLabel ?? 'Idioma'} onClick={onLanguageChange}>
+          <button className="intake-language" type="button" aria-label={copy.languageLabel ?? 'Idioma'} title={copy.languageLabel ?? 'Idioma'} onClick={onLanguageChange}>
             <b>{language.toUpperCase()}</b><span>/</span>{language === 'es' ? 'EN' : 'ES'}
           </button>
         </div>
@@ -49,13 +49,13 @@ export function OperatorAccessScreen({ access, copy = {}, language, onLanguageCh
         {access.status === 'configuration' ? (
           <><p className="intake-eyebrow">{auth.configurationEyebrow}</p><h1>{auth.configurationTitle}</h1><p>{auth.configurationBody}</p></>
         ) : access.status === 'restricted' ? (
-          <><p className="intake-eyebrow">{auth.restrictedEyebrow}</p><h1>{auth.restrictedTitle}</h1><p>{auth.restrictedBody}</p><strong className="operator-email">{access.email}</strong><button className="intake-button secondary" type="button" onClick={access.signOut}>{auth.signOut}</button></>
+          <><p className="intake-eyebrow">{auth.restrictedEyebrow}</p><h1>{auth.restrictedTitle}</h1><p>{auth.restrictedBody}</p><strong className="operator-email">{access.email}</strong><button className="intake-button secondary" type="button" onClick={access.signOut} title={auth.signOut}>{auth.signOut}</button></>
         ) : access.status === 'link_sent' ? (
-          <><p className="intake-eyebrow">{auth.linkEyebrow}</p><h1>{auth.linkTitle}</h1><p>{auth.linkBody}</p><strong className="operator-email">{access.email}</strong><button className="intake-button secondary" type="button" onClick={() => access.requestMagicLink(access.email)}>{auth.sendAgain}</button></>
+          <><p className="intake-eyebrow">{auth.linkEyebrow}</p><h1>{auth.linkTitle}</h1><p>{auth.linkBody}</p><strong className="operator-email">{access.email}</strong><button className="intake-button secondary" type="button" onClick={() => access.requestMagicLink(access.email)} title={auth.sendAgain}>{auth.sendAgain}</button></>
         ) : access.status === 'error' ? (
-          <><p className="intake-eyebrow">{auth.errorEyebrow}</p><h1>{auth.errorTitle}</h1><p>{auth.errorBody}</p><button className="intake-button secondary" type="button" onClick={access.signOut}>{auth.signOut}</button></>
+          <><p className="intake-eyebrow">{auth.errorEyebrow}</p><h1>{auth.errorTitle}</h1><p>{auth.errorBody}</p><button className="intake-button secondary" type="button" onClick={access.signOut} title={auth.signOut}>{auth.signOut}</button></>
         ) : (
-          <><p className="intake-eyebrow">{auth.eyebrow}</p><h1>{auth.title}</h1><p>{auth.body}</p><form onSubmit={submit}><label htmlFor="operator-email">{auth.email}</label><input id="operator-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={auth.emailPlaceholder} required />{access.message && <p className="form-error" role="alert">{auth.requestError}</p>}<button className="intake-button primary" type="submit" disabled={!canRequest}>{busy ? auth.sending : auth.sendLink}</button></form></>
+          <><p className="intake-eyebrow">{auth.eyebrow}</p><h1>{auth.title}</h1><p>{auth.body}</p><form onSubmit={submit}><label htmlFor="operator-email">{auth.email}</label><input id="operator-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={auth.emailPlaceholder} required />{access.message && <p className="form-error" role="alert">{auth.requestError}</p>}<button className="intake-button primary" type="submit" disabled={!canRequest} title={auth.sendLink}>{busy ? auth.sending : auth.sendLink}</button></form></>
         )}
       </section>
     </main>

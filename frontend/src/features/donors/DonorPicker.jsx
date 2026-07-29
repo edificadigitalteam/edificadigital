@@ -176,7 +176,7 @@ export default function DonorPicker({
           {quickForm.donor_type !== 'anonymous' && <><label><span>{text.email}</span><input type="email" value={quickForm.email} onChange={(event) => setQuickForm((current) => ({ ...current, email: event.target.value }))} /></label><label><span>{text.phone}</span><input value={quickForm.phone} onChange={(event) => setQuickForm((current) => ({ ...current, phone: event.target.value }))} /></label></>}
           <label><span>{text.country}</span><input value={quickForm.country} onChange={(event) => setQuickForm((current) => ({ ...current, country: event.target.value }))} /></label>
           {error && <p className="donor-picker-error wide">{error}</p>}
-          <div className="donor-quick-actions wide"><button type="button" onClick={() => { setCreating(false); setError('') }}>{text.cancel}</button><button type="button" onClick={saveQuick} disabled={saving}>{saving ? '…' : text.save}</button></div>
+          <div className="donor-quick-actions wide"><button type="button" onClick={() => { setCreating(false); setError('') }} title={text.cancel}>{text.cancel}</button><button type="button" onClick={saveQuick} disabled={saving} title={text.save}>{saving ? '…' : text.save}</button></div>
         </div>
       )}
 
