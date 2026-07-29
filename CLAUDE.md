@@ -161,6 +161,7 @@ Good search and AI-answer-engine discoverability is a standing requirement for e
 - Preserve drafts and provide explicit retry states around network operations.
 - Use direct copy. Avoid antitheses, comparisons, personification of non-human subjects, and generic AI-page decoration.
 - Replace the word “no” with a direct construction when the result stays precise.
+- Any user-triggered action that calls Supabase (RPC, insert, upload) must surface its success or failure through the shared toast notification system (`frontend/src/features/notifications/`), not only inline text or a silent state change. Field-level validation stays inline next to the field; submit-level/system feedback (created, saved, permission denied, network failure) goes to a toast. See `docs/plans/SPRINT-S2-v1_donor-picker-auth-consistency-and-toast-notifications.md` for the introducing change and the friendly-error-mapping pattern for Postgres error codes.
 
 ## Current integration boundary
 

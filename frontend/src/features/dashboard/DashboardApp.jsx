@@ -55,7 +55,7 @@ function LoginCard({ access }) {
         <p className="edifica-kicker">ACCESO AL SISTEMA</p>
         <h1>Ingresa a Edifica</h1>
         <p>Usa el correo habilitado por el administrador. Recibirás un enlace seguro para iniciar sesión.</p>
-        {access.status === 'link_sent' ? <div className="edifica-message success">Revisa tu correo. El enlace de acceso fue enviado a <strong>{access.email}</strong>.</div> : access.status === 'restricted' ? <div className="edifica-message error">Este correo todavía requiere autorización administrativa.<button type="button" onClick={access.signOut}>Cerrar sesión</button></div> : (
+        {access.status === 'link_sent' ? <div className="edifica-message success">Revisa tu correo. El enlace de acceso fue enviado a <strong>{access.email}</strong>.</div> : access.status === 'confirmation_sent' ? <div className="edifica-message success">Correo de activación de cuenta enviado a <strong>{access.email}</strong>.</div> :access.status === 'restricted' ? <div className="edifica-message error">Este correo todavía requiere autorización administrativa.<button type="button" onClick={access.signOut}>Cerrar sesión</button></div> : (
           <form onSubmit={submit}>
             <label htmlFor="dashboard-email">Correo electrónico</label>
             <input id="dashboard-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="nombre@organizacion.org" required />

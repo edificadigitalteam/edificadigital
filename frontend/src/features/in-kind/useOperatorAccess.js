@@ -193,6 +193,17 @@ export function useOperatorAccess() {
     if (!supabase) return { error: new Error('Supabase configuration is unavailable.') }
     setState({ status: 'sending_link', ...emptyIdentity, email })
 
+    const { data: gate, error: gateError } = await supabase.rpc('request_login_access', { target_email: email })
+    if (gateError) {
+      setState({ status: 'signed_out', ...emptyIdentity, email, message: gateError.message })
+      return { error: gateError }
+    }
+
+    if (!gate?.ready) {
+      setState({ status: 'confirmation_sent', ...emptyIdentity, email })
+      return { error: null }
+    }
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
