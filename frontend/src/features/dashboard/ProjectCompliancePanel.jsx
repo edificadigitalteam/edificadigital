@@ -422,6 +422,11 @@ export default function ProjectCompliancePanel({ access }) {
 
   const exportPdf = async () => {
     if (!selectedProject || exportingPdf) return
+    // Open the target window synchronously, still inside the click's user
+    // gesture -- the dynamic imports below take long enough that calling
+    // window.open() (via pdfMake's own .open()) afterward gets silently
+    // blocked by the browser's popup blocker on a real click.
+    const previewWindow = window.open('', '_blank')
     setExportingPdf(true)
     setError('')
     try {
@@ -445,8 +450,12 @@ export default function ProjectCompliancePanel({ access }) {
         evidenceByOutput,
         organizationName: selectedProject.organization?.name ?? '',
       })
-      pdfMake.createPdf(docDefinition).open()
+      const blob = await new Promise((resolve) => pdfMake.createPdf(docDefinition).getBlob(resolve))
+      const blobUrl = URL.createObjectURL(blob)
+      if (previewWindow) previewWindow.location.href = blobUrl
+      else window.open(blobUrl, '_blank')
     } catch (exportError) {
+      previewWindow?.close()
       setError(exportError?.message ?? 'No fue posible generar el PDF del informe.')
     }
     setExportingPdf(false)
