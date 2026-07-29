@@ -64,7 +64,7 @@ export default function DonationDetailModal({ donation, loading, error, onClose 
       <section className="edifica-modal" role="dialog" aria-modal="true" aria-labelledby="donation-detail-title">
         <header className="edifica-modal-header">
           <div><p className="edifica-kicker">DETALLE DE LA DONACIÓN</p><h2 id="donation-detail-title">{donation?.reference_code ?? 'Registro de Edifica'}</h2></div>
-          <button className="edifica-modal-close" type="button" onClick={onClose} aria-label="Cerrar detalle">×</button>
+          <button className="edifica-modal-close" type="button" onClick={onClose} aria-label="Cerrar detalle" title="Cerrar detalle">×</button>
         </header>
 
         {loading ? <p className="edifica-modal-state">Cargando información…</p> : error ? <p className="edifica-modal-state error">{error}</p> : donation ? (

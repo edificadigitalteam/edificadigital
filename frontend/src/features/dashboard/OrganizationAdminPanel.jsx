@@ -221,7 +221,7 @@ export default function OrganizationAdminPanel({ access }) {
         <section className="operations-card">
           <div className="operations-card-heading">
             <div><p className="edifica-kicker">{form.id ? 'EDITAR ORGANIZACIÓN' : 'NUEVA ORGANIZACIÓN'}</p><h2>{form.id ? 'Actualizar tenant' : 'Crear tenant'}</h2></div>
-            <button type="button" onClick={reset}>Cancelar</button>
+            <button type="button" onClick={reset} title="Cerrar este formulario sin guardar">Cancelar</button>
           </div>
           <form className="operations-form" onSubmit={save}>
             <label><span>Nombre visible</span><input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} required /></label>
@@ -235,7 +235,7 @@ export default function OrganizationAdminPanel({ access }) {
             <label><span>Suscripción</span><select value={form.subscription_status} onChange={(event) => setForm((current) => ({ ...current, subscription_status: event.target.value }))}>{Object.entries(subscriptionLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             <label><span>Idioma predeterminado</span><select value={form.language} onChange={(event) => setForm((current) => ({ ...current, language: event.target.value }))}>{Object.entries(languageLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             <label className="operations-checkbox"><input type="checkbox" checked={form.active} onChange={(event) => setForm((current) => ({ ...current, active: event.target.checked }))} /><span>Organización activa</span></label>
-            <button className="edifica-primary-button" type="submit" disabled={saving}>{saving ? 'Guardando…' : form.id ? 'Guardar cambios' : 'Crear organización'}</button>
+            <button className="edifica-primary-button" type="submit" disabled={saving} title={form.id ? 'Guardar los cambios de esta organización' : 'Crear esta organización'}>{saving ? 'Guardando…' : form.id ? 'Guardar cambios' : 'Crear organización'}</button>
           </form>
           {error && <p className="operations-feedback error">{error}</p>}
         </section>
@@ -245,14 +245,14 @@ export default function OrganizationAdminPanel({ access }) {
         <section className="operations-card">
           <div className="operations-card-heading">
             <div><p className="edifica-kicker">HOST Y TENANT</p><h2>Dominio de acceso</h2></div>
-            <button type="button" onClick={resetHost}>Cancelar</button>
+            <button type="button" onClick={resetHost} title="Cerrar este formulario sin guardar">Cancelar</button>
           </div>
           <form className="operations-form" onSubmit={saveHost}>
             <label><span>Organización</span><select value={hostForm.organization_id} onChange={(event) => setHostForm((current) => ({ ...current, organization_id: event.target.value }))} required><option value="">Seleccionar</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>
             <label><span>Hostname</span><input value={hostForm.hostname} onChange={(event) => setHostForm((current) => ({ ...current, hostname: event.target.value }))} placeholder="organizacion.edifica.app" required /></label>
             <label className="operations-checkbox"><input type="checkbox" checked={hostForm.is_primary} onChange={(event) => setHostForm((current) => ({ ...current, is_primary: event.target.checked }))} /><span>Host principal</span></label>
             <label className="operations-checkbox"><input type="checkbox" checked={hostForm.active} onChange={(event) => setHostForm((current) => ({ ...current, active: event.target.checked }))} /><span>Host activo</span></label>
-            <button className="edifica-primary-button" type="submit" disabled={saving}>{saving ? 'Guardando…' : hostForm.id ? 'Guardar host' : 'Asociar host'}</button>
+            <button className="edifica-primary-button" type="submit" disabled={saving} title={hostForm.id ? 'Guardar los cambios de este host' : 'Asociar este host a la organización seleccionada'}>{saving ? 'Guardando…' : hostForm.id ? 'Guardar host' : 'Asociar host'}</button>
           </form>
           <p className="operations-empty-note">El host identifica el tenant antes del inicio de sesión. La autorización del usuario y las políticas RLS confirman después que su organización coincide con la cuenta solicitada.</p>
           {error && <p className="operations-feedback error">{error}</p>}
@@ -261,14 +261,14 @@ export default function OrganizationAdminPanel({ access }) {
 
       <section className="module-search-bar operations-card">
         <label><span>Buscar</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, código, país o ciudad" /></label>
-        <button type="button" onClick={() => setSearch('')}>Limpiar</button>
+        <button type="button" onClick={() => setSearch('')} title="Limpiar la búsqueda">Limpiar</button>
       </section>
 
       <section className="operations-card">
-        <div className="module-list-heading"><div><p className="edifica-kicker">CUENTAS</p><h2>Organizaciones registradas</h2></div><div className="module-list-actions"><span>{filteredOrganizations.length} registros</span>{canEdit && <button type="button" onClick={startNew}>＋ Nueva organización</button>}</div></div>
+        <div className="module-list-heading"><div><p className="edifica-kicker">CUENTAS</p><h2>Organizaciones registradas</h2></div><div className="module-list-actions"><span>{filteredOrganizations.length} registros</span>{canEdit && <button type="button" onClick={startNew} title="Crear una nueva organización">＋ Nueva organización</button>}</div></div>
         {loading ? <p className="edifica-empty">Cargando organizaciones…</p> : filteredOrganizations.length === 0 ? <p className="edifica-empty">Crea la primera organización para comenzar a asociar usuarios y proyectos.</p> : (
           <div className="edifica-table-wrap"><table className="operations-table"><thead><tr><th>Organización</th><th>Ubicación</th><th>Suscripción</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{filteredOrganizations.map((organization) => (
-            <tr key={organization.id}><td><strong>{organization.name}</strong><span>{organization.legal_name || organization.code}</span></td><td>{[organization.city, organization.country].filter(Boolean).join(', ') || '—'}</td><td>{subscriptionLabels[organization.subscription_status] ?? organization.subscription_status}</td><td><span className={`edifica-access-state ${organization.active ? 'active' : 'inactive'}`}>{organization.active ? 'Activa' : 'Inactiva'}</span></td><td><button type="button" onClick={() => edit(organization)} disabled={!organization.can_edit}>Editar</button></td></tr>
+            <tr key={organization.id}><td><strong>{organization.name}</strong><span>{organization.legal_name || organization.code}</span></td><td>{[organization.city, organization.country].filter(Boolean).join(', ') || '—'}</td><td>{subscriptionLabels[organization.subscription_status] ?? organization.subscription_status}</td><td><span className={`edifica-access-state ${organization.active ? 'active' : 'inactive'}`}>{organization.active ? 'Activa' : 'Inactiva'}</span></td><td><button type="button" onClick={() => edit(organization)} disabled={!organization.can_edit} title={`Editar ${organization.name}`}>Editar</button></td></tr>
           ))}</tbody></table></div>
         )}
       </section>
@@ -277,14 +277,14 @@ export default function OrganizationAdminPanel({ access }) {
         <>
           <section className="module-search-bar operations-card">
             <label><span>Buscar</span><input type="search" value={hostSearch} onChange={(event) => setHostSearch(event.target.value)} placeholder="Hostname u organización" /></label>
-            <button type="button" onClick={() => setHostSearch('')}>Limpiar</button>
+            <button type="button" onClick={() => setHostSearch('')} title="Limpiar la búsqueda">Limpiar</button>
           </section>
 
           <section className="operations-card">
-            <div className="module-list-heading"><div><p className="edifica-kicker">ENRUTAMIENTO</p><h2>Hosts registrados</h2></div><div className="module-list-actions"><span>{filteredHosts.length} hosts</span><button type="button" onClick={startNewHost} disabled={organizations.length === 0}>＋ Asociar host</button></div></div>
+            <div className="module-list-heading"><div><p className="edifica-kicker">ENRUTAMIENTO</p><h2>Hosts registrados</h2></div><div className="module-list-actions"><span>{filteredHosts.length} hosts</span><button type="button" onClick={startNewHost} disabled={organizations.length === 0} title="Asociar un nuevo host a una organización">＋ Asociar host</button></div></div>
             {filteredHosts.length === 0 ? <p className="edifica-empty">Todavía no existen dominios o subdominios asociados.</p> : (
               <div className="edifica-table-wrap"><table className="operations-table"><thead><tr><th>Hostname</th><th>Organización</th><th>Tipo</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{filteredHosts.map((host) => (
-                <tr key={host.id}><td><strong>{host.hostname}</strong><span>https://{host.hostname}</span></td><td>{host.organization_name}</td><td>{host.is_primary ? 'Principal' : 'Alternativo'}</td><td><span className={`edifica-access-state ${host.active ? 'active' : 'inactive'}`}>{host.active ? 'Activo' : 'Inactivo'}</span></td><td><button type="button" onClick={() => editHost(host)}>Editar</button></td></tr>
+                <tr key={host.id}><td><strong>{host.hostname}</strong><span>https://{host.hostname}</span></td><td>{host.organization_name}</td><td>{host.is_primary ? 'Principal' : 'Alternativo'}</td><td><span className={`edifica-access-state ${host.active ? 'active' : 'inactive'}`}>{host.active ? 'Activo' : 'Inactivo'}</span></td><td><button type="button" onClick={() => editHost(host)} title={`Editar el host ${host.hostname}`}>Editar</button></td></tr>
               ))}</tbody></table></div>
             )}
           </section>
