@@ -253,29 +253,33 @@ export default function ProjectsPanel({ access }) {
       {message && <p className="operations-feedback success">{message}</p>}
       {!formOpen && error && <p className="operations-feedback error">{error}</p>}
 
-      <section className="module-search-bar operations-card">
-        <label><span>Buscar</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por código, proyecto, organización o aliado/donante" /></label>
-        <label><span>Estado</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">Todos los estados</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-        {access.role === 'super_admin' && <label><span>Organización</span><select value={organizationFilter} onChange={(event) => setOrganizationFilter(event.target.value)}><option value="all">Todas las organizaciones</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
-        <button type="button" onClick={() => { setSearch(''); setStatusFilter('all'); setOrganizationFilter('all') }} title="Limpiar la búsqueda y los filtros">Limpiar</button>
-      </section>
+      {!formOpen && (
+        <>
+          <section className="module-search-bar operations-card">
+            <label><span>Buscar</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por código, proyecto, organización o aliado/donante" /></label>
+            <label><span>Estado</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">Todos los estados</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            {access.role === 'super_admin' && <label><span>Organización</span><select value={organizationFilter} onChange={(event) => setOrganizationFilter(event.target.value)}><option value="all">Todas las organizaciones</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
+            <button type="button" onClick={() => { setSearch(''); setStatusFilter('all'); setOrganizationFilter('all') }} title="Limpiar la búsqueda y los filtros">Limpiar</button>
+          </section>
 
-      <section className="project-list-card operations-card">
-        <div className="module-list-heading"><div><p className="edifica-kicker">CARTERA DE PROYECTOS</p><h2>Proyectos registrados</h2></div>{canManage && <button type="button" onClick={startNew} title="Registrar un nuevo proyecto">＋ Nuevo proyecto</button>}</div>
-        {loading ? <p className="edifica-empty">Cargando proyectos…</p> : filteredProjects.length === 0 ? <p className="edifica-empty">No existen proyectos que coincidan con los filtros.</p> : (
-          <div className="edifica-table-wrap"><table className="project-portal-table"><thead><tr><th>Proyecto</th><th>Organización / aliado o donante</th><th>Vigencia</th><th>Presupuesto</th><th>Beneficiarios</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{filteredProjects.map((project) => (
-            <tr key={project.id}>
-              <td><strong>{project.name}</strong><span>{project.code}</span></td>
-              <td><strong>{project.organization?.name ?? 'Organización'}</strong><span>{project.funding_partner}</span></td>
-              <td><span>{formatDate(project.start_date)}</span><small>hasta {formatDate(project.end_date)}</small></td>
-              <td className="project-budget">{formatMoney(project.approved_budget, project.currency)}</td>
-              <td><span className={`beneficiary-mode-badge ${project.beneficiary_detail_enabled ? 'enabled' : ''}`}>{project.beneficiary_detail_enabled ? 'Registro individual' : 'Cifra agregada'}</span></td>
-              <td><span className={`project-status ${project.status}`}>{statusLabels[project.status] ?? project.status}</span></td>
-              <td><div className="project-row-actions"><a href={`/app/compliance?project=${project.id}`} title={`Ver el cumplimiento de ${project.name}`}>Cumplimiento</a><a href={`/app/compliance?project=${project.id}&section=beneficiary`} title={`Ver los beneficiarios de ${project.name}`}>Beneficiarios</a>{canManage && <button type="button" onClick={() => edit(project)} title={`Editar ${project.name}`}>Editar</button>}</div></td>
-            </tr>
-          ))}</tbody></table></div>
-        )}
-      </section>
+          <section className="project-list-card operations-card">
+            <div className="module-list-heading"><div><p className="edifica-kicker">CARTERA DE PROYECTOS</p><h2>Proyectos registrados</h2></div>{canManage && <button type="button" onClick={startNew} title="Registrar un nuevo proyecto">＋ Nuevo proyecto</button>}</div>
+            {loading ? <p className="edifica-empty">Cargando proyectos…</p> : filteredProjects.length === 0 ? <p className="edifica-empty">No existen proyectos que coincidan con los filtros.</p> : (
+              <div className="edifica-table-wrap"><table className="project-portal-table"><thead><tr><th>Proyecto</th><th>Organización / aliado o donante</th><th>Vigencia</th><th>Presupuesto</th><th>Beneficiarios</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{filteredProjects.map((project) => (
+                <tr key={project.id}>
+                  <td><strong>{project.name}</strong><span>{project.code}</span></td>
+                  <td><strong>{project.organization?.name ?? 'Organización'}</strong><span>{project.funding_partner}</span></td>
+                  <td><span>{formatDate(project.start_date)}</span><small>hasta {formatDate(project.end_date)}</small></td>
+                  <td className="project-budget">{formatMoney(project.approved_budget, project.currency)}</td>
+                  <td><span className={`beneficiary-mode-badge ${project.beneficiary_detail_enabled ? 'enabled' : ''}`}>{project.beneficiary_detail_enabled ? 'Registro individual' : 'Cifra agregada'}</span></td>
+                  <td><span className={`project-status ${project.status}`}>{statusLabels[project.status] ?? project.status}</span></td>
+                  <td><div className="project-row-actions"><a href={`/app/compliance?project=${project.id}`} title={`Ver el cumplimiento de ${project.name}`}>Cumplimiento</a><a href={`/app/compliance?project=${project.id}&section=beneficiary`} title={`Ver los beneficiarios de ${project.name}`}>Beneficiarios</a>{canManage && <button type="button" onClick={() => edit(project)} title={`Editar ${project.name}`}>Editar</button>}</div></td>
+                </tr>
+              ))}</tbody></table></div>
+            )}
+          </section>
+        </>
+      )}
     </div>
   )
 }
