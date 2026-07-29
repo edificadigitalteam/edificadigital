@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
+import './operations.css'
 import './operator-admin.css'
 
 const emptyForm = {
@@ -27,6 +28,8 @@ export default function OperatorAdminPanel({ access }) {
   const [organizations, setOrganizations] = useState([])
   const [billingOverview, setBillingOverview] = useState(null)
   const [form, setForm] = useState({ ...emptyForm, organization_id: access.organizationId || '' })
+  const [formOpen, setFormOpen] = useState(false)
+  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -34,6 +37,13 @@ export default function OperatorAdminPanel({ access }) {
 
   const isSuperAdmin = access.role === 'super_admin'
   const activeCount = useMemo(() => operators.filter((operator) => operator.active).length, [operators])
+  const filteredOperators = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    if (!query) return operators
+    return operators.filter((operator) => [operator.display_name, operator.email, operator.organization_name]
+      .filter(Boolean)
+      .some((value) => value.toLowerCase().includes(query)))
+  }, [operators, search])
 
   const loadOperators = useCallback(async () => {
     if (!supabase) return
@@ -74,6 +84,14 @@ export default function OperatorAdminPanel({ access }) {
 
   const resetForm = () => {
     setForm({ ...emptyForm, organization_id: access.organizationId || organizations[0]?.id || '' })
+    setFormOpen(false)
+    setError('')
+    setMessage('')
+  }
+
+  const startNew = () => {
+    setForm({ ...emptyForm, organization_id: access.organizationId || organizations[0]?.id || '' })
+    setFormOpen(true)
     setError('')
     setMessage('')
   }
@@ -88,6 +106,7 @@ export default function OperatorAdminPanel({ access }) {
       organization_id: operator.organization_id ?? '',
       active: operator.active,
     })
+    setFormOpen(true)
     setError('')
     setMessage('')
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -113,9 +132,10 @@ export default function OperatorAdminPanel({ access }) {
       setError(requestError.message)
     } else {
       setMessage(form.id ? 'Acceso actualizado correctamente.' : 'Persona habilitada correctamente.')
+      const organizationId = form.organization_id
       resetForm()
       await loadOperators()
-      await loadBilling(form.organization_id)
+      await loadBilling(organizationId)
     }
     setSaving(false)
   }
@@ -177,24 +197,33 @@ export default function OperatorAdminPanel({ access }) {
         </section>
       )}
 
-      <section className="edifica-admin-form-card">
-        <div className="edifica-admin-card-heading"><div><p className="edifica-kicker">{form.id ? 'EDITAR ACCESO' : 'NUEVO ACCESO'}</p><h2>{form.id ? 'Actualizar persona' : 'Habilitar una persona'}</h2></div>{form.id && <button type="button" onClick={resetForm}>Cancelar edición</button>}</div>
-        <form className="edifica-admin-form" onSubmit={saveOperator}>
-          <label><span>Nombre</span><input type="text" value={form.display_name} onChange={(event) => setForm((current) => ({ ...current, display_name: event.target.value }))} placeholder="Nombre y apellido" required /></label>
-          <label><span>Correo electrónico</span><input type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} placeholder="persona@organizacion.org" required /></label>
-          <label><span>Organización</span><select value={form.organization_id} onChange={(event) => setForm((current) => ({ ...current, organization_id: event.target.value }))} disabled={!isSuperAdmin}><option value="">Sin asignar</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>
-          <label><span>Rol</span><select value={form.role} onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))} disabled={!isSuperAdmin}><option value="operator">Operador</option>{isSuperAdmin && <option value="admin">Administrador</option>}{isSuperAdmin && <option value="super_admin">Superadministrador</option>}</select></label>
-          <label className="edifica-admin-checkbox"><input type="checkbox" checked={form.active} onChange={(event) => setForm((current) => ({ ...current, active: event.target.checked }))} /><span>Acceso activo</span></label>
-          <button className="edifica-primary-button" type="submit" disabled={saving || seatLimitReached}>{saving ? 'Guardando…' : seatLimitReached ? 'Cupo de usuarios completo' : form.id ? 'Guardar cambios' : 'Habilitar persona'}</button>
-        </form>
-        {message && <p className="edifica-admin-feedback success">{message}</p>}
-        {error && <p className="edifica-admin-feedback error">{error}</p>}
+      <section className="module-search-bar operations-card">
+        <label><span>Buscar</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, correo u organización" /></label>
+        <button type="button" onClick={() => setSearch('')}>Limpiar</button>
       </section>
 
+      {message && <p className="edifica-admin-feedback success">{message}</p>}
+      {!formOpen && error && <p className="edifica-admin-feedback error">{error}</p>}
+
+      {formOpen && (
+        <section className="edifica-admin-form-card">
+          <div className="edifica-admin-card-heading"><div><p className="edifica-kicker">{form.id ? 'EDITAR ACCESO' : 'NUEVO ACCESO'}</p><h2>{form.id ? 'Actualizar persona' : 'Habilitar una persona'}</h2></div><button type="button" onClick={resetForm}>Cancelar</button></div>
+          <form className="edifica-admin-form" onSubmit={saveOperator}>
+            <label><span>Nombre</span><input type="text" value={form.display_name} onChange={(event) => setForm((current) => ({ ...current, display_name: event.target.value }))} placeholder="Nombre y apellido" required /></label>
+            <label><span>Correo electrónico</span><input type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} placeholder="persona@organizacion.org" required /></label>
+            <label><span>Organización</span><select value={form.organization_id} onChange={(event) => setForm((current) => ({ ...current, organization_id: event.target.value }))} disabled={!isSuperAdmin}><option value="">Sin asignar</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>
+            <label><span>Rol</span><select value={form.role} onChange={(event) => setForm((current) => ({ ...current, role: event.target.value }))} disabled={!isSuperAdmin}><option value="operator">Operador</option>{isSuperAdmin && <option value="admin">Administrador</option>}{isSuperAdmin && <option value="super_admin">Superadministrador</option>}</select></label>
+            <label className="edifica-admin-checkbox"><input type="checkbox" checked={form.active} onChange={(event) => setForm((current) => ({ ...current, active: event.target.checked }))} /><span>Acceso activo</span></label>
+            <button className="edifica-primary-button" type="submit" disabled={saving || seatLimitReached}>{saving ? 'Guardando…' : seatLimitReached ? 'Cupo de usuarios completo' : form.id ? 'Guardar cambios' : 'Habilitar persona'}</button>
+          </form>
+          {error && <p className="edifica-admin-feedback error">{error}</p>}
+        </section>
+      )}
+
       <section className="edifica-admin-list-card">
-        <div className="edifica-section-heading"><div><p className="edifica-kicker">DIRECTORIO</p><h2>Usuarios del sistema</h2></div><span>{operators.length} personas</span></div>
-        {loading ? <p className="edifica-empty">Cargando personas habilitadas…</p> : operators.length === 0 ? <p className="edifica-empty">Todavía no existen personas habilitadas.</p> : (
-          <div className="edifica-table-wrap"><table className="edifica-admin-table"><thead><tr><th>Persona</th><th>Organización</th><th>Rol</th><th>Estado</th><th>Actualizado</th><th>Acciones</th></tr></thead><tbody>{operators.map((operator) => (
+        <div className="module-list-heading"><div><p className="edifica-kicker">DIRECTORIO</p><h2>Usuarios del sistema</h2></div><div className="module-list-actions"><span>{filteredOperators.length} personas</span><button type="button" onClick={startNew}>＋ Habilitar persona</button></div></div>
+        {loading ? <p className="edifica-empty">Cargando personas habilitadas…</p> : filteredOperators.length === 0 ? <p className="edifica-empty">Todavía no existen personas habilitadas.</p> : (
+          <div className="edifica-table-wrap"><table className="edifica-admin-table"><thead><tr><th>Persona</th><th>Organización</th><th>Rol</th><th>Estado</th><th>Actualizado</th><th>Acciones</th></tr></thead><tbody>{filteredOperators.map((operator) => (
             <tr key={operator.id}><td><strong>{operator.display_name}</strong><span>{operator.email}</span></td><td>{operator.organization_name ?? 'Sin asignar'}</td><td>{roleLabels[operator.role] ?? operator.role}</td><td><span className={`edifica-access-state ${operator.active ? 'active' : 'inactive'}`}>{operator.active ? 'Activo' : 'Suspendido'}</span>{!operator.email_confirmed_at && <span className="edifica-access-state pending">Confirmación pendiente</span>}</td><td>{formatDate(operator.updated_at)}</td><td><div className="edifica-admin-row-actions"><button type="button" onClick={() => editOperator(operator)} disabled={!operator.can_edit || saving}>Editar</button><button type="button" onClick={() => toggleOperator(operator)} disabled={!operator.can_edit || saving}>{operator.active ? 'Suspender' : 'Reactivar'}</button>{operator.can_resend_invitation && <button type="button" onClick={() => resendInvitation(operator)} disabled={saving}>Reenviar invitación</button>}</div></td></tr>
           ))}</tbody></table></div>
         )}

@@ -253,15 +253,15 @@ export default function ProjectsPanel({ access }) {
       {message && <p className="operations-feedback success">{message}</p>}
       {!formOpen && error && <p className="operations-feedback error">{error}</p>}
 
-      <section className="project-filter-bar operations-card">
-        <label className="project-search"><span className="sr-only">Buscar proyecto</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por código, proyecto, organización o aliado/donante" /></label>
-        <label><span className="sr-only">Estado</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">Todos los estados</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-        {access.role === 'super_admin' && <label><span className="sr-only">Organización</span><select value={organizationFilter} onChange={(event) => setOrganizationFilter(event.target.value)}><option value="all">Todas las organizaciones</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
+      <section className="module-search-bar operations-card">
+        <label><span>Buscar</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por código, proyecto, organización o aliado/donante" /></label>
+        <label><span>Estado</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">Todos los estados</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+        {access.role === 'super_admin' && <label><span>Organización</span><select value={organizationFilter} onChange={(event) => setOrganizationFilter(event.target.value)}><option value="all">Todas las organizaciones</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
         <button type="button" onClick={() => { setSearch(''); setStatusFilter('all'); setOrganizationFilter('all') }}>Limpiar</button>
       </section>
 
       <section className="project-list-card operations-card">
-        <div className="project-list-heading"><div><p className="edifica-kicker">CARTERA DE PROYECTOS</p><h2>Proyectos registrados</h2></div>{canManage && <button type="button" onClick={startNew}>＋ Nuevo proyecto</button>}</div>
+        <div className="module-list-heading"><div><p className="edifica-kicker">CARTERA DE PROYECTOS</p><h2>Proyectos registrados</h2></div>{canManage && <button type="button" onClick={startNew}>＋ Nuevo proyecto</button>}</div>
         {loading ? <p className="edifica-empty">Cargando proyectos…</p> : filteredProjects.length === 0 ? <p className="edifica-empty">No existen proyectos que coincidan con los filtros.</p> : (
           <div className="edifica-table-wrap"><table className="project-portal-table"><thead><tr><th>Proyecto</th><th>Organización / aliado o donante</th><th>Vigencia</th><th>Presupuesto</th><th>Beneficiarios</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{filteredProjects.map((project) => (
             <tr key={project.id}>

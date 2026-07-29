@@ -15,6 +15,7 @@ import VolunteerPanel from './VolunteerPanel.jsx'
 import './dashboard.css'
 import './dashboard-extensions.css'
 import './dashboard-summary.css'
+import './module-panel.css'
 import './portal-shell.css'
 
 const typeLabels = { monetary: 'Monetaria', in_kind: 'En especies', mixed: 'Mixta' }

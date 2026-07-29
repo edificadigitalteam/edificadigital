@@ -162,6 +162,7 @@ Good search and AI-answer-engine discoverability is a standing requirement for e
 - Use direct copy. Avoid antitheses, comparisons, personification of non-human subjects, and generic AI-page decoration.
 - Replace the word “no” with a direct construction when the result stays precise.
 - Any user-triggered action that calls Supabase (RPC, insert, upload) must surface its success or failure through the shared toast notification system (`frontend/src/features/notifications/`), not only inline text or a silent state change. Field-level validation stays inline next to the field; submit-level/system feedback (created, saved, permission denied, network failure) goes to a toast. See `docs/plans/SPRINT-S2-v1_donor-picker-auth-consistency-and-toast-notifications.md` for the introducing change and the friendly-error-mapping pattern for Postgres error codes.
+- Every dashboard module panel (`/app/...`) follows the same three-block page layout: header (kicker + title + description), a simple search/filter block with a "Limpiar" button, and a list block whose heading row carries the primary "+ Nuevo/Crear ___" action. See "Module Panel Layout Standard" in `docs/DESIGN.md`, with `ProjectsPanel.jsx` as the reference implementation. Do not design a new module screen, or leave an existing one, with a different structure.
 
 ## Current integration boundary
 

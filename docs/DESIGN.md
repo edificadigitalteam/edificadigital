@@ -187,6 +187,43 @@ Use multiples of 4px for consistency.
 
 Every new screen/component must be checked at a mobile viewport first, before checking desktop.
 
+## Module Panel Layout Standard
+
+Every operational module panel inside the dashboard (`/app/...`) follows the
+same three-block structure, top to bottom. Reference implementation:
+`frontend/src/features/dashboard/ProjectsPanel.jsx` (`.project-portal-header`,
+`.project-filter-bar`, `.project-list-card` — see `project-portal.css`).
+
+1. **Header block** — kicker label (e.g. "CUMPLIMIENTO Y TRAZABILIDAD"), an
+   `<h1>` page title, and a one- or two-sentence description of what the
+   module manages. An optional summary stat (e.g. "0 proyectos activos") may
+   sit at the top-right, in its own small card.
+2. **Search block** — a single card containing at least a text search input
+   (placeholder describes exactly what it matches, e.g. "Buscar por código,
+   proyecto, organización o aliado/donante") and a "Limpiar" (clear) button
+   as a ghost/outline button. The principle to preserve is that a dedicated
+   search area exists, separate from the header and from the list block —
+   not that it stays minimal forever. Additional simple filters (e.g. a
+   status `<select>`) fit here by default; a module may grow into more
+   advanced/multi-field search or filtering within this same block as its
+   needs require. Keep it to one row on desktop; stack on mobile.
+3. **List block** — one card containing: a heading row with a kicker (e.g.
+   "CARTERA DE PROYECTOS") + `<h2>` title on the left, and the primary
+   "+ Nuevo/Crear ___" action button on the right (purple, `.edifica-
+   primary-button` styling) when the module supports creating a record.
+   The list/table itself follows directly below that heading row, inside
+   the same card.
+
+Do not invent a different structure for a new or existing module screen.
+When a module's current layout diverges from this (e.g. the create action
+lives in a separate toolbar above the search block, or the create form
+opens inline in a different-colored panel), that is a defect to fix, not an
+intentional variation — bring it in line with this standard instead of
+preserving the divergence. See
+`docs/plans/SPRINT-S2-v1_donor-picker-auth-consistency-and-toast-notifications.md`
+for the "Aliados y donantes" color-consistency fix that was an early,
+narrower instance of this same rule.
+
 ## Dark Mode (Future)
 
 Not required for MVP, but design for light mode should be dark-mode compatible:
@@ -285,8 +322,8 @@ This system is based on:
 
 ## Versioning
 
-- **Version:** 2.0
-- **Last Updated:** 2026-07-19
+- **Version:** 2.1
+- **Last Updated:** 2026-07-29
 - **Maintained by:** Design & Development Team
 - **Review Cycle:** Every 6 months or on major brand changes
 
