@@ -224,6 +224,65 @@ preserving the divergence. See
 for the "Aliados y donantes" color-consistency fix that was an early,
 narrower instance of this same rule.
 
+## Create/Edit Record Mechanism Standard
+
+Every module needs a create and/or edit action for its records. Three
+mechanisms are allowed — inline, full page, or modal — chosen per the rules
+below, not by preference. This is not one-size-fits-all: different modules
+legitimately use different mechanisms, but each module's choice must follow
+this decision order.
+
+**Decide in this order:**
+
+1. **Is this editing an existing record from a long/filterable list, where
+   leaving the page would lose useful scroll position or applied filters?**
+   If yes → **modal**, regardless of field count. This is the "Donaciones"
+   case (`DonationDetailModal.jsx`/`DonationEditModal.jsx`).
+2. **Is this a sub-record nested inside a workspace that is already a full
+   page** (e.g. a project's Cumplimiento workspace, not a list-style module
+   panel)? If the sub-record's form exceeds the inline field threshold
+   (rule 3) → **modal scoped to that workspace**, not a second full-page
+   navigation. This is the case for Cumplimiento's "Avances y entregas" and
+   "Inversión ejecutada" sub-forms, and for "Personas beneficiadas" when a
+   project has individual beneficiary registration enabled (its list can
+   then grow long per project — same "don't lose list context" reasoning as
+   rule 1). When individual registration is disabled, the module works in
+   aggregate mode with no per-record list, so neither rule applies.
+3. **Otherwise, count fields and sections.** ≤5 fields in a single section
+   → **inline** (the expand-in-place card triggered by "+ Nuevo/Crear ___"
+   in the list heading, per the Module Panel Layout Standard above). 6+
+   fields, or 2+ sections → **full page**.
+
+**Full-page requirement — the dashboard menu must stay visible.** A
+full-page create/edit screen renders inside the same dashboard shell as
+every other module (sidebar navigation present), never as an isolated
+screen with only a "volver al panel" link. A "back" link is a supplement,
+not a substitute, for keeping the surrounding navigation reachable — losing
+the menu makes the screen feel disconnected from the rest of the app even
+with a way back.
+
+**Reference classification** (module → mechanism, as of this standard's
+introduction):
+
+| Module | Fields/sections | Mechanism |
+|---|---|---|
+| Personas habilitadas | 5, 1 section | Inline |
+| Host (within Organizaciones) | 4, 1 section | Inline (nested, under threshold) |
+| Aliados y donantes | 6, 1 section | Full page |
+| Organizaciones | 11, 1 section | Full page |
+| Voluntariado | 14 | Full page |
+| Proyectos | 16, 3 sections | Full page |
+| Beneficiarios de proyecto | 12 | Modal when individual registration is enabled; not applicable in aggregate mode |
+| Cumplimiento — Avances y entregas | 9 | Modal within the Cumplimiento workspace |
+| Cumplimiento — Inversión ejecutada | 7 | Modal within the Cumplimiento workspace |
+| Donaciones (detail/edit) | — | Modal |
+| Donación monetaria / en especie (intake) | 20+, 4 sections | Full page (must render inside the dashboard shell — currently a known gap, see `docs/plans/`) |
+
+Do not invent a fourth mechanism, and do not move a module between
+mechanisms without re-running this decision order — a module growing past
+5 fields is a signal to reclassify it, not a reason to stretch the inline
+pattern.
+
 ## Dark Mode (Future)
 
 Not required for MVP, but design for light mode should be dark-mode compatible:
@@ -349,8 +408,8 @@ This system is based on:
 
 ## Versioning
 
-- **Version:** 2.1
-- **Last Updated:** 2026-07-29
+- **Version:** 2.2
+- **Last Updated:** 2026-07-30
 - **Maintained by:** Design & Development Team
 - **Review Cycle:** Every 6 months or on major brand changes
 
