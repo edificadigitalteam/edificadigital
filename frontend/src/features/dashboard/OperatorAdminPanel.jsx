@@ -30,6 +30,7 @@ export default function OperatorAdminPanel({ access }) {
   const [form, setForm] = useState({ ...emptyForm, organization_id: access.organizationId || '' })
   const [formOpen, setFormOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [organizationFilter, setOrganizationFilter] = useState('all')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -39,11 +40,12 @@ export default function OperatorAdminPanel({ access }) {
   const activeCount = useMemo(() => operators.filter((operator) => operator.active).length, [operators])
   const filteredOperators = useMemo(() => {
     const query = search.trim().toLowerCase()
-    if (!query) return operators
-    return operators.filter((operator) => [operator.display_name, operator.email, operator.organization_name]
-      .filter(Boolean)
-      .some((value) => value.toLowerCase().includes(query)))
-  }, [operators, search])
+    return operators
+      .filter((operator) => organizationFilter === 'all' || operator.organization_id === organizationFilter)
+      .filter((operator) => !query || [operator.display_name, operator.email, operator.organization_name]
+        .filter(Boolean)
+        .some((value) => value.toLowerCase().includes(query)))
+  }, [operators, search, organizationFilter])
 
   const loadOperators = useCallback(async () => {
     if (!supabase) return
@@ -199,7 +201,8 @@ export default function OperatorAdminPanel({ access }) {
 
       <section className="module-search-bar operations-card">
         <label><span>Buscar</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, correo u organización" /></label>
-        <button type="button" onClick={() => setSearch('')}>Limpiar</button>
+        {isSuperAdmin && <label><span>Organización</span><select value={organizationFilter} onChange={(event) => setOrganizationFilter(event.target.value)}><option value="all">Todas las organizaciones</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
+        <button type="button" onClick={() => { setSearch(''); setOrganizationFilter('all') }}>Limpiar</button>
       </section>
 
       {message && <p className="edifica-admin-feedback success">{message}</p>}
@@ -224,7 +227,7 @@ export default function OperatorAdminPanel({ access }) {
         <div className="module-list-heading"><div><p className="edifica-kicker">DIRECTORIO</p><h2>Usuarios del sistema</h2></div><div className="module-list-actions"><span>{filteredOperators.length} personas</span><button type="button" onClick={startNew}>＋ Habilitar persona</button></div></div>
         {loading ? <p className="edifica-empty">Cargando personas habilitadas…</p> : filteredOperators.length === 0 ? <p className="edifica-empty">Todavía no existen personas habilitadas.</p> : (
           <div className="edifica-table-wrap"><table className="edifica-admin-table"><thead><tr><th>Persona</th><th>Organización</th><th>Rol</th><th>Estado</th><th>Actualizado</th><th>Acciones</th></tr></thead><tbody>{filteredOperators.map((operator) => (
-            <tr key={operator.id}><td><strong>{operator.display_name}</strong><span>{operator.email}</span></td><td>{operator.organization_name ?? 'Sin asignar'}</td><td>{roleLabels[operator.role] ?? operator.role}</td><td><span className={`edifica-access-state ${operator.active ? 'active' : 'inactive'}`}>{operator.active ? 'Activo' : 'Suspendido'}</span>{!operator.email_confirmed_at && <span className="edifica-access-state pending">Confirmación pendiente</span>}</td><td>{formatDate(operator.updated_at)}</td><td><div className="edifica-admin-row-actions"><button type="button" onClick={() => editOperator(operator)} disabled={!operator.can_edit || saving}>Editar</button><button type="button" onClick={() => toggleOperator(operator)} disabled={!operator.can_edit || saving}>{operator.active ? 'Suspender' : 'Reactivar'}</button>{operator.can_resend_invitation && <button type="button" onClick={() => resendInvitation(operator)} disabled={saving}>Reenviar invitación</button>}</div></td></tr>
+            <tr key={operator.id}><td><strong>{operator.display_name}</strong><span>{operator.email}</span></td><td>{operator.organization_name ?? 'HOST'}</td><td>{roleLabels[operator.role] ?? operator.role}</td><td><span className={`edifica-access-state ${operator.active ? 'active' : 'inactive'}`}>{operator.active ? 'Activo' : 'Suspendido'}</span>{!operator.email_confirmed_at && <span className="edifica-access-state pending">Confirmación pendiente</span>}</td><td>{formatDate(operator.updated_at)}</td><td><div className="edifica-admin-row-actions"><button type="button" onClick={() => editOperator(operator)} disabled={!operator.can_edit || saving}>Editar</button><button type="button" onClick={() => toggleOperator(operator)} disabled={!operator.can_edit || saving}>{operator.active ? 'Suspender' : 'Reactivar'}</button>{operator.can_resend_invitation && <button type="button" onClick={() => resendInvitation(operator)} disabled={saving}>Reenviar invitación</button>}</div></td></tr>
           ))}</tbody></table></div>
         )}
       </section>
