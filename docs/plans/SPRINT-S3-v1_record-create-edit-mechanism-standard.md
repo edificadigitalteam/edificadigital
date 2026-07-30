@@ -3,7 +3,15 @@
 **Branch:** to be created per phase (this plan spans multiple PRs, following
 the session's established one-fix-per-PR pattern).
 
-**Status:** Planned.
+**Status:** Done. All 5 phases merged (#46, #47, #48, #51, #52). A follow-up
+fix (#53) corrected two issues found after Phase 5 shipped: the breadcrumb
+in Aliados y donantes/Voluntariado was rendering inside the form card
+instead of outside it (now `.module-form-portal`, see `docs/DESIGN.md`'s
+"Full-page requirement — a 'Módulo / Acción' breadcrumb"), and the donation
+intake screens carried a leftover standalone-page background/`min-height:
+100vh` that produced a blank gap above the breadcrumb once nested inside
+the dashboard shell (see "Full-page requirement — no duplicate page-level
+chrome").
 
 ## Context
 
