@@ -64,7 +64,7 @@ test('header on detail pages carries the brand mark, tenant name, project name, 
 test('the cover page opens the document, carries the compliance gauge, and forces a page break before the detail', () => {
   const doc = buildComplianceReportDocDefinition(baseReport())
   const [firstNode] = doc.content
-  assert.equal(firstNode.id, 'report-cover')
+  assert.equal(firstNode.stack[0].id, 'report-cover')
 
   const contentText = JSON.stringify(doc.content)
   assert.match(contentText, /Kits escolares Zona Norte/)
@@ -84,14 +84,17 @@ test('the cover table of contents links to each section, omitting evidence when 
   assert.match(JSON.stringify(withEvidence.content), /"linkToDestination":"section-evidence"/)
 })
 
-test('each detail section is anchored by id and links back to the cover', () => {
+test('each detail section is anchored by id, and the footer links back to the cover once per page', () => {
   const doc = buildComplianceReportDocDefinition(baseReport())
   const contentText = JSON.stringify(doc.content)
   assert.match(contentText, /"id":"section-financial"/)
   assert.match(contentText, /"id":"section-physical"/)
   assert.match(contentText, /"id":"section-expenses"/)
-  const backLinks = (contentText.match(/"linkToDestination":"report-cover"/g) ?? []).length
-  assert.ok(backLinks >= 3, `expected at least 3 back-to-cover links, found ${backLinks}`)
+  assert.doesNotMatch(contentText, /"linkToDestination":"report-cover"/)
+
+  assert.equal(doc.footer(1, 5), null)
+  const footerText = JSON.stringify(doc.footer(2, 5))
+  assert.match(footerText, /"linkToDestination":"report-cover"/)
 })
 
 test('content includes financial reconciliation and physical execution figures', () => {
