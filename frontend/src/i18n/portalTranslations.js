@@ -38,6 +38,8 @@ export const portalTranslations = {
   'Registros agregados o nominales': 'Aggregate or individual records',
   'Tipos de donación': 'Donation types',
   'Monetarias / en especies': 'Monetary / in-kind',
+  '+ Agregar donación': '+ Add donation',
+  'Elegir el tipo de donación a registrar': 'Choose the type of donation to register',
   'Registrar donación monetaria': 'Register monetary donation',
   'Divisas, transferencias, efectivo y comprobantes.': 'Currencies, transfers, cash, and payment evidence.',
   'Registrar donación en especies': 'Register in-kind donation',
