@@ -6,6 +6,7 @@ import {
   expenseStatusLabels,
   formatBreakdown,
   formatDate,
+  formatDateTime,
   formatMoney,
   formatNumber,
   outputStatusLabels,
@@ -73,7 +74,7 @@ function headerBlock(projectName, generatedAt, organizationName) {
         {
           columns: [
             { text: 'Informe de cumplimiento', style: 'headerSubtitle' },
-            { text: `Generado el ${formatDate(generatedAt)}`, style: 'headerMeta', alignment: 'right' },
+            { text: `Generado el ${formatDateTime(generatedAt)}`, style: 'headerMeta', alignment: 'right' },
           ],
         },
         { canvas: [{ type: 'line', x1: 0, y1: 4, x2: 515, y2: 4, lineWidth: 1, lineColor: BRAND_PURPLE }] },
@@ -131,9 +132,8 @@ function buildCover({ project, metrics, funding, tableOfContents }) {
   const currency = project.currency
   return [
     {
-      id: 'report-cover',
       stack: [
-        { text: 'INFORME DE CUMPLIMIENTO', style: 'coverKicker' },
+        { id: 'report-cover', text: 'INFORME DE CUMPLIMIENTO', style: 'coverKicker' },
         { text: project.name, style: 'coverTitle' },
         { text: `${project.code} · ${project.funding_partner || ''}`, style: 'coverMeta' },
       ],

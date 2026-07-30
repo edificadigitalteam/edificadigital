@@ -42,6 +42,11 @@ export function formatDate(value) {
   return new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium' }).format(new Date(value))
 }
 
+export function formatDateTime(value) {
+  if (!value) return '—'
+  return new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+}
+
 export function formatBreakdown(values) {
   const entries = Object.entries(values ?? {}).filter(([, amount]) => Number(amount) !== 0)
   if (!entries.length) return '—'
