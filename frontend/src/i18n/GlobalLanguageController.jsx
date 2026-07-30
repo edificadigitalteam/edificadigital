@@ -81,14 +81,17 @@ export default function GlobalLanguageController() {
     const root = document.getElementById('root')
     applyLanguage(root, language)
 
-    let frame = 0
+    let scheduled = false
     const observer = new MutationObserver(() => {
-      window.cancelAnimationFrame(frame)
-      frame = window.requestAnimationFrame(() => applyLanguage(root, language))
+      if (scheduled) return
+      scheduled = true
+      queueMicrotask(() => {
+        scheduled = false
+        applyLanguage(root, language)
+      })
     })
     observer.observe(root, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: translatedAttributes })
     return () => {
-      window.cancelAnimationFrame(frame)
       observer.disconnect()
     }
   }, [isPortal, language])
