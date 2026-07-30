@@ -183,9 +183,8 @@ export default function SimplifiedInKindDonationFlow() {
 
   return (
     <div className="intake-shell monetary-shell simplified-in-kind-shell">
-      <header className="intake-header"><a href="/app" aria-label={copy.back} title={copy.back}><Brand /></a><div className="intake-header-actions"><span className={savedPulse ? 'save-state pulse' : 'save-state'}>✓ {copy.draftSaved}</span><button className="operator-signout" type="button" onClick={access.signOut} title={copy.signOut}>{copy.signOut}</button><button className="intake-language" type="button" onClick={() => setLanguage((current) => current === 'es' ? 'en' : 'es')} title={language === 'es' ? 'Change language to English' : 'Cambiar idioma a español'}><b>{language.toUpperCase()}</b><span>/</span>{language === 'es' ? 'EN' : 'ES'}</button></div></header>
       <main className="intake-main monetary-main">
-        <a className="intake-back-home" href="/app">← {copy.back}</a>
+        <div className="module-form-breadcrumb"><a href="/app/donations">Donaciones</a><span>/</span><strong>{copy.title}</strong><span className={savedPulse ? 'save-state pulse' : 'save-state'}>✓ {copy.draftSaved}</span></div>
         <div className="intake-heading"><p className="intake-eyebrow"><span />{copy.eyebrow}</p><h1>{copy.title}</h1><p>{copy.intro}</p><small className="monetary-required">{copy.required}</small></div>
         <form className="monetary-form" onSubmit={submit}>
           <Section data={copy.sections.donor}><div className="monetary-grid">

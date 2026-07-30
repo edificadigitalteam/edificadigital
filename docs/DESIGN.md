@@ -284,7 +284,7 @@ introduction):
 | Cumplimiento — Avances y entregas | 9 | Modal within the Cumplimiento workspace |
 | Cumplimiento — Inversión ejecutada | 7 | Modal within the Cumplimiento workspace |
 | Donaciones (detail/edit) | — | Modal |
-| Donación monetaria / en especie (intake) | 20+, 4 sections | Full page (must render inside the dashboard shell — currently a known gap, see `docs/plans/`) |
+| Donación monetaria / en especie (intake) | 20+, 4 sections | Full page (renders inside the dashboard shell) |
 
 Do not invent a fourth mechanism, and do not move a module between
 mechanisms without re-running this decision order — a module growing past
