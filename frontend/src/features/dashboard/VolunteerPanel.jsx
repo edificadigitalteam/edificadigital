@@ -193,8 +193,9 @@ export default function VolunteerPanel({ access }) {
       {!formOpen && error && <p className="operations-feedback error">{error}</p>}
 
       {formOpen && (
-      <section className="operations-card">
+      <div className="module-form-portal">
         <div className="module-form-breadcrumb"><button type="button" onClick={reset} title="Volver al listado de voluntarios">Voluntariado</button><span>/</span><strong>{form.id ? 'Editar' : 'Crear'}</strong></div>
+      <section className="operations-card">
         <div className="operations-card-heading"><div><p className="edifica-kicker">{form.id ? 'EDITAR VOLUNTARIO' : 'NUEVO VOLUNTARIO'}</p><h2>{form.id ? 'Actualizar registro' : 'Registrar voluntario'}</h2></div><button type="button" onClick={reset} title="Cerrar este formulario sin guardar">Cancelar</button></div>
         <form className="operations-form" onSubmit={save}>
           {access.role === 'super_admin' && <label><span>Organización</span><select value={form.organization_id} onChange={(event) => setForm((current) => ({ ...current, organization_id: event.target.value, project_id: '' }))} required><option value="">Seleccionar</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
@@ -218,6 +219,7 @@ export default function VolunteerPanel({ access }) {
         </form>
         {error && <p className="operations-feedback error">{error}</p>}
       </section>
+      </div>
       )}
 
       {!formOpen && (

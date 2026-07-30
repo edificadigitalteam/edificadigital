@@ -20,7 +20,10 @@
 .module-list-actions > button { min-height: 42px; padding: 0 16px; border: 0; border-radius: 9px; background: var(--ed-purple); color: #fff; font-weight: 800; cursor: pointer; white-space: nowrap; }
 
 /* Full-page create/edit screens show a "Módulo / Acción" breadcrumb above
-   the form, per docs/DESIGN.md's Create/Edit Record Mechanism Standard. */
+   the form, per docs/DESIGN.md's Create/Edit Record Mechanism Standard.
+   .module-form-portal wraps the breadcrumb + form card so the breadcrumb
+   sits outside the card, matching the Proyectos reference implementation. */
+.module-form-portal { display: grid; gap: 0; }
 .module-form-breadcrumb { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; color: var(--ed-muted); font-size: .82rem; }
 .module-form-breadcrumb button,
 .module-form-breadcrumb a { border: 0; padding: 0; background: transparent; color: var(--ed-purple); text-decoration: underline; cursor: pointer; }

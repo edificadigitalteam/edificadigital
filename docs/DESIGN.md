@@ -264,10 +264,26 @@ with a way back.
 **Full-page requirement — a "Módulo / Acción" breadcrumb.** Every full-page
 create/edit screen shows a small breadcrumb above the form: the module name
 (a link back to its list) followed by "/" and the current action ("Crear" /
-"Editar"), e.g. "Proyectos / Crear". Shared styling lives in
-`frontend/src/features/dashboard/module-panel.css`'s `.module-form-
-breadcrumb` — reuse it, don't duplicate per module. `ProjectsPanel.jsx` is
-the reference implementation.
+"Editar"), e.g. "Proyectos / Crear". The breadcrumb sits outside the form
+card, not inside it — wrap the breadcrumb and the card together in
+`.module-form-portal`, with `.module-form-breadcrumb` as its first child and
+the card (`.operations-card` or equivalent) as a sibling after it, not a
+parent. Shared styling for both lives in
+`frontend/src/features/dashboard/module-panel.css` — reuse it, don't
+duplicate per module. `ProjectsPanel.jsx` is the reference implementation.
+
+**Full-page requirement — no duplicate page-level chrome.** A full-page
+create/edit screen renders inside `.edifica-dashboard-main`, which already
+supplies the page background and outer padding. Its own root element must
+not add a competing full-viewport background or `min-height: 100vh` (or
+redundant top padding) on top of that — doing so either doubles the
+background wash or reintroduces blank space above the breadcrumb. This
+bit the donation intake screens (`UnifiedMonetaryDonationFlow.jsx`,
+`SimplifiedInKindDonationFlow.jsx`) after Phase 5 moved them inside the
+dashboard shell: their `.intake-shell`/`.monetary-shell` wrappers still
+carried a standalone-page gradient background and `min-height: 100vh` left
+over from when they were rendered outside the shell, producing a visible
+gap above the breadcrumb — removed once identified.
 
 **Reference classification** (module → mechanism, as of this standard's
 introduction):
