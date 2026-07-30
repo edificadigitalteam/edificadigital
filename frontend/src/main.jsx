@@ -11,53 +11,12 @@ import { installGlobalErrorLogging } from './lib/logger.js'
 
 installGlobalErrorLogging()
 
-const isDashboard = window.location.pathname === '/app' || window.location.pathname.startsWith('/app/')
-const isOperationalForm = window.location.pathname.startsWith('/donations/')
+const isDashboard = window.location.pathname === '/app' || window.location.pathname.startsWith('/app/') || window.location.pathname.startsWith('/donations/')
 const isActivationPage = window.location.pathname === '/activar'
-
-function OperationalNavigationGuard() {
-  useEffect(() => {
-    if (!isOperationalForm) return undefined
-
-    const rewriteVisibleLinks = () => {
-      document.querySelectorAll('a[href="/"], a[href="/app"]').forEach((link) => {
-        link.setAttribute('href', '/app/donations')
-      })
-
-      document.querySelectorAll('.intake-back-home').forEach((link) => {
-        if (link.dataset.panelLinkFixed === 'true') return
-        const isEnglish = document.documentElement.lang === 'en'
-        const icon = link.querySelector('svg')
-        link.replaceChildren(...(icon ? [icon] : []), document.createTextNode(isEnglish ? ' Back to Donations' : ' Volver a Donaciones'))
-        link.dataset.panelLinkFixed = 'true'
-      })
-    }
-
-    const redirectModuleLinks = (event) => {
-      const link = event.target.closest?.('a[href="/"], a[href="/app"]')
-      if (!link) return
-      event.preventDefault()
-      window.location.assign('/app/donations')
-    }
-
-    rewriteVisibleLinks()
-    const immediate = window.setTimeout(rewriteVisibleLinks, 0)
-    const afterRender = window.setTimeout(rewriteVisibleLinks, 250)
-    document.addEventListener('click', redirectModuleLinks, true)
-
-    return () => {
-      window.clearTimeout(immediate)
-      window.clearTimeout(afterRender)
-      document.removeEventListener('click', redirectModuleLinks, true)
-    }
-  }, [])
-
-  return null
-}
 
 function PublicLoginGuard() {
   useEffect(() => {
-    if (isDashboard || isOperationalForm) return undefined
+    if (isDashboard) return undefined
 
     const openLogin = (event) => {
       const link = event.target.closest?.('a.product-login[href="/app"], a.nav-cta[href="/app"]')
@@ -86,7 +45,6 @@ function RootApplication() {
   return (
     <>
       <PublicLoginGuard />
-      {isOperationalForm && <OperationalNavigationGuard />}
       <GlobalLanguageController />
       {isDashboard ? <DashboardApp /> : <App />}
     </>

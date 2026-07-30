@@ -31,7 +31,7 @@ Lightweight backlog for future work that does not yet have a plan in `docs/plans
 
 ## Reported by product owner (2026-07-30)
 
-- [ ] Revisar el estándar de creación/edición de registros a nivel visual: definir cuándo debe ser modal, cuándo página completa y cuándo inline, y aplicarlo de forma consistente en todos los módulos. Relacionado con `docs/DESIGN.md` "Module Panel Layout Standard" (#40), que ya estandarizó el layout de listado/búsqueda pero no resolvió cuál mecanismo de edición usar en cada caso.
+- [x] Revisar el estándar de creación/edición de registros a nivel visual: definir cuándo debe ser modal, cuándo página completa y cuándo inline, y aplicarlo de forma consistente en todos los módulos. Documentado como "Create/Edit Record Mechanism Standard" en `docs/DESIGN.md` (umbral de 5 campos para inline; breadcrumb "Módulo / Acción" obligatorio en pantallas completas) y aplicado en 5 fases: Personas habilitadas/Aliados (inline), Cumplimiento de proyecto y Beneficiarios de proyecto (modal), y donación monetaria/en especie (página completa, ahora dentro del shell del dashboard). Ver `docs/plans/SPRINT-S3-v1_record-create-edit-mechanism-standard.md` (#46, #47, #48, #51, #52).
 - [ ] Separar los módulos visibles según el rol: qué ve un superadmin, qué ve un admin de organización, y qué ve un operador. Relacionado con el fix de scoping por organización en "Personas habilitadas" (#41), que corrigió el acceso a datos pero no revisó de forma integral qué módulos/entradas de navegación debería ver cada rol.
 - [ ] Agrupar "Donaciones" como un módulo configurable (el usuario decide qué incluir) en vez de una entrada de menú fija por sí sola.
 - [ ] Revisar qué se muestra en el dashboard principal (resumen de operaciones al entrar a la app).

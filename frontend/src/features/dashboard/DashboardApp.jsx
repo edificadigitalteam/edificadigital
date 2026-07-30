@@ -12,6 +12,8 @@ import OrganizationAdminPanel from './OrganizationAdminPanel.jsx'
 import ProjectCompliancePanel from './ProjectCompliancePanel.jsx'
 import ProjectsPanel from './ProjectsPanel.jsx'
 import VolunteerPanel from './VolunteerPanel.jsx'
+import UnifiedMonetaryDonationFlow from '../monetary/UnifiedMonetaryDonationFlow.jsx'
+import SimplifiedInKindDonationFlow from '../in-kind/SimplifiedInKindDonationFlow.jsx'
 import './dashboard.css'
 import './dashboard-extensions.css'
 import './dashboard-summary.css'
@@ -222,6 +224,8 @@ export default function DashboardApp() {
   const volunteersPage = path.startsWith('/app/donations/volunteers') || path.startsWith('/app/volunteers')
   const donorsPage = path.startsWith('/app/donations/donors') || path.startsWith('/app/donors')
   const donationsHome = path === '/app/donations'
+  const monetaryNewPage = path.startsWith('/donations/monetary')
+  const inKindNewPage = path.startsWith('/donations/in-kind')
   const canAdmin = access.role === 'admin' || access.role === 'super_admin'
 
   useEffect(() => {
@@ -251,6 +255,8 @@ export default function DashboardApp() {
   if (donorsPage) page = <DonorDirectoryPanel access={access} />
   if (operatorsPage && canAdmin) page = <OperatorAdminPanel access={access} />
   if (organizationsPage && canAdmin) page = <OrganizationAdminPanel access={access} />
+  if (monetaryNewPage) page = <UnifiedMonetaryDonationFlow />
+  if (inKindNewPage) page = <SimplifiedInKindDonationFlow />
   if (billingPage && canAdmin) page = <BillingPanel access={access} />
 
   return (
@@ -268,8 +274,8 @@ export default function DashboardApp() {
           <NavLink href="/app" icon="home">Todos los módulos</NavLink>
           <span className="portal-nav-section portal-management-section">DONACIONES</span>
           <NavLink active={donationsHome} href="/app/donations" icon="home">Resumen</NavLink>
-          <NavLink href="/donations/monetary/new" icon="money">Donación monetaria</NavLink>
-          <NavLink href="/donations/in-kind/new" icon="package">Donación en especies</NavLink>
+          <NavLink active={monetaryNewPage} href="/donations/monetary/new" icon="money">Donación monetaria</NavLink>
+          <NavLink active={inKindNewPage} href="/donations/in-kind/new" icon="package">Donación en especies</NavLink>
           <NavLink active={volunteersPage} href="/app/donations/volunteers" icon="people">Voluntariado</NavLink>
           <span className="portal-nav-section portal-management-section">GESTIÓN</span>
           <NavLink active={projectsPage || compliancePage} href="/app/donations/projects" icon="project">Proyectos</NavLink>
