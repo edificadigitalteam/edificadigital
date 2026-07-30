@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
+import Modal from './Modal.jsx'
 import './beneficiaries.css'
 
 const emptyForm = {
@@ -39,6 +40,7 @@ const sexLabels = {
 export default function ProjectBeneficiariesPanel({ project, onChanged }) {
   const [beneficiaries, setBeneficiaries] = useState([])
   const [form, setForm] = useState(emptyForm)
+  const [formOpen, setFormOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -71,6 +73,14 @@ export default function ProjectBeneficiariesPanel({ project, onChanged }) {
     setForm(emptyForm)
     setError('')
     setMessage('')
+    setFormOpen(false)
+  }
+
+  const startNew = () => {
+    setForm(emptyForm)
+    setError('')
+    setMessage('')
+    setFormOpen(true)
   }
 
   const edit = (beneficiary) => {
@@ -92,7 +102,7 @@ export default function ProjectBeneficiariesPanel({ project, onChanged }) {
     })
     setError('')
     setMessage('')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setFormOpen(true)
   }
 
   const save = async (event) => {
@@ -116,6 +126,7 @@ export default function ProjectBeneficiariesPanel({ project, onChanged }) {
     } else {
       setMessage(form.id ? 'Persona beneficiaria actualizada.' : 'Persona beneficiaria registrada.')
       setForm(emptyForm)
+      setFormOpen(false)
       await load()
       await onChanged?.()
     }
@@ -126,29 +137,34 @@ export default function ProjectBeneficiariesPanel({ project, onChanged }) {
     <section className="operations-card beneficiary-registry no-print">
       <div className="edifica-section-heading">
         <div><p className="edifica-kicker">REGISTRO NOMINAL OPCIONAL</p><h2>Personas beneficiadas</h2></div>
-        <span>{activeCount} activas</span>
+        <div className="module-list-actions"><span>{activeCount} activas</span><button type="button" onClick={startNew} title="Registrar una nueva persona beneficiada">＋ Nuevo beneficiario</button></div>
       </div>
       <p className="beneficiary-intro">Este proyecto exige detalle individual. Registra únicamente los datos solicitados por el convenio y conserva la aceptación del aviso de privacidad.</p>
 
-      <form className="operations-form beneficiary-form" onSubmit={save} key={form.id || 'new-beneficiary'}>
-        <label className="wide"><span>Nombre completo *</span><input value={form.full_name} onChange={(event) => setForm((current) => ({ ...current, full_name: event.target.value }))} required /></label>
-        <label><span>Documento o identificación</span><input value={form.identification_number} onChange={(event) => setForm((current) => ({ ...current, identification_number: event.target.value }))} /></label>
-        <label><span>Teléfono</span><input value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} /></label>
-        <label><span>Correo electrónico</span><input type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} /></label>
-        <label><span>País</span><input value={form.residence_country} onChange={(event) => setForm((current) => ({ ...current, residence_country: event.target.value }))} /></label>
-        <label><span>Ciudad, comunidad o zona</span><input value={form.residence_area} onChange={(event) => setForm((current) => ({ ...current, residence_area: event.target.value }))} /></label>
-        <label><span>Rango de edad</span><select value={form.age_band} onChange={(event) => setForm((current) => ({ ...current, age_band: event.target.value }))}>{Object.entries(ageLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-        <label><span>Sexo</span><select value={form.sex} onChange={(event) => setForm((current) => ({ ...current, sex: event.target.value }))}>{Object.entries(sexLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-        <label><span>Personas representadas</span><input type="number" min="1" step="1" value={form.household_members_represented} onChange={(event) => setForm((current) => ({ ...current, household_members_represented: event.target.value }))} /></label>
-        <label className="wide"><span>Beneficio, servicio o entrega recibida</span><input value={form.benefit_received} onChange={(event) => setForm((current) => ({ ...current, benefit_received: event.target.value }))} placeholder="Ej.: kit de alimentos, consulta médica, hidratación" /></label>
-        <label className="wide"><span>Observaciones</span><textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} /></label>
-        <label className="operations-checkbox"><input type="checkbox" checked={form.active} onChange={(event) => setForm((current) => ({ ...current, active: event.target.checked }))} /><span>Registro activo</span></label>
-        <label className="operations-checkbox wide"><input type="checkbox" checked={form.privacy_notice_acknowledged} onChange={(event) => setForm((current) => ({ ...current, privacy_notice_acknowledged: event.target.checked }))} required /><span>Confirmo que la persona fue informada sobre el uso y resguardo de sus datos.</span></label>
-        <div className="compliance-form-actions"><button type="button" onClick={reset} title={form.id ? 'Cerrar sin guardar' : 'Limpiar este formulario'}>{form.id ? 'Cancelar edición' : 'Limpiar'}</button><button className="edifica-primary-button" type="submit" disabled={saving} title={form.id ? 'Guardar los cambios de este beneficiario' : 'Registrar este beneficiario'}>{saving ? 'Guardando…' : form.id ? 'Guardar cambios' : 'Registrar persona'}</button></div>
-      </form>
+      {formOpen && (
+        <Modal titleId="beneficiary-modal-title" kicker={form.id ? 'EDITAR BENEFICIARIO' : 'NUEVO BENEFICIARIO'} title={form.id ? 'Actualizar registro' : 'Registrar persona'} onClose={reset}>
+          <form className="operations-form beneficiary-form" onSubmit={save} key={form.id || 'new-beneficiary'}>
+            <label className="wide"><span>Nombre completo *</span><input value={form.full_name} onChange={(event) => setForm((current) => ({ ...current, full_name: event.target.value }))} required /></label>
+            <label><span>Documento o identificación</span><input value={form.identification_number} onChange={(event) => setForm((current) => ({ ...current, identification_number: event.target.value }))} /></label>
+            <label><span>Teléfono</span><input value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} /></label>
+            <label><span>Correo electrónico</span><input type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} /></label>
+            <label><span>País</span><input value={form.residence_country} onChange={(event) => setForm((current) => ({ ...current, residence_country: event.target.value }))} /></label>
+            <label><span>Ciudad, comunidad o zona</span><input value={form.residence_area} onChange={(event) => setForm((current) => ({ ...current, residence_area: event.target.value }))} /></label>
+            <label><span>Rango de edad</span><select value={form.age_band} onChange={(event) => setForm((current) => ({ ...current, age_band: event.target.value }))}>{Object.entries(ageLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            <label><span>Sexo</span><select value={form.sex} onChange={(event) => setForm((current) => ({ ...current, sex: event.target.value }))}>{Object.entries(sexLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            <label><span>Personas representadas</span><input type="number" min="1" step="1" value={form.household_members_represented} onChange={(event) => setForm((current) => ({ ...current, household_members_represented: event.target.value }))} /></label>
+            <label className="wide"><span>Beneficio, servicio o entrega recibida</span><input value={form.benefit_received} onChange={(event) => setForm((current) => ({ ...current, benefit_received: event.target.value }))} placeholder="Ej.: kit de alimentos, consulta médica, hidratación" /></label>
+            <label className="wide"><span>Observaciones</span><textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} /></label>
+            <label className="operations-checkbox"><input type="checkbox" checked={form.active} onChange={(event) => setForm((current) => ({ ...current, active: event.target.checked }))} /><span>Registro activo</span></label>
+            <label className="operations-checkbox wide"><input type="checkbox" checked={form.privacy_notice_acknowledged} onChange={(event) => setForm((current) => ({ ...current, privacy_notice_acknowledged: event.target.checked }))} required /><span>Confirmo que la persona fue informada sobre el uso y resguardo de sus datos.</span></label>
+            {error && <p className="operations-feedback error wide">{error}</p>}
+            <div className="compliance-form-actions"><button type="button" onClick={reset} title="Cerrar este formulario sin guardar">Cancelar</button><button className="edifica-primary-button" type="submit" disabled={saving} title={form.id ? 'Guardar los cambios de este beneficiario' : 'Registrar este beneficiario'}>{saving ? 'Guardando…' : form.id ? 'Guardar cambios' : 'Registrar persona'}</button></div>
+          </form>
+        </Modal>
+      )}
 
       {message && <p className="operations-feedback success">{message}</p>}
-      {error && <p className="operations-feedback error">{error}</p>}
+      {!formOpen && error && <p className="operations-feedback error">{error}</p>}
 
       {loading ? <p className="edifica-empty">Cargando personas beneficiadas…</p> : beneficiaries.length === 0 ? <p className="edifica-empty">Todavía no existen personas registradas para este proyecto.</p> : (
         <div className="edifica-table-wrap"><table className="operations-table beneficiary-table"><thead><tr><th>Persona</th><th>Contacto</th><th>Ubicación</th><th>Beneficio</th><th>Estado</th><th>Acción</th></tr></thead><tbody>{beneficiaries.map((beneficiary) => (
