@@ -114,8 +114,17 @@ function metricCard(label, value, accent, width = 160) {
   }
 }
 
-function backToIndexLink() {
-  return { text: '↑ Volver al índice', linkToDestination: 'report-cover', style: 'backLink', margin: [0, 0, 0, 4] }
+function footerBlock() {
+  return (currentPage) => {
+    if (currentPage === 1) return null
+    return {
+      margin: [40, 8, 40, 0],
+      text: '↑ Volver al índice',
+      linkToDestination: 'report-cover',
+      style: 'backLink',
+      alignment: 'right',
+    }
+  }
 }
 
 function buildCover({ project, metrics, funding, tableOfContents }) {
@@ -290,6 +299,7 @@ export function buildComplianceReportDocDefinition({ project, generatedAt, metri
     pageSize: 'A4',
     pageMargins: [40, 105, 40, 40],
     header: headerBlock(project.name, generatedAt ?? new Date(), organizationName),
+    footer: footerBlock(),
     content: [
       ...buildCover({ project, metrics, funding, tableOfContents }),
 
@@ -303,7 +313,6 @@ export function buildComplianceReportDocDefinition({ project, generatedAt, metri
       { text: `Exigencias de reporte: ${project.reporting_requirements || 'Según convenio del proyecto'}`, style: 'projectDataItem', margin: [0, 0, 0, 12] },
 
       { id: 'section-financial', text: 'Cotejo financiero — otorgado, recibido y ejecutado', style: 'sectionHeading' },
-      backToIndexLink(),
       {
         columns: [
           { text: `Aprobado u otorgado\n${formatMoney(project.approved_budget, currency)}`, style: 'metric' },
@@ -317,15 +326,12 @@ export function buildComplianceReportDocDefinition({ project, generatedAt, metri
       donationsTable(linkedDonations),
 
       { id: 'section-physical', text: 'Ejecución física — metas y avances', style: 'sectionHeading', margin: [0, 16, 0, 6] },
-      backToIndexLink(),
       outputsTable(outputs),
 
       evidenceRows ? { id: 'section-evidence', text: 'Soportes multimedia — evidencias de ejecución', style: 'sectionHeading', margin: [0, 16, 0, 6] } : null,
-      evidenceRows ? backToIndexLink() : null,
       evidenceRows,
 
       { id: 'section-expenses', text: 'Ejecución financiera — inversión y comprobantes', style: 'sectionHeading', margin: [0, 16, 0, 6] },
-      backToIndexLink(),
       expensesTable(expenses),
 
       { text: `Cumplimiento físico promedio: ${metrics?.averageCompliance ?? 0}%  ·  Cumplimiento presupuestal: ${metrics?.budgetCompliance ?? 0}%  ·  Personas beneficiadas: ${formatNumber(metrics?.beneficiaries)}`, style: 'summaryLine', margin: [0, 16, 0, 0] },
