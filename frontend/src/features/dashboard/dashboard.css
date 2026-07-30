@@ -249,6 +249,36 @@
 }
 .edifica-section-heading h2 { font-size: 1.65rem; }
 .edifica-section-heading > span { color: var(--ed-muted); font-size: .85rem; }
+
+.edifica-new-donation-menu { position: relative; }
+.edifica-new-donation-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  display: grid;
+  gap: 4px;
+  width: min(320px, 90vw);
+  padding: 8px;
+  border: 1px solid var(--ed-line);
+  border-radius: 14px;
+  background: var(--ed-white);
+  box-shadow: 0 16px 36px rgba(52, 21, 80, .16);
+}
+.edifica-new-donation-menu-panel a {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  color: var(--ed-ink);
+}
+.edifica-new-donation-menu-panel a:hover,
+.edifica-new-donation-menu-panel a:focus-visible {
+  background: var(--ed-purple-soft);
+  outline: none;
+}
+.edifica-new-donation-menu-panel a strong { color: var(--ed-purple-dark); font-size: .95rem; }
+.edifica-new-donation-menu-panel a span { color: var(--ed-muted); font-size: .8rem; line-height: 1.4; }
 .edifica-table-wrap { overflow-x: auto; }
 .edifica-records table { width: 100%; border-collapse: collapse; }
 .edifica-records th,

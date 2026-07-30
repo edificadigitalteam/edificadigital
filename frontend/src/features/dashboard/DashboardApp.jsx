@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
 import BillingPanel from '../billing/BillingPanel.jsx'
 import DonorDirectoryPanel from '../donors/DonorDirectoryPanel.jsx'
@@ -42,6 +42,46 @@ function PortalIcon({ name }) {
 
 function NavLink({ active, href, icon, children }) {
   return <a className={active ? 'active' : ''} href={href}><span className="portal-nav-icon"><PortalIcon name={icon} /></span><span>{children}</span></a>
+}
+
+function NewDonationMenu() {
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return undefined
+    const closeOnOutsideClick = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) setOpen(false)
+    }
+    const closeOnEscape = (event) => { if (event.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', closeOnOutsideClick)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutsideClick)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [open])
+
+  return (
+    <div className="edifica-new-donation-menu" ref={containerRef}>
+      <button
+        type="button"
+        className="edifica-primary-button"
+        aria-haspopup="true"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        title="Elegir el tipo de donación a registrar"
+      >
+        + Agregar donación
+      </button>
+      {open && (
+        <div className="edifica-new-donation-menu-panel" role="menu">
+          <a role="menuitem" href="/donations/monetary/new" title="Registrar donación monetaria"><strong>Donación monetaria</strong><span>Divisas, transferencias, efectivo y comprobantes.</span></a>
+          <a role="menuitem" href="/donations/in-kind/new" title="Registrar donación en especies"><strong>Donación en especies</strong><span>Cargas consolidadas, manifiestos, contenedores y envíos.</span></a>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function LoginCard({ access }) {
@@ -194,14 +234,12 @@ function DashboardHome({ access }) {
         <article><span>Personas beneficiadas</span><strong>{totals.beneficiaries}</strong><small>Registros agregados o nominales</small></article>
         <article><span>Tipos de donación</span><strong>{totals.monetary} / {totals.inKind}</strong><small>Monetarias / en especies</small></article>
       </section>
-      <section className="edifica-actions edifica-actions-expanded">
-        <a href="/donations/monetary/new"><strong>Registrar donación monetaria</strong><span>Divisas, transferencias, efectivo y comprobantes.</span></a>
-        <a href="/donations/in-kind/new"><strong>Registrar donación en especies</strong><span>Cargas consolidadas, manifiestos, contenedores y envíos.</span></a>
+      <section className="edifica-actions">
         <a href="/app/donations/donors"><strong>Crear aliado o donante</strong><span>Directorio reutilizable para proyectos y donaciones.</span></a>
         <a href="/app/donations/projects"><strong>{canAdmin ? 'Cargar proyecto financiado' : 'Consultar proyectos'}</strong><span>Objetivos, presupuesto, ejecución, facturas y evidencias.</span></a>
       </section>
       <section className="edifica-records" id="registros">
-        <div className="edifica-section-heading"><div><p className="edifica-kicker">ACTIVIDAD RECIENTE</p><h2>Registros de la organización</h2></div><span>{donations.length} registros</span></div>
+        <div className="edifica-section-heading"><div><p className="edifica-kicker">ACTIVIDAD RECIENTE</p><h2>Registros de la organización</h2></div><div className="module-list-actions"><span>{donations.length} registros</span><NewDonationMenu /></div></div>
         {loading ? <p className="edifica-empty">Cargando registros…</p> : error ? <p className="edifica-empty error">No se pudo cargar el listado: {error}</p> : donations.length === 0 ? <p className="edifica-empty">Todavía no existen donaciones registradas.</p> : <div className="edifica-table-wrap"><table><thead><tr><th>Fecha</th><th>Referencia</th><th>Tipo</th><th>Donante o aliado</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{donations.map((donation) => <tr key={donation.id} onClick={() => openDonation(donation.id, 'detail')}><td>{formatDate(donation.received_at ?? donation.created_at)}</td><td>{donation.reference_code ?? 'Sin referencia'}</td><td>{typeLabels[donation.donation_type] ?? donation.donation_type}</td><td>{donation.donor?.name ?? 'Donante registrado'}</td><td><span className={`edifica-status ${donation.status}`}>{statusLabels[donation.status] ?? donation.status}</span></td><td><div className="edifica-record-actions"><button className="edifica-view-detail" type="button" onClick={(event) => { event.stopPropagation(); openDonation(donation.id, 'detail') }} title="Ver el detalle de esta donación">Ver</button><button className="edifica-edit-record" type="button" onClick={(event) => { event.stopPropagation(); openDonation(donation.id, 'edit') }} title="Editar esta donación">Editar</button></div></td></tr>)}</tbody></table></div>}
       </section>
       {selectedId && (detailLoading || selectedMode === 'detail' || !detail ? <DonationDetailModal donation={detail} loading={detailLoading} error={detailError} onClose={closeDetail} /> : <DonationEditModal donation={detail} onClose={closeDetail} onSaved={afterEdit} />)}
@@ -273,9 +311,7 @@ export default function DashboardApp() {
           <span className="portal-nav-section">EDIFICA</span>
           <NavLink href="/app" icon="home">Todos los módulos</NavLink>
           <span className="portal-nav-section portal-management-section">DONACIONES</span>
-          <NavLink active={donationsHome} href="/app/donations" icon="home">Resumen</NavLink>
-          <NavLink active={monetaryNewPage} href="/donations/monetary/new" icon="money">Donación monetaria</NavLink>
-          <NavLink active={inKindNewPage} href="/donations/in-kind/new" icon="package">Donación en especies</NavLink>
+          <NavLink active={donationsHome || monetaryNewPage || inKindNewPage} href="/app/donations" icon="home">Donaciones</NavLink>
           <NavLink active={volunteersPage} href="/app/donations/volunteers" icon="people">Voluntariado</NavLink>
           <span className="portal-nav-section portal-management-section">GESTIÓN</span>
           <NavLink active={projectsPage || compliancePage} href="/app/donations/projects" icon="project">Proyectos</NavLink>
