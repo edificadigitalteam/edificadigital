@@ -1,9 +1,3 @@
-.monetary-shell {
-  background:
-    linear-gradient(180deg, rgba(242, 140, 40, .055), transparent 300px),
-    #f8f6fa;
-}
-
 .monetary-main { width: min(880px, calc(100% - 32px)); }
 
 .monetary-required {
