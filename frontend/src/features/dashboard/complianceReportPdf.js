@@ -119,7 +119,7 @@ function footerBlock() {
     if (currentPage === 1) return null
     return {
       margin: [40, 8, 40, 0],
-      text: '↑ Volver al índice',
+      text: 'Volver al índice',
       linkToDestination: 'report-cover',
       style: 'backLink',
       alignment: 'right',
