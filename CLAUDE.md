@@ -60,7 +60,7 @@ pnpm lint
 pnpm build
 ```
 
-Also verify responsive layouts, keyboard flow, focus states, language switching, draft preservation, and reduced motion for interface work.
+Also verify responsive layouts, keyboard flow, focus states, language switching, draft preservation, and reduced motion for interface work. The `playwright-cli` skill (installed globally at `~/.claude/skills/playwright-cli`, available across projects — not duplicated in this repo's `.claude/skills`) is the tool for driving the browser during this kind of interface verification.
 
 For database work, verify the live schema only after confirming the exact Supabase project. Use rollback-safe transactions for functional scenarios and run Supabase security and performance advisors after migrations.
 

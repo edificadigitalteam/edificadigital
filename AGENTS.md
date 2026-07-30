@@ -29,6 +29,10 @@ Every implementation follows this order:
 
 For urgent work, compress feedback loops while preserving the order above.
 
+### Browser verification tooling
+
+The `playwright-cli` skill is installed globally (`~/.claude/skills/playwright-cli`, not duplicated in this repo's `.claude/skills`) and available in every project. Use it for browser-driven verification steps in the workflow above — navigating the app, exercising a UI change, and confirming rendered output — whenever that kind of check is needed.
+
 ## Current product decisions
 
 ### Identity and language
