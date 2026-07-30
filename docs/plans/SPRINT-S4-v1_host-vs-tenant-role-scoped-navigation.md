@@ -46,8 +46,9 @@ Product owner decisions from this conversation:
 3. **Data cleanup was requested** ("eliminar la data que esté relacionado
    con los superadmin") — investigated against the live `edifydb`
    project (`rrqyihsjftlloizsccvi`) before writing this plan:
-   - Both real super_admin accounts (`isaacdacosta7@gmail.com`,
-     `yangetze@gmail.com`) correctly have `organization_id = null`.
+   - Both real super_admin accounts correctly have
+     `organization_id = null` — nothing tenant-specific assigned to
+     them.
    - Zero rows across `donation`, `project`, `volunteer`, and `actor`
      have a null `organization_id`.
    - **Conclusion: there is no orphaned data to clean up.** The
