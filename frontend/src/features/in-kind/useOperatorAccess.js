@@ -24,7 +24,21 @@ function isLocalUrl(value) {
   }
 }
 
-function getAppRedirectUrl() {
+const redirectablePathPrefixes = ['/app', '/donations']
+
+function getOriginPath() {
+  const { pathname, search } = window.location
+  const params = new URLSearchParams(search)
+  params.delete('login')
+  params.delete('t')
+  const cleanedSearch = params.toString()
+  const path = cleanedSearch ? `${pathname}?${cleanedSearch}` : pathname
+  // A bare "/app" (or the plain login trigger) isn't a deep link worth restoring.
+  if (path === '/app' || path === '/') return ''
+  return path
+}
+
+function getAppRedirectUrl(nextPath) {
   const configuredUrl = import.meta.env.VITE_APP_URL?.trim()
   const runtimeIsLocal = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname)
   const usableConfiguredUrl = configuredUrl && !isLocalUrl(configuredUrl) ? configuredUrl : ''
@@ -32,15 +46,25 @@ function getAppRedirectUrl() {
   const normalizedBaseUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`
   const redirect = new URL('/app', normalizedBaseUrl)
   redirect.searchParams.set('auth', 'callback')
+  if (nextPath) redirect.searchParams.set('next', nextPath)
   return redirect.toString()
 }
 
 function clearCallbackUrl() {
   if (window.location.pathname !== '/app') return
   const params = new URLSearchParams(window.location.search)
-  const callbackKeys = ['code', 'auth', 'login', 'error', 'error_code', 'error_description', 't']
+  const callbackKeys = ['code', 'auth', 'login', 'error', 'error_code', 'error_description', 't', 'next']
   if (!callbackKeys.some((key) => params.has(key)) && !window.location.hash) return
   window.history.replaceState({}, document.title, '/app')
+}
+
+function consumeNextPath() {
+  if (window.location.pathname !== '/app') return null
+  const params = new URLSearchParams(window.location.search)
+  const next = params.get('next')
+  if (!next || !next.startsWith('/')) return null
+  if (!redirectablePathPrefixes.some((prefix) => next === prefix || next.startsWith(`${prefix}/`))) return null
+  return next
 }
 
 function clearLocalAuthCache() {
@@ -109,7 +133,11 @@ export function useOperatorAccess() {
           ? 'Este acceso pertenece a una organización diferente al tenant solicitado.'
           : '',
       })
-      if (authorized && !tenantMismatch) clearCallbackUrl()
+      if (authorized && !tenantMismatch) {
+        const next = consumeNextPath()
+        if (next) { window.location.replace(next); return }
+        clearCallbackUrl()
+      }
       return
     }
 
@@ -140,7 +168,11 @@ export function useOperatorAccess() {
       tenantOrganizationId: tenant?.organization_id ?? '',
       message: '',
     })
-    if (data) clearCallbackUrl()
+    if (data) {
+      const next = consumeNextPath()
+      if (next) { window.location.replace(next); return }
+      clearCallbackUrl()
+    }
   }, [])
 
   useEffect(() => {
@@ -207,7 +239,7 @@ export function useOperatorAccess() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: getAppRedirectUrl(),
+        emailRedirectTo: getAppRedirectUrl(getOriginPath()),
         shouldCreateUser: true,
       },
     })
