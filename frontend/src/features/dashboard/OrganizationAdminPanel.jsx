@@ -219,6 +219,7 @@ export default function OrganizationAdminPanel({ access }) {
 
       {canEdit && formOpen && (
         <section className="operations-card">
+          <div className="module-form-breadcrumb"><button type="button" onClick={reset} title="Volver al listado de organizaciones">Organizaciones</button><span>/</span><strong>{form.id ? 'Editar' : 'Crear'}</strong></div>
           <div className="operations-card-heading">
             <div><p className="edifica-kicker">{form.id ? 'EDITAR ORGANIZACIÓN' : 'NUEVA ORGANIZACIÓN'}</p><h2>{form.id ? 'Actualizar tenant' : 'Crear tenant'}</h2></div>
             <button type="button" onClick={reset} title="Cerrar este formulario sin guardar">Cancelar</button>
@@ -243,6 +244,7 @@ export default function OrganizationAdminPanel({ access }) {
 
       {canEdit && hostFormOpen && (
         <section className="operations-card">
+          <div className="module-form-breadcrumb"><button type="button" onClick={resetHost} title="Volver al listado de organizaciones">Organizaciones</button><span>/</span><strong>{hostForm.id ? 'Editar host' : 'Asociar host'}</strong></div>
           <div className="operations-card-heading">
             <div><p className="edifica-kicker">HOST Y TENANT</p><h2>Dominio de acceso</h2></div>
             <button type="button" onClick={resetHost} title="Cerrar este formulario sin guardar">Cancelar</button>

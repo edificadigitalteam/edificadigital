@@ -207,7 +207,7 @@ export default function ProjectsPanel({ access }) {
 
       {formOpen && canManage && (
         <section className="project-form-portal">
-          <div className="project-form-breadcrumb"><button type="button" onClick={reset} title="Volver al listado de proyectos">Proyectos</button><span>/</span><strong>{form.id ? 'Editar' : 'Crear'}</strong></div>
+          <div className="module-form-breadcrumb"><button type="button" onClick={reset} title="Volver al listado de proyectos">Proyectos</button><span>/</span><strong>{form.id ? 'Editar' : 'Crear'}</strong></div>
           <form onSubmit={save} key={form.id || 'new-project'}>
             <section className="project-form-section">
               <header><div><span>01</span><h2>Identificación del proyecto</h2></div><p>Datos de la organización responsable y del aliado o donante que financia.</p></header>

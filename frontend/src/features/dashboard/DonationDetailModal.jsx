@@ -1,3 +1,5 @@
+import Modal from './Modal.jsx'
+
 const typeLabels = {
   monetary: 'Monetaria',
   in_kind: 'En especies',
@@ -58,15 +60,7 @@ function DetailField({ label, children }) {
 
 export default function DonationDetailModal({ donation, loading, error, onClose }) {
   return (
-    <div className="edifica-modal-backdrop" role="presentation" onMouseDown={(event) => {
-      if (event.target === event.currentTarget) onClose()
-    }}>
-      <section className="edifica-modal" role="dialog" aria-modal="true" aria-labelledby="donation-detail-title">
-        <header className="edifica-modal-header">
-          <div><p className="edifica-kicker">DETALLE DE LA DONACIÓN</p><h2 id="donation-detail-title">{donation?.reference_code ?? 'Registro de Edifica'}</h2></div>
-          <button className="edifica-modal-close" type="button" onClick={onClose} aria-label="Cerrar detalle" title="Cerrar detalle">×</button>
-        </header>
-
+    <Modal titleId="donation-detail-title" kicker="DETALLE DE LA DONACIÓN" title={donation?.reference_code ?? 'Registro de Edifica'} onClose={onClose} closeLabel="Cerrar detalle">
         {loading ? <p className="edifica-modal-state">Cargando información…</p> : error ? <p className="edifica-modal-state error">{error}</p> : donation ? (
           <div className="edifica-modal-content">
             <section className="edifica-detail-section">
@@ -145,7 +139,6 @@ export default function DonationDetailModal({ donation, loading, error, onClose 
             {donation.notes && <section className="edifica-detail-section"><h3>Observaciones</h3><p className="edifica-detail-notes">{donation.notes}</p></section>}
           </div>
         ) : null}
-      </section>
-    </div>
+    </Modal>
   )
 }

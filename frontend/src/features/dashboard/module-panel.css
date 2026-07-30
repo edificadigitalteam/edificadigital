@@ -19,6 +19,11 @@
 .module-list-heading > button,
 .module-list-actions > button { min-height: 42px; padding: 0 16px; border: 0; border-radius: 9px; background: var(--ed-purple); color: #fff; font-weight: 800; cursor: pointer; white-space: nowrap; }
 
+/* Full-page create/edit screens show a "Módulo / Acción" breadcrumb above
+   the form, per docs/DESIGN.md's Create/Edit Record Mechanism Standard. */
+.module-form-breadcrumb { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; color: var(--ed-muted); font-size: .82rem; }
+.module-form-breadcrumb button { border: 0; padding: 0; background: transparent; color: var(--ed-purple); text-decoration: underline; cursor: pointer; }
+
 @media (max-width: 800px) {
   .module-search-bar { flex-direction: column; align-items: stretch; }
   .module-search-bar > button { align-self: flex-start; }

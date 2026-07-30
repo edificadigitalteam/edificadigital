@@ -261,6 +261,14 @@ not a substitute, for keeping the surrounding navigation reachable — losing
 the menu makes the screen feel disconnected from the rest of the app even
 with a way back.
 
+**Full-page requirement — a "Módulo / Acción" breadcrumb.** Every full-page
+create/edit screen shows a small breadcrumb above the form: the module name
+(a link back to its list) followed by "/" and the current action ("Crear" /
+"Editar"), e.g. "Proyectos / Crear". Shared styling lives in
+`frontend/src/features/dashboard/module-panel.css`'s `.module-form-
+breadcrumb` — reuse it, don't duplicate per module. `ProjectsPanel.jsx` is
+the reference implementation.
+
 **Reference classification** (module → mechanism, as of this standard's
 introduction):
 

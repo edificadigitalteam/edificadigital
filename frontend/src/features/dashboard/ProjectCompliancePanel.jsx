@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
+import Modal from './Modal.jsx'
 import ProjectBeneficiariesPanel from './ProjectBeneficiariesPanel.jsx'
 import { buildComplianceReportDocDefinition } from './complianceReportPdf.js'
 import {
@@ -94,7 +95,9 @@ export default function ProjectCompliancePanel({ access }) {
   const [evidenceFiles, setEvidenceFiles] = useState([])
   const [outputForm, setOutputForm] = useState(emptyOutput)
   const [expenseForm, setExpenseForm] = useState(createEmptyExpense)
-  const [activeForm, setActiveForm] = useState(querySection === 'beneficiary' ? 'beneficiary' : 'output')
+  const [beneficiaryOpen, setBeneficiaryOpen] = useState(querySection === 'beneficiary')
+  const [outputModalOpen, setOutputModalOpen] = useState(false)
+  const [expenseModalOpen, setExpenseModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [enablingBeneficiaries, setEnablingBeneficiaries] = useState(false)
@@ -221,11 +224,25 @@ export default function ProjectCompliancePanel({ access }) {
     setEvidenceFiles([])
     setError('')
     setMessage('')
-    setActiveForm('output')
+    setOutputModalOpen(false)
+    setExpenseModalOpen(false)
+  }
+
+  const startNewOutput = () => {
+    setOutputForm(emptyOutput)
+    setEvidenceFiles([])
+    setError('')
+    setOutputModalOpen(true)
+  }
+
+  const startNewExpense = () => {
+    setExpenseForm(createEmptyExpense())
+    setError('')
+    setExpenseModalOpen(true)
   }
 
   const editOutput = (output) => {
-    setActiveForm('output')
+    setOutputModalOpen(true)
     setOutputForm({
       id: output.id,
       name: output.name,
@@ -239,11 +256,10 @@ export default function ProjectCompliancePanel({ access }) {
       notes: output.notes ?? '',
     })
     setEvidenceFiles([])
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const editExpense = (expense) => {
-    setActiveForm('expense')
+    setExpenseModalOpen(true)
     setExpenseForm({
       id: expense.id,
       expense_date: expense.expense_date,
@@ -255,7 +271,6 @@ export default function ProjectCompliancePanel({ access }) {
       invoice_number: expense.invoice_number ?? '',
       status: expense.status,
     })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const chooseEvidence = (event) => {
@@ -345,6 +360,7 @@ export default function ProjectCompliancePanel({ access }) {
       setMessage(outputForm.id ? 'Avance actualizado.' : 'Avance registrado.')
       setOutputForm(emptyOutput)
       setEvidenceFiles([])
+      setOutputModalOpen(false)
       await loadExecution(selectedProject.id)
     } catch (requestError) {
       setError(requestError?.message ?? 'No fue posible guardar el avance y sus evidencias.')
@@ -379,6 +395,7 @@ export default function ProjectCompliancePanel({ access }) {
     else {
       setMessage(expenseForm.id ? 'Inversión actualizada.' : 'Inversión ejecutada registrada.')
       setExpenseForm(createEmptyExpense())
+      setExpenseModalOpen(false)
       await loadExecution(selectedProject.id)
     }
     setSaving(false)
@@ -396,7 +413,7 @@ export default function ProjectCompliancePanel({ access }) {
     else {
       setMessage('El registro individual de personas beneficiadas quedó activado para este proyecto.')
       await loadProjects()
-      setActiveForm('beneficiary')
+      setBeneficiaryOpen(true)
     }
     setEnablingBeneficiaries(false)
   }
@@ -490,17 +507,15 @@ export default function ProjectCompliancePanel({ access }) {
 
           <section className="beneficiary-access-card no-print">
             <div><p className="edifica-kicker">PERSONAS BENEFICIADAS</p><h2>{selectedProject.beneficiary_detail_enabled ? 'Registro individual disponible' : 'Registro individual opcional'}</h2><p>{selectedProject.beneficiary_detail_enabled ? 'Puedes cargar, consultar y editar a las personas vinculadas con este proyecto.' : 'Actívalo cuando el aliado o donante solicite información detallada por persona.'}</p></div>
-            {selectedProject.beneficiary_detail_enabled ? <button type="button" onClick={() => setActiveForm('beneficiary')} title="Abrir el registro de beneficiarios">Abrir registro</button> : canManageProject ? <button type="button" onClick={enableBeneficiaryRegistry} disabled={enablingBeneficiaries} title="Activar el registro individual de beneficiarios">{enablingBeneficiaries ? 'Activando…' : 'Activar registro individual'}</button> : <span>Requiere un administrador</span>}
+            {selectedProject.beneficiary_detail_enabled ? <button type="button" onClick={() => setBeneficiaryOpen(true)} title="Abrir el registro de beneficiarios">Abrir registro</button> : canManageProject ? <button type="button" onClick={enableBeneficiaryRegistry} disabled={enablingBeneficiaries} title="Activar el registro individual de beneficiarios">{enablingBeneficiaries ? 'Activando…' : 'Activar registro individual'}</button> : <span>Requiere un administrador</span>}
           </section>
 
-          <section className="operations-card compliance-entry-card no-print">
-            <div className="compliance-tabs">
-              <button className={activeForm === 'output' ? 'active' : ''} type="button" onClick={() => setActiveForm('output')} title="Ver avances y entregas del proyecto">Avances y entregas</button>
-              <button className={activeForm === 'expense' ? 'active' : ''} type="button" onClick={() => setActiveForm('expense')} title="Ver la inversión ejecutada del proyecto">Inversión ejecutada</button>
-              <button className={activeForm === 'beneficiary' ? 'active' : ''} type="button" onClick={() => setActiveForm('beneficiary')} title="Ver las personas beneficiadas del proyecto">Personas beneficiadas</button>
-            </div>
+          {beneficiaryOpen && (selectedProject.beneficiary_detail_enabled
+            ? <section className="operations-card compliance-entry-card no-print"><div className="operations-card-heading"><h2>Personas beneficiadas</h2><button type="button" onClick={() => setBeneficiaryOpen(false)} title="Cerrar el registro de beneficiarios">Cerrar</button></div><ProjectBeneficiariesPanel project={selectedProject} onChanged={() => loadExecution(selectedProject.id)} /></section>
+            : <section className="operations-card compliance-entry-card no-print"><div className="beneficiary-disabled-state"><strong>Registro individual desactivado</strong><p>El proyecto usa actualmente cifras agregadas. Un administrador puede activarlo desde esta pantalla o desde la edición del proyecto.</p>{canManageProject && <button type="button" onClick={enableBeneficiaryRegistry} disabled={enablingBeneficiaries} title="Activar el registro individual de beneficiarios">{enablingBeneficiaries ? 'Activando…' : 'Activar ahora'}</button>}</div></section>)}
 
-            {activeForm === 'output' && (
+          {outputModalOpen && (
+            <Modal titleId="output-modal-title" kicker={outputForm.id ? 'EDITAR AVANCE' : 'NUEVO AVANCE'} title={outputForm.id ? 'Actualizar avance' : 'Registrar avance'} onClose={() => setOutputModalOpen(false)}>
               <form className="operations-form" onSubmit={saveOutput} key={`output-${outputForm.id || 'new'}`}>
                 <label className="wide"><span>Actividad o producto</span><input value={outputForm.name} onChange={(event) => setOutputForm((current) => ({ ...current, name: event.target.value }))} placeholder="Ej.: Kits de alimentos" required /></label>
                 <label><span>Unidad de medida</span><select value={outputForm.unit_of_measure_id} onChange={(event) => setOutputForm((current) => ({ ...current, unit_of_measure_id: event.target.value }))} required><option value="">Seleccionar unidad</option>{units.map((unit) => <option key={unit.id} value={unit.id}>{unit.name_es} ({unit.abbreviation})</option>)}</select></label>
@@ -511,11 +526,14 @@ export default function ProjectCompliancePanel({ access }) {
                 {!selectedProject.beneficiary_detail_enabled && <label><span>Personas beneficiadas</span><input type="number" min="0" step="1" value={outputForm.beneficiary_count} onChange={(event) => setOutputForm((current) => ({ ...current, beneficiary_count: event.target.value }))} /></label>}
                 <label className="wide"><span>Observaciones y método de verificación</span><textarea value={outputForm.notes} onChange={(event) => setOutputForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Actas, listas, fotografías, centros atendidos..." /></label>
                 <div className="wide compliance-evidence-field"><div><strong>Evidencias multimedia</strong><span>Agrega fotografías, PDF o videos que sustenten esta ejecución.</span></div><input id={evidenceInputId} type="file" multiple accept=".jpg,.jpeg,.png,.webp,.pdf,.mp4,.mov,image/jpeg,image/png,image/webp,application/pdf,video/mp4,video/quicktime" onChange={chooseEvidence} /><label htmlFor={evidenceInputId}>Agregar evidencias</label><small>Imágenes y PDF: máximo 10 MB. Videos MP4 o MOV: máximo 50 MB.</small>{outputForm.id && (evidenceByOutput.get(outputForm.id) ?? []).length > 0 && <p>{(evidenceByOutput.get(outputForm.id) ?? []).length} evidencias guardadas para este avance.</p>}{evidenceFiles.length > 0 && <div className="pending-evidence-list">{evidenceFiles.map((file, index) => <div key={`${file.name}-${index}`}><span>{file.name}</span><small>{(file.size / 1024 / 1024).toFixed(2)} MB</small><button type="button" onClick={() => removePendingEvidence(index)} title={`Quitar el archivo ${file.name}`}>Eliminar</button></div>)}</div>}</div>
+                {error && <p className="operations-feedback error">{error}</p>}
                 <div className="compliance-form-actions"><button type="button" onClick={() => { setOutputForm(emptyOutput); setEvidenceFiles([]) }} title="Limpiar este formulario">Limpiar</button><button className="edifica-primary-button" type="submit" disabled={saving} title={outputForm.id ? 'Guardar los cambios de este avance' : 'Registrar este avance'}>{saving ? 'Guardando…' : outputForm.id ? 'Guardar cambios' : 'Registrar avance'}</button></div>
               </form>
-            )}
+            </Modal>
+          )}
 
-            {activeForm === 'expense' && (
+          {expenseModalOpen && (
+            <Modal titleId="expense-modal-title" kicker={expenseForm.id ? 'EDITAR INVERSIÓN' : 'NUEVA INVERSIÓN'} title={expenseForm.id ? 'Actualizar inversión' : 'Registrar inversión'} onClose={() => setExpenseModalOpen(false)}>
               <form className="operations-form" onSubmit={saveExpense} key={`expense-${expenseForm.id || 'new'}`}>
                 <label><span>Fecha de gasto</span><input type="date" value={expenseForm.expense_date} onChange={(event) => setExpenseForm((current) => ({ ...current, expense_date: event.target.value }))} required /></label>
                 <label><span>Estado</span><select value={expenseForm.status} onChange={(event) => setExpenseForm((current) => ({ ...current, status: event.target.value }))}>{Object.entries(expenseStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
@@ -525,14 +543,11 @@ export default function ProjectCompliancePanel({ access }) {
                 <label><span>Monto ({selectedProject.currency})</span><input type="number" min="0.01" step="0.01" value={expenseForm.amount} onChange={(event) => setExpenseForm((current) => ({ ...current, amount: event.target.value }))} required /></label>
                 <label><span>Número de factura</span><input value={expenseForm.invoice_number} onChange={(event) => setExpenseForm((current) => ({ ...current, invoice_number: event.target.value }))} /></label>
                 <label className="wide"><span>Referencia de pago</span><input value={expenseForm.payment_reference} onChange={(event) => setExpenseForm((current) => ({ ...current, payment_reference: event.target.value }))} /></label>
+                {error && <p className="operations-feedback error">{error}</p>}
                 <div className="compliance-form-actions"><button type="button" onClick={() => setExpenseForm(createEmptyExpense())} title="Limpiar este formulario">Limpiar</button><button className="edifica-primary-button" type="submit" disabled={saving} title={expenseForm.id ? 'Guardar los cambios de esta inversión' : 'Registrar esta inversión'}>{saving ? 'Guardando…' : expenseForm.id ? 'Guardar cambios' : 'Registrar inversión'}</button></div>
               </form>
-            )}
-
-            {activeForm === 'beneficiary' && (selectedProject.beneficiary_detail_enabled
-              ? <ProjectBeneficiariesPanel project={selectedProject} onChanged={() => loadExecution(selectedProject.id)} />
-              : <div className="beneficiary-disabled-state"><strong>Registro individual desactivado</strong><p>El proyecto usa actualmente cifras agregadas. Un administrador puede activarlo desde esta pantalla o desde la edición del proyecto.</p>{canManageProject && <button type="button" onClick={enableBeneficiaryRegistry} disabled={enablingBeneficiaries} title="Activar el registro individual de beneficiarios">{enablingBeneficiaries ? 'Activando…' : 'Activar ahora'}</button>}</div>)}
-          </section>
+            </Modal>
+          )}
 
           <section className="operations-card final-report-card">
             <div className="final-report-heading"><div><p className="edifica-kicker">INFORME DE CUMPLIMIENTO</p><h2>{selectedProject.name}</h2><span>{selectedProject.code} · {selectedProject.funding_partner}</span></div><div className="final-report-score"><strong>{averageCompliance}%</strong><span>cumplimiento físico</span></div></div>
@@ -552,9 +567,9 @@ export default function ProjectCompliancePanel({ access }) {
               )}
             </div>
 
-            <div className="final-report-section"><div className="edifica-section-heading"><div><p className="edifica-kicker">EJECUCIÓN FÍSICA</p><h2>Metas y avances</h2></div><span>{outputs.length} indicadores</span></div>{loading ? <p className="edifica-empty">Cargando ejecución…</p> : outputs.length === 0 ? <p className="edifica-empty">Todavía faltan avances y entregas por registrar.</p> : <div className="edifica-table-wrap"><table className="compliance-table"><thead><tr><th>Actividad / producto</th><th>Meta</th><th>Armado</th><th>Entregado</th><th>Cumplimiento</th><th>Beneficiarios</th><th>Evidencias</th><th className="no-print">Acción</th></tr></thead><tbody>{outputs.map((output) => { const progress = percentage(output.delivered_quantity, output.target_quantity); const outputEvidence = evidenceByOutput.get(output.id) ?? []; const unitLabel = output.unit?.abbreviation || output.unit_label; return <tr key={output.id}><td><strong>{output.name}</strong><span>{unitLabel} · {outputStatusLabels[output.status]}</span></td><td>{formatNumber(output.target_quantity)}</td><td>{formatNumber(output.produced_quantity)}</td><td>{formatNumber(output.delivered_quantity)}</td><td><div className="compliance-progress"><span style={{ width: `${Math.min(progress, 100)}%` }} /><b>{progress}%</b></div></td><td>{selectedProject.beneficiary_detail_enabled ? 'Ver registro' : formatNumber(output.beneficiary_count)}</td><td><strong>{outputEvidence.length}</strong></td><td className="no-print"><button type="button" onClick={() => editOutput(output)} title={`Editar ${output.name}`}>Editar</button></td></tr> })}</tbody></table></div>}</div>
+            <div className="final-report-section"><div className="edifica-section-heading"><div><p className="edifica-kicker">EJECUCIÓN FÍSICA</p><h2>Metas y avances</h2></div><div className="module-list-actions no-print"><span>{outputs.length} indicadores</span>{canManageProject && <button type="button" onClick={startNewOutput} title="Registrar un nuevo avance">＋ Nuevo avance</button>}</div></div>{loading ? <p className="edifica-empty">Cargando ejecución…</p> : outputs.length === 0 ? <p className="edifica-empty">Todavía faltan avances y entregas por registrar.</p> : <div className="edifica-table-wrap"><table className="compliance-table"><thead><tr><th>Actividad / producto</th><th>Meta</th><th>Armado</th><th>Entregado</th><th>Cumplimiento</th><th>Beneficiarios</th><th>Evidencias</th><th className="no-print">Acción</th></tr></thead><tbody>{outputs.map((output) => { const progress = percentage(output.delivered_quantity, output.target_quantity); const outputEvidence = evidenceByOutput.get(output.id) ?? []; const unitLabel = output.unit?.abbreviation || output.unit_label; return <tr key={output.id}><td><strong>{output.name}</strong><span>{unitLabel} · {outputStatusLabels[output.status]}</span></td><td>{formatNumber(output.target_quantity)}</td><td>{formatNumber(output.produced_quantity)}</td><td>{formatNumber(output.delivered_quantity)}</td><td><div className="compliance-progress"><span style={{ width: `${Math.min(progress, 100)}%` }} /><b>{progress}%</b></div></td><td>{selectedProject.beneficiary_detail_enabled ? 'Ver registro' : formatNumber(output.beneficiary_count)}</td><td><strong>{outputEvidence.length}</strong></td><td className="no-print"><button type="button" onClick={() => editOutput(output)} title={`Editar ${output.name}`}>Editar</button></td></tr> })}</tbody></table></div>}</div>
             {evidences.length > 0 && <div className="final-report-section evidence-report-section"><div className="edifica-section-heading"><div><p className="edifica-kicker">SOPORTES MULTIMEDIA</p><h2>Evidencias de ejecución</h2></div><span>{evidences.length} archivos</span></div><div className="evidence-report-grid">{outputs.map((output) => { const outputEvidence = evidenceByOutput.get(output.id) ?? []; if (!outputEvidence.length) return null; return <article key={output.id}><header><strong>{output.name}</strong><span>{outputEvidence.length} evidencias</span></header><div>{outputEvidence.map((evidence) => <figure key={evidence.id} className={`evidence-preview ${evidence.evidence_type}`}>{evidence.evidence_type === 'image' && evidence.signed_url ? <img src={evidence.signed_url} alt={evidence.caption || evidence.file_name} /> : null}{evidence.evidence_type === 'video' && evidence.signed_url ? <video controls preload="metadata" src={evidence.signed_url} /> : null}{evidence.evidence_type === 'document' ? <a href={evidence.signed_url} target="_blank" rel="noreferrer"><span>PDF</span></a> : null}<figcaption>{evidence.file_name}</figcaption></figure>)}</div></article> })}</div></div>}
-            <div className="final-report-section"><div className="edifica-section-heading"><div><p className="edifica-kicker">EJECUCIÓN FINANCIERA</p><h2>Inversión y comprobantes</h2></div><span>{formatMoney(investment, selectedProject.currency)}</span></div>{expenses.length === 0 ? <p className="edifica-empty">Todavía faltan inversiones o gastos por registrar.</p> : <div className="edifica-table-wrap"><table className="compliance-table"><thead><tr><th>Fecha</th><th>Proveedor / concepto</th><th>Factura</th><th>Estado</th><th>Monto</th><th className="no-print">Acción</th></tr></thead><tbody>{expenses.map((expense) => <tr key={expense.id}><td>{expense.expense_date}</td><td><strong>{expense.supplier_name}</strong><span>{expense.category} · {expense.description}</span></td><td>{expense.invoice_number || '—'}</td><td>{expenseStatusLabels[expense.status]}</td><td><strong>{formatMoney(expense.amount, expense.currency)}</strong></td><td className="no-print"><button type="button" onClick={() => editExpense(expense)} title={`Editar el gasto de ${expense.supplier_name}`}>Editar</button></td></tr>)}</tbody></table></div>}</div>
+            <div className="final-report-section"><div className="edifica-section-heading"><div><p className="edifica-kicker">EJECUCIÓN FINANCIERA</p><h2>Inversión y comprobantes</h2></div><div className="module-list-actions no-print"><span>{formatMoney(investment, selectedProject.currency)}</span>{canManageProject && <button type="button" onClick={startNewExpense} title="Registrar una nueva inversión">＋ Nueva inversión</button>}</div></div>{expenses.length === 0 ? <p className="edifica-empty">Todavía faltan inversiones o gastos por registrar.</p> : <div className="edifica-table-wrap"><table className="compliance-table"><thead><tr><th>Fecha</th><th>Proveedor / concepto</th><th>Factura</th><th>Estado</th><th>Monto</th><th className="no-print">Acción</th></tr></thead><tbody>{expenses.map((expense) => <tr key={expense.id}><td>{expense.expense_date}</td><td><strong>{expense.supplier_name}</strong><span>{expense.category} · {expense.description}</span></td><td>{expense.invoice_number || '—'}</td><td>{expenseStatusLabels[expense.status]}</td><td><strong>{formatMoney(expense.amount, expense.currency)}</strong></td><td className="no-print"><button type="button" onClick={() => editExpense(expense)} title={`Editar el gasto de ${expense.supplier_name}`}>Editar</button></td></tr>)}</tbody></table></div>}</div>
           </section>
         </>
       )}
