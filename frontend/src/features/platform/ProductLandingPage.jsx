@@ -221,6 +221,21 @@ export default function ProductLandingPage() {
     window.localStorage.setItem('edifica-language', language)
   }, [language, text])
 
+  useEffect(() => {
+    if (!menuOpen) return undefined
+    const previousBodyOverflow = document.body.style.overflow
+    const previousHtmlOverflow = document.documentElement.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+    const onKeyDown = (event) => { if (event.key === 'Escape') setMenuOpen(false) }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = previousBodyOverflow
+      document.documentElement.style.overflow = previousHtmlOverflow
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [menuOpen])
+
   const close = () => setMenuOpen(false)
   const trackCta = (name, props) => track(name, { language, ...props })
 
@@ -241,6 +256,7 @@ export default function ProductLandingPage() {
           <a className="product-login" href="/app">{text.nav.login} <Arrow /></a>
         </nav>
       </header>
+      {menuOpen ? <button type="button" className="product-menu-backdrop" aria-label={text.nav.closeMenu} onClick={close} /> : null}
 
       <main id="main-content" tabIndex={-1}>
         <section className="product-hero" id="inicio">

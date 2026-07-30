@@ -178,9 +178,14 @@ a.product-login:hover { background: var(--product-purple-dark); }
   .resource-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
+@keyframes product-menu-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.product-menu-backdrop { display: none; }
+
 @media (max-width: 850px) {
   .product-menu-button { display: block; }
-  .product-header nav { position: absolute; top: 74px; left: 18px; right: 18px; display: none; align-items: stretch; flex-direction: column; gap: 4px; padding: 18px; border: 1px solid var(--product-line); border-radius: 15px; background: #fff; box-shadow: 0 20px 45px rgba(49,19,77,.14); }
+  .product-menu-backdrop { display: block; position: fixed; inset: 0; z-index: 15; border: 0; padding: 0; background: rgba(23,15,31,.45); animation: product-menu-fade .18s ease; }
+  .product-header nav { position: fixed; top: 74px; left: 18px; right: 18px; z-index: 20; display: none; align-items: stretch; flex-direction: column; gap: 4px; max-height: calc(100vh - 94px); overflow-y: auto; padding: 18px; border: 1px solid var(--product-line); border-radius: 15px; background: #fff; box-shadow: 0 20px 45px rgba(49,19,77,.14); }
   .product-header nav.open { display: flex; }
   .product-header nav a, .product-header nav button { padding: 11px; }
   .product-login { justify-content: center; }
@@ -192,6 +197,7 @@ a.product-login:hover { background: var(--product-purple-dark); }
 
 @media (max-width: 620px) {
   .product-header { min-height: 72px; }
+  .product-header nav { top: 62px; max-height: calc(100vh - 82px); }
   .product-hero { min-height: 0; padding-top: 62px; }
   .product-hero h1 { font-size: 3.3rem; }
   .product-hero-actions { align-items: flex-start; flex-direction: column; }

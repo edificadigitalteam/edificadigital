@@ -209,6 +209,7 @@ function DashboardHome({ access }) {
 
 export default function DashboardApp() {
   const access = useOperatorAccess()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const path = window.location.pathname.replace(/\/$/, '') || '/'
   const platformHome = path === '/app'
   const churchPage = path.startsWith('/app/church')
@@ -222,6 +223,21 @@ export default function DashboardApp() {
   const donorsPage = path.startsWith('/app/donations/donors') || path.startsWith('/app/donors')
   const donationsHome = path === '/app/donations'
   const canAdmin = access.role === 'admin' || access.role === 'super_admin'
+
+  useEffect(() => {
+    if (!sidebarOpen) return undefined
+    const previousBodyOverflow = document.body.style.overflow
+    const previousHtmlOverflow = document.documentElement.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+    const onKeyDown = (event) => { if (event.key === 'Escape') setSidebarOpen(false) }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = previousBodyOverflow
+      document.documentElement.style.overflow = previousHtmlOverflow
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [sidebarOpen])
 
   if (access.status !== 'authorized') return <LoginCard access={access} />
   if (platformHome) return <PlatformHome access={access} />
@@ -239,7 +255,12 @@ export default function DashboardApp() {
 
   return (
     <div className="edifica-dashboard-shell portal-dashboard-shell">
-      <aside className="edifica-sidebar portal-sidebar">
+      <div className="portal-mobile-topbar">
+        <a className="edifica-wordmark" href="/app">edifica<span>digital</span></a>
+        <button type="button" className="portal-menu-button" aria-expanded={sidebarOpen} aria-label={sidebarOpen ? 'Cerrar menú' : 'Abrir menú'} title={sidebarOpen ? 'Cerrar menú' : 'Abrir menú'} onClick={() => setSidebarOpen((current) => !current)}><span /><span /></button>
+      </div>
+      {sidebarOpen ? <button type="button" className="portal-sidebar-backdrop" aria-label="Cerrar menú" title="Cerrar menú" onClick={() => setSidebarOpen(false)} /> : null}
+      <aside className={`edifica-sidebar portal-sidebar${sidebarOpen ? ' open' : ''}`}>
         <div className="portal-brand-block"><a className="edifica-wordmark" href="/app">edifica<span>digital</span></a><small>MÓDULO DONACIONES</small></div>
         <div className="portal-tenant-card"><span>ORGANIZACIÓN ACTIVA</span><strong>{access.organizationName || 'Administración general'}</strong><small>{roleLabels[access.role] ?? access.role}</small></div>
         <nav className="edifica-primary-nav portal-primary-nav">
