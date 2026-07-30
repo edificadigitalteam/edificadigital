@@ -256,8 +256,8 @@ export default function DashboardApp() {
   return (
     <div className="edifica-dashboard-shell portal-dashboard-shell">
       <div className="portal-mobile-topbar">
-        <a className="edifica-wordmark" href="/app">edifica<span>digital</span></a>
         <button type="button" className="portal-menu-button" aria-expanded={sidebarOpen} aria-label={sidebarOpen ? 'Cerrar menú' : 'Abrir menú'} title={sidebarOpen ? 'Cerrar menú' : 'Abrir menú'} onClick={() => setSidebarOpen((current) => !current)}><span /><span /></button>
+        <a className="edifica-wordmark" href="/app">edifica<span>digital</span></a>
       </div>
       {sidebarOpen ? <button type="button" className="portal-sidebar-backdrop" aria-label="Cerrar menú" title="Cerrar menú" onClick={() => setSidebarOpen(false)} /> : null}
       <aside className={`edifica-sidebar portal-sidebar${sidebarOpen ? ' open' : ''}`}>

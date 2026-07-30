@@ -130,9 +130,10 @@
     z-index: 25;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 14px;
     min-height: 60px;
-    padding: 0 18px;
+    padding: 0 100px 0 18px;
     background: linear-gradient(180deg, #2f173f 0%, #3a1c51 100%);
     box-shadow: 0 8px 20px rgba(35, 15, 48, .12);
   }
