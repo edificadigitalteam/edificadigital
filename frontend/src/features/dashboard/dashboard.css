@@ -235,7 +235,6 @@
 .edifica-actions span { opacity: .76; font-size: .9rem; line-height: 1.45; }
 
 .edifica-records {
-  overflow: hidden;
   border: 1px solid var(--ed-line);
   border-radius: 18px;
   background: var(--ed-white);
