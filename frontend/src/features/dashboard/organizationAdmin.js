@@ -6,10 +6,10 @@ const nullable = (value) => {
 // contact_email is the auto-provisioned tenant admin's login identity: NOT NULL + unique
 // on public.organization (see 20260727010000_organization_admin_provisioning.sql), so unlike
 // the other optional fields below it must never be nulled out here.
-export function buildOrganizationPayload(form) {
+export function buildOrganizationPayload(form, { code } = {}) {
   return {
     id: form.id || null,
-    code: form.code.trim().toLowerCase(),
+    code: (code ?? form.code).trim().toLowerCase(),
     name: form.name.trim(),
     legal_name: nullable(form.legal_name),
     tax_id: nullable(form.tax_id),

@@ -48,6 +48,12 @@ test('preserves an existing id for edit', () => {
   assert.equal(payload.id, 'org-1')
 })
 
+test('overrides the code with an auto-generated candidate when provided', () => {
+  const payload = buildOrganizationPayload(completeForm(), { code: 'Casa-Nueva-4821' })
+
+  assert.equal(payload.code, 'casa-nueva-4821')
+})
+
 test('preserves subscription status, language and active flag', () => {
   const payload = buildOrganizationPayload({
     ...completeForm(),
