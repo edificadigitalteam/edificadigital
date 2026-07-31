@@ -98,6 +98,25 @@ Use application-facing publishable credentials only in the client. Service-role 
 
 ## Current domain rules
 
+### Access roles: host vs. tenant
+
+- `private.operator_access.role` is `operator`, `admin`, or `super_admin`.
+- `super_admin` is the **host** plane: administers organizations/tenants,
+  cross-tenant user provisioning, and plans. Host accounts have
+  `organization_id = null` and have no reason to access any single
+  tenant's operational content.
+- `admin` and `operator` are the **tenant** plane, scoped to one
+  organization: donations, volunteers, projects, and aliados/donantes.
+  There is currently no access differentiation between `admin` and
+  `operator` on tenant content — both see and manage the same things.
+  `admin` additionally manages its own organization's users and views its
+  own plan/billing (both already RLS/RPC-scoped to that organization).
+- See `docs/plans/SPRINT-S4-v1_host-vs-tenant-role-scoped-navigation.md`
+  for the navigation/routing decision built on this model, and the "New
+  module scope questions" section in `AGENTS.md` for the three questions
+  every new module must answer against this host/tenant split before
+  implementation starts.
+
 ### Donation intake
 
 - Actor name is required. Email, phone, and country are optional.

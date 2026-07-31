@@ -33,6 +33,35 @@ For urgent work, compress feedback loops while preserving the order above.
 
 The `playwright-cli` skill is installed globally (`~/.claude/skills/playwright-cli`, not duplicated in this repo's `.claude/skills`) and available in every project. Use it for browser-driven verification steps in the workflow above — navigating the app, exercising a UI change, and confirming rendered output — whenever that kind of check is needed.
 
+### New module scope questions (required before starting a new module)
+
+The app separates a **host** plane (super_admin — administers tenants,
+organizations, and plans) from a **tenant** plane (admin/operator —
+donations, volunteers, projects, aliados/donantes, and other operational
+content for one organization). See
+`docs/plans/SPRINT-S4-v1_host-vs-tenant-role-scoped-navigation.md` for
+the decision record.
+
+Before starting any new module (new nav entry, new panel, new top-level
+feature area), answer these as part of the Plan step and get product
+owner confirmation before implementing:
+
+1. **Is this module tenant-scoped, host-scoped, or both?** A module
+   serving both needs an explicit design for how it behaves differently
+   per plane (e.g. host manages the registry, tenant manages its own
+   instance) — it is never "the same screen, just with more rows" across
+   both planes.
+2. **If tenant-scoped, does it need role differentiation** between org
+   admin and operator, or do both get the same access (today's default
+   for existing tenant modules)?
+3. **Which nav section does it belong to** — "Plataforma" (host-only),
+   "Mi organización" (tenant admin-only), or the shared tenant-content
+   section (admin + operator)?
+
+Do not add a nav entry or route without these questions answered —
+retrofitting the scope after the fact is exactly the gap this section
+exists to prevent (see the TODO item this plan resolved).
+
 ## Current product decisions
 
 ### Identity and language
