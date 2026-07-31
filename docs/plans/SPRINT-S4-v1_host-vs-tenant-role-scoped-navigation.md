@@ -2,7 +2,15 @@
 
 **Branch:** `feat/host-tenant-role-navigation`
 
-**Status:** Planned.
+**Status:** Done. Implemented in `frontend/src/features/dashboard/DashboardApp.jsx`
+(role gating on the page-selection chain and the sidebar markup) plus new
+`portalTranslations.js` entries for the new/renamed labels. One deviation
+from the original outline, discovered during implementation: bare `/app`
+did not render `DashboardHome` as the outline assumed — it rendered
+`PlatformHome` (a separate module-picker screen). The host now skips
+`PlatformHome` entirely (`platformHome = path === '/app' && !isSuperAdmin`)
+and lands directly on `OrganizationAdminPanel`, which achieves the same
+outcome the outline intended.
 
 ## Context
 

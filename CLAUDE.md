@@ -103,19 +103,29 @@ Use application-facing publishable credentials only in the client. Service-role 
 - `private.operator_access.role` is `operator`, `admin`, or `super_admin`.
 - `super_admin` is the **host** plane: administers organizations/tenants,
   cross-tenant user provisioning, and plans. Host accounts have
-  `organization_id = null` and have no reason to access any single
-  tenant's operational content.
+  `organization_id = null` and have no access to any single tenant's
+  operational content — this is enforced in the dashboard nav/routing
+  (`DashboardApp.jsx`), not just a convention: the sidebar shows only
+  "Plataforma" (Organizaciones y hosts, Personas habilitadas, Planes y
+  facturación) for `super_admin`, and hitting a tenant-content URL
+  directly (Donaciones, Voluntariado, Proyectos, Aliados y donantes)
+  falls back to Organizaciones y hosts instead of rendering it. A host
+  lands on Organizaciones y hosts at bare `/app` — it never sees the
+  `PlatformHome` module picker (Donaciones/Iglesia/Productos digitales)
+  that `admin`/`operator` land on.
 - `admin` and `operator` are the **tenant** plane, scoped to one
   organization: donations, volunteers, projects, and aliados/donantes.
   There is currently no access differentiation between `admin` and
   `operator` on tenant content — both see and manage the same things.
   `admin` additionally manages its own organization's users and views its
-  own plan/billing (both already RLS/RPC-scoped to that organization).
+  own plan/billing (both already RLS/RPC-scoped to that organization) via
+  a "Mi organización" sidebar section — `admin` does not see
+  "Organizaciones y hosts" (host-only).
 - See `docs/plans/SPRINT-S4-v1_host-vs-tenant-role-scoped-navigation.md`
-  for the navigation/routing decision built on this model, and the "New
-  module scope questions" section in `AGENTS.md` for the three questions
-  every new module must answer against this host/tenant split before
-  implementation starts.
+  for the navigation/routing decision and implementation (#64), and the
+  "New module scope questions" section in `AGENTS.md` for the three
+  questions every new module must answer against this host/tenant split
+  before implementation starts.
 
 ### Donation intake
 

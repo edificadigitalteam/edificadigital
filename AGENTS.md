@@ -38,9 +38,12 @@ The `playwright-cli` skill is installed globally (`~/.claude/skills/playwright-c
 The app separates a **host** plane (super_admin — administers tenants,
 organizations, and plans) from a **tenant** plane (admin/operator —
 donations, volunteers, projects, aliados/donantes, and other operational
-content for one organization). See
-`docs/plans/SPRINT-S4-v1_host-vs-tenant-role-scoped-navigation.md` for
-the decision record.
+content for one organization). This is implemented, not just a
+convention: `DashboardApp.jsx` gates both the sidebar nav and the
+direct-URL routing per plane, so a host cannot land on tenant content
+(or vice versa) even by typing the URL. See
+`docs/plans/SPRINT-S4-v1_host-vs-tenant-role-scoped-navigation.md` (#64)
+for the decision record and implementation.
 
 Before starting any new module (new nav entry, new panel, new top-level
 feature area), answer these as part of the Plan step and get product
