@@ -251,20 +251,25 @@ export default function DashboardApp() {
   const access = useOperatorAccess()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const path = window.location.pathname.replace(/\/$/, '') || '/'
-  const platformHome = path === '/app'
+  const isSuperAdmin = access.role === 'super_admin'
+  const canAdmin = access.role === 'admin' || access.role === 'super_admin'
+  // Host (super_admin) has no tenant/module picker — it lands straight in the
+  // Plataforma section. See docs/plans/SPRINT-S4-v1_host-vs-tenant-role-scoped-navigation.md.
+  const platformHome = path === '/app' && !isSuperAdmin
   const churchPage = path.startsWith('/app/church')
   const academyPage = path.startsWith('/app/academy')
   const operatorsPage = path.startsWith('/app/admin/operators')
   const organizationsPage = path.startsWith('/app/admin/organizations')
   const billingPage = path.startsWith('/app/admin/billing')
-  const compliancePage = path.startsWith('/app/donations/execution') || path.startsWith('/app/compliance')
-  const projectsPage = path.startsWith('/app/donations/projects') || path.startsWith('/app/projects')
-  const volunteersPage = path.startsWith('/app/donations/volunteers') || path.startsWith('/app/volunteers')
-  const donorsPage = path.startsWith('/app/donations/donors') || path.startsWith('/app/donors')
-  const donationsHome = path === '/app/donations'
-  const monetaryNewPage = path.startsWith('/donations/monetary')
-  const inKindNewPage = path.startsWith('/donations/in-kind')
-  const canAdmin = access.role === 'admin' || access.role === 'super_admin'
+  // Tenant-only pages: a host visiting any of these falls back to its own
+  // Plataforma home instead of rendering tenant content.
+  const compliancePage = !isSuperAdmin && (path.startsWith('/app/donations/execution') || path.startsWith('/app/compliance'))
+  const projectsPage = !isSuperAdmin && (path.startsWith('/app/donations/projects') || path.startsWith('/app/projects'))
+  const volunteersPage = !isSuperAdmin && (path.startsWith('/app/donations/volunteers') || path.startsWith('/app/volunteers'))
+  const donorsPage = !isSuperAdmin && (path.startsWith('/app/donations/donors') || path.startsWith('/app/donors'))
+  const donationsHome = !isSuperAdmin && path === '/app/donations'
+  const monetaryNewPage = !isSuperAdmin && path.startsWith('/donations/monetary')
+  const inKindNewPage = !isSuperAdmin && path.startsWith('/donations/in-kind')
 
   useEffect(() => {
     if (!sidebarOpen) return undefined
@@ -286,13 +291,13 @@ export default function DashboardApp() {
   if (churchPage) return <ChurchModulePreview access={access} />
   if (academyPage) return <DigitalProductsPreview access={access} />
 
-  let page = <DashboardHome access={access} />
+  let page = isSuperAdmin ? <OrganizationAdminPanel access={access} /> : <DashboardHome access={access} />
   if (projectsPage) page = <ProjectsPanel access={access} />
   if (compliancePage) page = <ProjectCompliancePanel access={access} />
   if (volunteersPage) page = <VolunteerPanel access={access} />
   if (donorsPage) page = <DonorDirectoryPanel access={access} />
   if (operatorsPage && canAdmin) page = <OperatorAdminPanel access={access} />
-  if (organizationsPage && canAdmin) page = <OrganizationAdminPanel access={access} />
+  if (organizationsPage && isSuperAdmin) page = <OrganizationAdminPanel access={access} />
   if (monetaryNewPage) page = <UnifiedMonetaryDonationFlow />
   if (inKindNewPage) page = <SimplifiedInKindDonationFlow />
   if (billingPage && canAdmin) page = <BillingPanel access={access} />
@@ -305,20 +310,31 @@ export default function DashboardApp() {
       </div>
       {sidebarOpen ? <button type="button" className="portal-sidebar-backdrop" aria-label="Cerrar menú" title="Cerrar menú" onClick={() => setSidebarOpen(false)} /> : null}
       <aside className={`edifica-sidebar portal-sidebar${sidebarOpen ? ' open' : ''}`}>
-        <div className="portal-brand-block"><a className="edifica-wordmark" href="/app">edifica<span>digital</span></a><small>MÓDULO DONACIONES</small></div>
+        <div className="portal-brand-block"><a className="edifica-wordmark" href="/app">edifica<span>digital</span></a><small>{isSuperAdmin ? 'PLATAFORMA' : 'MÓDULO DONACIONES'}</small></div>
         <div className="portal-tenant-card"><span>ORGANIZACIÓN ACTIVA</span><strong>{access.organizationName || 'Administración general'}</strong><small>{roleLabels[access.role] ?? access.role}</small></div>
         <nav className="edifica-primary-nav portal-primary-nav">
           <span className="portal-nav-section">EDIFICA</span>
-          <NavLink href="/app" icon="home">Todos los módulos</NavLink>
-          <span className="portal-nav-section portal-management-section">DONACIONES</span>
-          <NavLink active={donationsHome || monetaryNewPage || inKindNewPage} href="/app/donations" icon="home">Donaciones</NavLink>
-          <NavLink active={volunteersPage} href="/app/donations/volunteers" icon="people">Voluntariado</NavLink>
-          <span className="portal-nav-section portal-management-section">GESTIÓN</span>
-          <NavLink active={projectsPage || compliancePage} href="/app/donations/projects" icon="project">Proyectos</NavLink>
-          <NavLink active={donorsPage} href="/app/donations/donors" icon="donor">Aliados y donantes</NavLink>
+          <NavLink href="/app" icon="home">{isSuperAdmin ? 'Inicio' : 'Todos los módulos'}</NavLink>
+          {isSuperAdmin ? (
+            <>
+              <span className="portal-nav-section portal-management-section">PLATAFORMA</span>
+              <NavLink active={organizationsPage || (!operatorsPage && !billingPage)} href="/app/admin/organizations" icon="organization">Organizaciones y hosts</NavLink>
+              <NavLink active={operatorsPage} href="/app/admin/operators" icon="users">Personas habilitadas</NavLink>
+              <NavLink active={billingPage} href="/app/admin/billing" icon="billing">Planes y facturación</NavLink>
+            </>
+          ) : (
+            <>
+              <span className="portal-nav-section portal-management-section">DONACIONES</span>
+              <NavLink active={donationsHome || monetaryNewPage || inKindNewPage} href="/app/donations" icon="home">Donaciones</NavLink>
+              <NavLink active={volunteersPage} href="/app/donations/volunteers" icon="people">Voluntariado</NavLink>
+              <span className="portal-nav-section portal-management-section">GESTIÓN</span>
+              <NavLink active={projectsPage || compliancePage} href="/app/donations/projects" icon="project">Proyectos</NavLink>
+              <NavLink active={donorsPage} href="/app/donations/donors" icon="donor">Aliados y donantes</NavLink>
+            </>
+          )}
         </nav>
         <div className="edifica-sidebar-footer portal-sidebar-footer">
-          {canAdmin && <nav className="edifica-admin-nav portal-admin-nav" aria-label="Administración"><span className="portal-nav-section">ADMINISTRACIÓN</span><NavLink active={operatorsPage} href="/app/admin/operators" icon="users">Personas habilitadas</NavLink><NavLink active={organizationsPage} href="/app/admin/organizations" icon="organization">Organizaciones y hosts</NavLink><NavLink active={billingPage} href="/app/admin/billing" icon="billing">Planes y facturación</NavLink></nav>}
+          {!isSuperAdmin && canAdmin && <nav className="edifica-admin-nav portal-admin-nav" aria-label="Mi organización"><span className="portal-nav-section">MI ORGANIZACIÓN</span><NavLink active={operatorsPage} href="/app/admin/operators" icon="users">Personas habilitadas</NavLink><NavLink active={billingPage} href="/app/admin/billing" icon="billing">Planes y facturación</NavLink></nav>}
           <div className="portal-user-footer"><div><strong>{access.displayName || access.email}</strong><span>{access.email}</span></div><button className="edifica-signout" type="button" onClick={access.signOut} title="Cerrar la sesión actual">Cerrar sesión</button></div>
         </div>
       </aside>
