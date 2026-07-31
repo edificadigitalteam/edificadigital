@@ -164,6 +164,7 @@ export default function OrganizationAdminPanel({ access }) {
         id: form.id || null,
         code: form.code.trim().toLowerCase(),
         name: form.name.trim(),
+        contact_email: form.contact_email.trim().toLowerCase(),
       },
     })
 
@@ -231,7 +232,7 @@ export default function OrganizationAdminPanel({ access }) {
             <label><span>RIF / identificación fiscal</span><input value={form.tax_id} onChange={(event) => setForm((current) => ({ ...current, tax_id: event.target.value }))} /></label>
             <label><span>País</span><input value={form.country} onChange={(event) => setForm((current) => ({ ...current, country: event.target.value }))} /></label>
             <label><span>Ciudad</span><input value={form.city} onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))} /></label>
-            <label><span>Correo de contacto</span><input type="email" value={form.contact_email} onChange={(event) => setForm((current) => ({ ...current, contact_email: event.target.value }))} /></label>
+            <label><span>Correo de contacto (acceso del administrador)</span><input type="email" value={form.contact_email} onChange={(event) => setForm((current) => ({ ...current, contact_email: event.target.value }))} required /></label>
             <label><span>Teléfono</span><input value={form.contact_phone} onChange={(event) => setForm((current) => ({ ...current, contact_phone: event.target.value }))} /></label>
             <label><span>Suscripción</span><select value={form.subscription_status} onChange={(event) => setForm((current) => ({ ...current, subscription_status: event.target.value }))}>{Object.entries(subscriptionLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             <label><span>Idioma predeterminado</span><select value={form.language} onChange={(event) => setForm((current) => ({ ...current, language: event.target.value }))}>{Object.entries(languageLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
