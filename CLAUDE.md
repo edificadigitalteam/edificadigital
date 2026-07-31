@@ -64,6 +64,8 @@ Also verify responsive layouts, keyboard flow, focus states, language switching,
 
 For database work, verify the live schema only after confirming the exact Supabase project. Use rollback-safe transactions for functional scenarios and run Supabase security and performance advisors after migrations.
 
+When a change needs a real round trip against the database (a new migration, an RPC behavior change, an end-to-end UI flow that writes data), prioritize running it locally with Docker (`supabase start`, which applies the repo's migrations to a local Postgres instance) over exercising the live `edifydb` project. Point the frontend at the local stack (`VITE_SUPABASE_URL=http://127.0.0.1:54321` and the local publishable key printed by `supabase start`, in a gitignored `.env.local`), use an existing local seed operator or create a throwaway one, and clean up any test data and stop the stack (`supabase stop`) afterward. Only fall back to the live project when the local stack cannot reproduce what's being verified (e.g. a Studio/dashboard-only check), and say so explicitly.
+
 ## Current Supabase baseline
 
 The Edifica Digital database is `edifydb`, project reference `rrqyihsjftlloizsccvi`.
