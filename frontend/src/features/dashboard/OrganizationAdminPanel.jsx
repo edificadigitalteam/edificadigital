@@ -2,6 +2,31 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
 import './operations.css'
 
+const CODE_GENERATION_ATTEMPTS = 5
+
+function slugify(value) {
+  return value
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+// Human-readable, DB-friendly tenant code: a slug of the org name plus a
+// random 4-digit suffix for uniqueness, matching organization_code_check
+// (^[a-z][a-z0-9_-]{1,39}$) and organization_code_key (unique).
+function generateOrganizationCode(name) {
+  const base = slugify(name).slice(0, 30) || 'org'
+  const safeBase = /^[a-z]/.test(base) ? base : `org-${base}`
+  const suffix = Math.floor(1000 + Math.random() * 9000)
+  return `${safeBase}-${suffix}`
+}
+
+function isDuplicateCodeError(requestError) {
+  return requestError?.code === '23505' || /organization_code_key/i.test(requestError?.message ?? '')
+}
+
 const emptyForm = {
   id: '',
   code: '',
@@ -158,14 +183,21 @@ export default function OrganizationAdminPanel({ access }) {
     setError('')
     setMessage('')
 
-    const { error: requestError } = await supabase.rpc('admin_save_organization', {
-      payload: {
-        ...form,
-        id: form.id || null,
-        code: form.code.trim().toLowerCase(),
-        name: form.name.trim(),
-      },
-    })
+    const trimmedName = form.name.trim()
+    let requestError = null
+    if (form.id) {
+      ({ error: requestError } = await supabase.rpc('admin_save_organization', {
+        payload: { ...form, id: form.id, code: form.code, name: trimmedName },
+      }))
+    } else {
+      for (let attempt = 0; attempt < CODE_GENERATION_ATTEMPTS; attempt += 1) {
+        const candidateCode = generateOrganizationCode(trimmedName);
+        ({ error: requestError } = await supabase.rpc('admin_save_organization', {
+          payload: { ...form, id: null, code: candidateCode, name: trimmedName },
+        }))
+        if (!requestError || !isDuplicateCodeError(requestError)) break
+      }
+    }
 
     if (requestError) {
       setError(requestError.message)
@@ -218,15 +250,15 @@ export default function OrganizationAdminPanel({ access }) {
       {!formOpen && !hostFormOpen && error && <p className="operations-feedback error">{error}</p>}
 
       {canEdit && formOpen && (
+        <div className="module-form-portal">
+        <div className="module-form-breadcrumb"><button type="button" onClick={reset} title="Volver al listado de organizaciones">Organizaciones</button><span>/</span><strong>{form.id ? 'Editar' : 'Crear'}</strong></div>
         <section className="operations-card">
-          <div className="module-form-breadcrumb"><button type="button" onClick={reset} title="Volver al listado de organizaciones">Organizaciones</button><span>/</span><strong>{form.id ? 'Editar' : 'Crear'}</strong></div>
           <div className="operations-card-heading">
             <div><p className="edifica-kicker">{form.id ? 'EDITAR ORGANIZACIÓN' : 'NUEVA ORGANIZACIÓN'}</p><h2>{form.id ? 'Actualizar tenant' : 'Crear tenant'}</h2></div>
             <button type="button" onClick={reset} title="Cerrar este formulario sin guardar">Cancelar</button>
           </div>
           <form className="operations-form" onSubmit={save}>
             <label><span>Nombre visible</span><input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} required /></label>
-            <label><span>Código del tenant</span><input value={form.code} onChange={(event) => setForm((current) => ({ ...current, code: event.target.value }))} placeholder="cnbv" required /></label>
             <label className="wide"><span>Razón social</span><input value={form.legal_name} onChange={(event) => setForm((current) => ({ ...current, legal_name: event.target.value }))} /></label>
             <label><span>RIF / identificación fiscal</span><input value={form.tax_id} onChange={(event) => setForm((current) => ({ ...current, tax_id: event.target.value }))} /></label>
             <label><span>País</span><input value={form.country} onChange={(event) => setForm((current) => ({ ...current, country: event.target.value }))} /></label>
@@ -235,11 +267,11 @@ export default function OrganizationAdminPanel({ access }) {
             <label><span>Teléfono</span><input value={form.contact_phone} onChange={(event) => setForm((current) => ({ ...current, contact_phone: event.target.value }))} /></label>
             <label><span>Suscripción</span><select value={form.subscription_status} onChange={(event) => setForm((current) => ({ ...current, subscription_status: event.target.value }))}>{Object.entries(subscriptionLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             <label><span>Idioma predeterminado</span><select value={form.language} onChange={(event) => setForm((current) => ({ ...current, language: event.target.value }))}>{Object.entries(languageLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-            <label className="operations-checkbox"><input type="checkbox" checked={form.active} onChange={(event) => setForm((current) => ({ ...current, active: event.target.checked }))} /><span>Organización activa</span></label>
             <button className="edifica-primary-button" type="submit" disabled={saving} title={form.id ? 'Guardar los cambios de esta organización' : 'Crear esta organización'}>{saving ? 'Guardando…' : form.id ? 'Guardar cambios' : 'Crear organización'}</button>
           </form>
           {error && <p className="operations-feedback error">{error}</p>}
         </section>
+        </div>
       )}
 
       {canEdit && hostFormOpen && (
