@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
+import { buildOrganizationPayload } from './organizationAdmin.js'
 import './operations.css'
 
 const CODE_GENERATION_ATTEMPTS = 5
@@ -187,13 +188,13 @@ export default function OrganizationAdminPanel({ access }) {
     let requestError = null
     if (form.id) {
       ({ error: requestError } = await supabase.rpc('admin_save_organization', {
-        payload: { ...form, id: form.id, code: form.code, name: trimmedName },
+        payload: buildOrganizationPayload({ ...form, name: trimmedName }),
       }))
     } else {
       for (let attempt = 0; attempt < CODE_GENERATION_ATTEMPTS; attempt += 1) {
         const candidateCode = generateOrganizationCode(trimmedName);
         ({ error: requestError } = await supabase.rpc('admin_save_organization', {
-          payload: { ...form, id: null, code: candidateCode, name: trimmedName },
+          payload: buildOrganizationPayload({ ...form, id: '', name: trimmedName }, { code: candidateCode }),
         }))
         if (!requestError || !isDuplicateCodeError(requestError)) break
       }
@@ -263,7 +264,7 @@ export default function OrganizationAdminPanel({ access }) {
             <label><span>RIF / identificación fiscal</span><input value={form.tax_id} onChange={(event) => setForm((current) => ({ ...current, tax_id: event.target.value }))} /></label>
             <label><span>País</span><input value={form.country} onChange={(event) => setForm((current) => ({ ...current, country: event.target.value }))} /></label>
             <label><span>Ciudad</span><input value={form.city} onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))} /></label>
-            <label><span>Correo de contacto</span><input type="email" value={form.contact_email} onChange={(event) => setForm((current) => ({ ...current, contact_email: event.target.value }))} /></label>
+            <label><span>Correo de contacto (acceso del administrador)</span><input type="email" value={form.contact_email} onChange={(event) => setForm((current) => ({ ...current, contact_email: event.target.value }))} required /></label>
             <label><span>Teléfono</span><input value={form.contact_phone} onChange={(event) => setForm((current) => ({ ...current, contact_phone: event.target.value }))} /></label>
             <label><span>Suscripción</span><select value={form.subscription_status} onChange={(event) => setForm((current) => ({ ...current, subscription_status: event.target.value }))}>{Object.entries(subscriptionLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             <label><span>Idioma predeterminado</span><select value={form.language} onChange={(event) => setForm((current) => ({ ...current, language: event.target.value }))}>{Object.entries(languageLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
