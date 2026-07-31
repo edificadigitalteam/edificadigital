@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
+import { buildOrganizationPayload } from './organizationAdmin.js'
 import './operations.css'
 
 const emptyForm = {
@@ -159,13 +160,7 @@ export default function OrganizationAdminPanel({ access }) {
     setMessage('')
 
     const { error: requestError } = await supabase.rpc('admin_save_organization', {
-      payload: {
-        ...form,
-        id: form.id || null,
-        code: form.code.trim().toLowerCase(),
-        name: form.name.trim(),
-        contact_email: form.contact_email.trim().toLowerCase(),
-      },
+      payload: buildOrganizationPayload(form),
     })
 
     if (requestError) {
