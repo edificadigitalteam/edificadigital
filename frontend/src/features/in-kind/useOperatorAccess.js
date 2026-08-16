@@ -1,29 +1,10 @@
 import { useEffect, useState } from 'react'
 import { isSupabaseConfigured, supabase } from '../../lib/supabase.js'
+import { withTimeout } from '../../lib/withTimeout.js'
+import { trace as sharedTrace } from '../../lib/trace.js'
 
-// Temporary bootstrap tracing: ships every step (not deduped, unlike
-// reportClientError) to /api/log so a stuck "recovering session" report can
-// be diagnosed from Vercel logs without needing the user's own console.
-const bootId = Math.random().toString(36).slice(2, 8)
-let traceSeq = 0
-function trace(step, extra = {}) {
-  const detail = { boot: bootId, seq: ++traceSeq, path: typeof window !== 'undefined' ? window.location.pathname : '', ...extra }
-  console.info('[auth]', step, detail)
-  if (typeof window === 'undefined' || typeof fetch !== 'function') return
-  fetch('/api/log', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      level: 'warn',
-      context: 'auth-bootstrap',
-      message: `[auth] ${step}`,
-      stack: JSON.stringify(detail),
-      url: window.location.href,
-      userAgent: window.navigator?.userAgent ?? '',
-    }),
-    keepalive: true,
-  }).catch(() => {})
-}
+// Temporary bootstrap tracing: see lib/trace.js. Remove once the stuck-session report is resolved.
+const trace = (step, extra) => sharedTrace('auth', step, extra)
 
 trace('module:evaluated', { hasSupabase: isSupabaseConfigured })
 
@@ -59,12 +40,6 @@ function publish(next) {
     if (next.status === 'signed_out' || next.status === 'restricted') window.sessionStorage.removeItem('edifica-access-role')
   } catch { /* storage can be unavailable */ }
   subscribers.forEach((listener) => listener(sharedState))
-}
-
-function withTimeout(promise, milliseconds, message) {
-  let timer
-  const timeout = new Promise((_, reject) => { timer = window.setTimeout(() => reject(new Error(message)), milliseconds) })
-  return Promise.race([Promise.resolve(promise), timeout]).finally(() => window.clearTimeout(timer))
 }
 
 function isLocalUrl(value) {
