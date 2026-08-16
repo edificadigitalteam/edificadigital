@@ -26,7 +26,7 @@ export default function ManagementStandaloneShell({ access, children }) {
       <aside className="management-sidebar no-print">
         <div className="management-sidebar-top"><Brand /><small>GESTIÓN ORGANIZACIONAL</small></div>
         <a className="management-back" href="/app">← Todos los módulos</a>
-        <nav>
+        <nav className="management-canonical-nav">
           {navigation.map(([label, href, prefix], index) => {
             const active = href === '/app/management' ? path === href : path.startsWith(prefix)
             return <button className={active ? 'active' : ''} type="button" onClick={() => window.location.assign(href)} key={href}><span>{String(index + 1).padStart(2, '0')}</span>{label}</button>
