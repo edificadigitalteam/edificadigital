@@ -5,6 +5,7 @@ import App from './App.jsx'
 import DashboardApp from './features/dashboard/DashboardApp.jsx'
 import OrganizationalManagementApp from './features/management/OrganizationalManagementApp.jsx'
 import ManagementTrackingPage from './features/management/ManagementTrackingPage.jsx'
+import ManagementReportsPage from './features/management/ManagementReportsPage.jsx'
 import ManagementOperationalFixes from './features/management/ManagementOperationalFixes.jsx'
 import GuidedUXControllerV2 from './features/guidance/GuidedUXControllerV2.jsx'
 import ActivateAccountPage from './features/auth/ActivateAccountPage.jsx'
@@ -19,6 +20,7 @@ const pathname = window.location.pathname
 const isDashboard = pathname === '/app' || pathname.startsWith('/app/') || pathname.startsWith('/donations/')
 const isManagement = pathname.startsWith('/app/management') || pathname.startsWith('/app/church')
 const isManagementTracking = pathname.startsWith('/app/management/tracking')
+const isManagementReports = pathname.startsWith('/app/management/reports')
 const isActivationPage = pathname === '/activar'
 
 function PublicLoginGuard() {
@@ -55,7 +57,15 @@ function RootApplication() {
       <GlobalLanguageController />
       <GuidedUXControllerV2 />
       {isManagement && <ManagementOperationalFixes />}
-      {isManagementTracking ? <ManagementTrackingPage /> : isManagement ? <OrganizationalManagementApp /> : isDashboard ? <DashboardApp /> : <App />}
+      {isManagementTracking
+        ? <ManagementTrackingPage />
+        : isManagementReports
+          ? <ManagementReportsPage />
+          : isManagement
+            ? <OrganizationalManagementApp />
+            : isDashboard
+              ? <DashboardApp />
+              : <App />}
     </>
   )
 }
