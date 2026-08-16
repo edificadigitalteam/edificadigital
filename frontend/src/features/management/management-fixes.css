@@ -13,132 +13,57 @@
   text-decoration: none;
 }
 .management-users-link:hover { background: rgba(255,255,255,.13); }
-.management-users-mobile-link {
-  display: none;
-  color: #fff;
-  font-size: .76rem;
-  font-weight: 850;
-  text-decoration: none;
-}
+.management-users-mobile-link { display: none; color: #fff; font-size: .76rem; font-weight: 850; text-decoration: none; }
 .management-mobile-actions { display: flex; align-items: center; gap: 13px; }
 .management-mobile-actions a { color: #fff; text-decoration: none; font-size: .76rem; font-weight: 850; }
 .management-panel-heading > button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
-
-.management-form-title > div > p {
-  margin: 6px 0 0;
-  max-width: 780px;
-  color: var(--mg-muted);
-  font-size: .8rem;
-  line-height: 1.5;
-}
-.management-field-help {
-  display: block;
-  color: var(--mg-muted);
-  font-size: .71rem;
-  font-weight: 500;
-  line-height: 1.45;
-}
+.management-form-title > div > p { margin: 6px 0 0; max-width: 780px; color: var(--mg-muted); font-size: .8rem; line-height: 1.5; }
+.management-field-help { display: block; color: var(--mg-muted); font-size: .71rem; font-weight: 500; line-height: 1.45; }
 .management-indicator-editor .management-form-grid,
 .management-progress-editor .management-form-grid { row-gap: 19px; }
-
-.management-prerequisite-alert {
-  display: grid;
-  gap: 7px;
-  padding: 12px 15px;
-  border: 1px solid #ead9c6;
-  border-left: 4px solid var(--mg-orange);
-  border-radius: 10px;
-  background: #fffaf4;
-  color: #66566f;
-  font-size: .8rem;
-}
+.management-prerequisite-alert { display: grid; gap: 7px; padding: 12px 15px; border: 1px solid #ead9c6; border-left: 4px solid var(--mg-orange); border-radius: 10px; background: #fffaf4; color: #66566f; font-size: .8rem; }
 .management-prerequisite-alert span { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
 .management-prerequisite-alert a { color: var(--mg-purple); font-weight: 850; }
-
-.management-context-note {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  padding: 11px 21px;
-  border-bottom: 1px solid #eee8f1;
-  background: #fbf8fd;
-  color: var(--mg-muted);
-  font-size: .78rem;
-}
+.management-context-note { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 11px 21px; border-bottom: 1px solid #eee8f1; background: #fbf8fd; color: var(--mg-muted); font-size: .78rem; }
 .management-context-note strong { color: var(--mg-purple-dark); }
 .management-context-note span { color: var(--mg-orange); font-weight: 900; }
-
-.management-target-reference {
-  display: grid;
-  grid-template-columns: auto minmax(0,1fr) auto;
-  gap: 12px 18px;
-  align-items: center;
-  padding: 15px 21px;
-  border-bottom: 1px solid #eee8f1;
-  background: #faf6fd;
-}
-.management-target-reference > span {
-  color: var(--mg-purple);
-  font-size: .67rem;
-  font-weight: 950;
-  letter-spacing: .1em;
-}
-.management-target-reference strong {
-  color: var(--mg-purple-dark);
-  font-size: 1.35rem;
-}
-.management-target-reference small {
-  color: var(--mg-muted);
-  text-align: right;
-}
-
-.management-draft-check {
-  padding: 13px 15px;
-  border: 1px solid #e7e0eb;
-  border-radius: 10px;
-  background: #fcfbfd;
-}
-.management-draft-check > div {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-.management-draft-check input {
-  width: 17px !important;
-  min-height: 17px !important;
-  accent-color: var(--mg-purple);
-}
+.management-target-reference { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 12px 18px; align-items: center; padding: 15px 21px; border-bottom: 1px solid #eee8f1; background: #faf6fd; }
+.management-target-reference > span { color: var(--mg-purple); font-size: .67rem; font-weight: 950; letter-spacing: .1em; }
+.management-target-reference strong { color: var(--mg-purple-dark); font-size: 1.35rem; }
+.management-target-reference small { color: var(--mg-muted); text-align: right; }
+.management-draft-check { padding: 13px 15px; border: 1px solid #e7e0eb; border-radius: 10px; background: #fcfbfd; }
+.management-draft-check > div { display: flex; align-items: center; gap: 9px; }
+.management-draft-check input { width: 17px !important; min-height: 17px !important; accent-color: var(--mg-purple); }
 .management-draft-check span { color: var(--mg-purple-dark); font-weight: 850; }
-
 .indicator-card-footer { align-items: flex-end !important; flex-wrap: wrap; }
 .indicator-card-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
 .indicator-grid footer .indicator-card-actions button { min-height: 34px; }
-.indicator-grid footer .indicator-card-actions button.edit {
-  border-color: var(--mg-line);
-  color: var(--mg-purple-dark);
-  background: #faf8fc;
-}
+.indicator-grid footer .indicator-card-actions button.edit,
+.indicator-grid footer .indicator-card-actions button.detail { border-color: var(--mg-line); color: var(--mg-purple-dark); background: #faf8fc; }
+.indicator-grid footer .indicator-card-actions button.archive { border-color: #ead9c6; color: #87541c; background: #fffaf4; }
+.indicator-grid footer .indicator-card-actions button.danger { border-color: #efd1d1; color: #9d3131; background: #fff7f7; }
+.indicator-values-three { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
+.indicator-accountability-card { overflow: hidden; }
+.indicator-history { margin: 16px -18px -18px; border-top: 1px solid #e8e0ec; background: #fbf9fc; }
+.indicator-history-heading { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; }
+.indicator-history-heading strong { color: var(--mg-purple-dark); }
+.indicator-history-heading span { min-width: 28px; height: 28px; display: grid; place-items: center; border-radius: 999px; background: #eee6f6; color: var(--mg-purple); font-size: .72rem; font-weight: 900; }
+.indicator-history > p { margin: 0; padding: 0 18px 18px; color: var(--mg-muted); font-size: .8rem; }
+.indicator-history-list { display: grid; }
+.indicator-history-list > article { display: grid; gap: 9px; padding: 15px 18px; border-top: 1px solid #ece5ef; background: #fff; }
+.history-main { display: grid; grid-template-columns: minmax(120px,.8fr) minmax(140px,1fr) auto; gap: 12px; align-items: center; }
+.history-main > span { color: var(--mg-muted); font-size: .78rem; }
+.history-main > strong { color: var(--mg-purple-dark); }
+.history-status { width: fit-content; padding: 5px 8px; border-radius: 999px; background: #e8f7ef; color: #256746; font-size: .66rem; }
+.history-status.draft { background: #f3eef5; color: #756c7d; }
+.history-status.verified { background: #eee6f6; color: var(--mg-purple); }
+.history-accountability { display: flex; flex-wrap: wrap; gap: 7px 18px; color: var(--mg-muted); font-size: .72rem; }
+.history-accountability b { color: var(--mg-purple-dark); }
+.indicator-history-list p { margin: 0; color: var(--mg-muted); font-size: .76rem; line-height: 1.45; }
+.indicator-history-list > article > button { justify-self: end; min-height: 32px; padding: 0 10px; border: 1px solid #ddd3e3; border-radius: 8px; background: #fff; color: var(--mg-purple); font-size: .72rem; font-weight: 850; cursor: pointer; }
 
-/* Projects inside Gestión Organizacional use dashboard components whose
-   --ed-* variables are not guaranteed to exist in the management shell.
-   Give the real create button an explicit management-module treatment. */
-.management-shell .project-list-card .module-list-heading > button {
-  min-height: 44px !important;
-  padding: 0 17px !important;
-  border: 0 !important;
-  border-radius: 9px !important;
-  background: #5b2e91 !important;
-  color: #fff !important;
-  font-weight: 900 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  box-shadow: 0 8px 20px rgba(91,46,145,.16) !important;
-}
+.management-shell .project-list-card .module-list-heading > button { min-height: 44px !important; padding: 0 17px !important; border: 0 !important; border-radius: 9px !important; background: #5b2e91 !important; color: #fff !important; font-weight: 900 !important; opacity: 1 !important; visibility: visible !important; box-shadow: 0 8px 20px rgba(91,46,145,.16) !important; }
 .management-shell .project-list-card .module-list-heading > button:hover { background: #31124f !important; }
-
-/* The former injected project CTA is intentionally disabled. The project
-   component now owns its create action directly, avoiding duplicate actions. */
 #management-project-create-portal { display: none !important; }
 
 @media (max-width: 920px) {
@@ -150,4 +75,6 @@
   .indicator-card-actions { width: 100%; justify-content: stretch; }
   .indicator-grid footer .indicator-card-actions button { flex: 1; }
   .management-shell .project-list-card .module-list-heading > button { width: 100%; }
+  .indicator-values-three { grid-template-columns: 1fr !important; }
+  .history-main { grid-template-columns: 1fr; }
 }

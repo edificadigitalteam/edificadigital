@@ -1,0 +1,99 @@
+.management-unit-report-directory .management-card-heading p { margin: 6px 0 0; color: var(--mg-muted); font-size: .8rem; line-height: 1.45; }
+.management-unit-report-directory > div:last-child > article {
+  display: grid;
+  grid-template-columns: 72px minmax(0,1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 18px;
+  border-top: 1px solid #ebe4ee;
+}
+.management-unit-report-directory > div:last-child > article > span { color: var(--mg-purple); font-size: .78rem; font-weight: 950; }
+.management-unit-report-directory > div:last-child > article > div:nth-child(2) { display: grid; gap: 3px; }
+.management-unit-report-directory > div:last-child > article > div:nth-child(2) strong { color: var(--mg-purple-dark); }
+.management-unit-report-directory > div:last-child > article > div:nth-child(2) small { color: var(--mg-muted); }
+.unit-report-row-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+.unit-report-row-actions button { min-height: 35px; padding: 0 11px; border: 0; border-radius: 8px; background: var(--mg-purple); color: #fff; font-size: .73rem; font-weight: 850; cursor: pointer; }
+.unit-report-row-actions button.secondary { border: 1px solid #d9cfe0; background: #fff; color: var(--mg-purple); }
+.report-state.none { background: #f3eef5; color: #756b7c; }
+
+.unit-report-document,
+.management-consolidated-v2 {
+  display: grid;
+  gap: 24px;
+  padding: 28px;
+  border: 1px solid #ded5e4;
+  border-radius: 16px;
+  background: #fff;
+}
+.unit-report-document > header,
+.management-consolidated-v2 > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding-bottom: 20px; border-bottom: 2px solid var(--mg-purple); }
+.unit-report-document > header small,
+.management-consolidated-v2 > header small { color: var(--mg-purple); font-size: .68rem; font-weight: 950; letter-spacing: .12em; }
+.unit-report-document > header h1,
+.management-consolidated-v2 > header h1 { margin: 5px 0; color: var(--mg-purple-dark); font-family: Georgia, serif; font-size: 2rem; font-weight: 500; }
+.unit-report-document > header p,
+.management-consolidated-v2 > header p { margin: 0; color: var(--mg-muted); }
+.unit-report-print-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.unit-report-print-actions button { min-height: 40px; padding: 0 13px; border: 1px solid #d9cfe0; border-radius: 8px; background: #fff; color: var(--mg-purple); font-weight: 850; cursor: pointer; }
+.unit-report-print-actions button.primary { border-color: var(--mg-purple); background: var(--mg-purple); color: #fff; }
+.unit-report-meta { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.unit-report-meta article { display: grid; gap: 6px; padding: 14px 16px; border: 1px solid #e6dfea; border-radius: 11px; background: #fcfbfd; }
+.unit-report-meta span { color: var(--mg-muted); font-size: .72rem; }
+.unit-report-meta strong { color: var(--mg-purple-dark); }
+.unit-report-document > section > h2,
+.management-consolidated-v2 > section > h2 { margin: 0 0 13px; color: var(--mg-purple-dark); font-family: Georgia, serif; font-size: 1.35rem; font-weight: 500; }
+.unit-report-narrative { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+.unit-report-narrative article { padding: 17px; border: 1px solid #e5dde9; border-radius: 12px; background: #fff; }
+.unit-report-narrative article h2 { margin: 0 0 8px; color: var(--mg-purple-dark); font-size: 1rem; }
+.unit-report-narrative article p { margin: 0; color: var(--mg-muted); line-height: 1.6; white-space: pre-wrap; }
+.unit-report-objectives,
+.unit-report-indicators,
+.unit-report-projects { display: grid; gap: 9px; }
+.unit-report-objectives article,
+.unit-report-projects article { display: grid; grid-template-columns: 100px minmax(0,1fr); gap: 12px; padding: 13px 15px; border: 1px solid #e8e1eb; border-radius: 10px; }
+.unit-report-objectives article > span,
+.unit-report-projects article > span { color: var(--mg-purple); font-size: .72rem; font-weight: 900; }
+.unit-report-objectives strong,
+.unit-report-projects strong { color: var(--mg-purple-dark); }
+.unit-report-objectives p { margin: 4px 0 0; color: var(--mg-muted); font-size: .78rem; line-height: 1.45; }
+.unit-report-projects small { display: block; margin-top: 4px; color: var(--mg-muted); }
+.unit-report-indicators { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.unit-report-indicators article { display: grid; gap: 9px; padding: 15px; border: 1px solid #e5dde9; border-radius: 11px; background: #fcfbfd; }
+.unit-report-indicators article > strong { color: var(--mg-purple-dark); }
+.unit-report-indicators article > div { display: flex; flex-wrap: wrap; gap: 7px 13px; color: var(--mg-muted); font-size: .76rem; }
+.unit-report-indicators article b { color: var(--mg-purple); }
+.report-empty { margin: 0; padding: 14px; border: 1px dashed #d9cfe0; border-radius: 10px; color: var(--mg-muted); font-size: .8rem; }
+.report-editor-grid small { color: var(--mg-muted); font-size: .7rem; }
+
+@media print {
+  .management-sidebar,
+  .management-mobile-header,
+  .management-panel-heading,
+  .management-report-summary,
+  .management-filter-row,
+  .management-flash,
+  .report-editor,
+  .management-unit-report-directory,
+  .no-print { display: none !important; }
+  .management-shell,
+  .management-main,
+  .management-panel { display: block !important; width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
+  .unit-report-document,
+  .management-consolidated-v2 { border: 0 !important; border-radius: 0 !important; padding: 0 !important; box-shadow: none !important; }
+  .unit-report-document > header h1,
+  .management-consolidated-v2 > header h1 { font-size: 20pt; }
+  .unit-report-narrative,
+  .unit-report-indicators { grid-template-columns: 1fr 1fr; }
+  @page { size: Letter portrait; margin: 11mm; }
+}
+
+@media (max-width: 850px) {
+  .management-unit-report-directory > div:last-child > article { grid-template-columns: 58px minmax(0,1fr); }
+  .management-unit-report-directory > div:last-child > article > .report-state,
+  .unit-report-row-actions { grid-column: 2; justify-self: start; }
+  .unit-report-meta,
+  .unit-report-narrative,
+  .unit-report-indicators { grid-template-columns: 1fr; }
+  .unit-report-document > header,
+  .management-consolidated-v2 > header { flex-direction: column; }
+}
