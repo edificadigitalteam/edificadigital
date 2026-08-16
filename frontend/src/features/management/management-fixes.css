@@ -1,0 +1,107 @@
+.management-users-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 8px;
+  background: rgba(255,255,255,.07);
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+.management-users-link:hover { background: rgba(255,255,255,.13); }
+.management-users-mobile-link {
+  display: none;
+  color: #fff;
+  font-size: .76rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+.management-mobile-actions { display: flex; align-items: center; gap: 13px; }
+.management-mobile-actions a { color: #fff; text-decoration: none; font-size: .76rem; font-weight: 850; }
+.management-panel-heading > button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+
+.management-readiness-card {
+  overflow: hidden;
+  border: 1px solid #e1d8e8;
+  border-left: 5px solid var(--mg-orange);
+  border-radius: 16px;
+  background: #fff;
+}
+.management-readiness-card.ready { border-left-color: var(--mg-purple); }
+.management-readiness-card > header { padding: 18px 20px; border-bottom: 1px solid #eee8f1; background: #fdfbff; }
+.management-readiness-card > header small { color: var(--mg-purple); font-size: .68rem; font-weight: 950; letter-spacing: .12em; }
+.management-readiness-card > header h2 { margin: 6px 0 5px; color: var(--mg-purple-dark); font-family: Georgia, serif; font-size: 1.42rem; font-weight: 500; }
+.management-readiness-card > header p { margin: 0; max-width: 900px; color: var(--mg-muted); line-height: 1.5; }
+.management-readiness-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 0; }
+.management-readiness-grid article { position: relative; display: grid; grid-template-columns: auto minmax(0,1fr); gap: 12px; align-content: start; min-height: 150px; padding: 18px; border-right: 1px solid #eee8f1; }
+.management-readiness-grid article:last-child { border-right: 0; }
+.management-readiness-grid article > span { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: #f1ebf5; color: var(--mg-purple); font-size: .72rem; font-weight: 950; }
+.management-readiness-grid article > div { display: grid; gap: 5px; }
+.management-readiness-grid strong { color: var(--mg-purple-dark); }
+.management-readiness-grid p { margin: 0; color: var(--mg-muted); font-size: .78rem; line-height: 1.45; }
+.management-readiness-grid b { grid-column: 2; width: fit-content; padding: 5px 8px; border-radius: 999px; background: #f2edf5; color: var(--mg-muted); font-size: .66rem; }
+.management-readiness-grid article.complete b { background: #eee6f6; color: var(--mg-purple); }
+.management-readiness-grid article.missing { background: #fffaf4; }
+.management-readiness-grid article.missing b { background: #fff0dd; color: #9a5b14; }
+.management-readiness-grid article.optional { background: #fcfbfd; }
+.management-readiness-grid a { grid-column: 2; width: fit-content; color: var(--mg-purple); font-size: .75rem; font-weight: 850; }
+
+.management-form-title > div > p { margin: 6px 0 0; max-width: 760px; color: var(--mg-muted); font-size: .78rem; line-height: 1.45; }
+.management-field-help { display: block; color: var(--mg-muted); font-size: .7rem; font-weight: 500; line-height: 1.4; }
+.management-indicator-editor .management-form-grid,
+.management-progress-editor .management-form-grid { row-gap: 19px; }
+.management-calculated-preview {
+  display: grid;
+  justify-items: start;
+  gap: 3px;
+  padding: 16px 18px;
+  border: 1px solid #dbcbe8;
+  border-left: 5px solid var(--mg-purple);
+  border-radius: 11px;
+  background: #faf6fd;
+}
+.management-calculated-preview > span { color: var(--mg-purple); font-size: .67rem; font-weight: 950; letter-spacing: .1em; }
+.management-calculated-preview strong { color: var(--mg-purple-dark); font-size: 1.8rem; }
+.management-calculated-preview small { color: var(--mg-muted); }
+
+.indicator-card-footer { align-items: flex-end !important; flex-wrap: wrap; }
+.indicator-card-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+.indicator-grid footer .indicator-card-actions button { min-height: 34px; }
+.indicator-grid footer .indicator-card-actions button.edit { border-color: var(--mg-line); color: var(--mg-purple-dark); background: #faf8fc; }
+
+#management-project-create-portal { display: block; }
+.management-project-create-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 19px 22px;
+  border: 1px solid #e2d7e9;
+  border-left: 5px solid var(--ed-orange, #f28c28);
+  border-radius: 15px;
+  background: #fffaf4;
+}
+.management-project-create-card > div { display: grid; gap: 5px; }
+.management-project-create-card small { color: var(--ed-purple, #5b2e91); font-size: .68rem; font-weight: 950; letter-spacing: .1em; }
+.management-project-create-card strong { color: var(--ed-purple-dark, #31124f); font-size: 1.05rem; }
+.management-project-create-card p { margin: 0; max-width: 880px; color: var(--ed-muted, #756d79); font-size: .82rem; line-height: 1.45; }
+.management-project-create-card em { color: #963b34; font-size: .75rem; font-style: normal; }
+.management-project-create-card > button { min-height: 45px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--ed-purple, #5b2e91); color: #fff; font-weight: 900; white-space: nowrap; cursor: pointer; }
+.management-project-create-card > button:hover { background: var(--ed-purple-dark, #31124f); }
+
+@media (max-width: 920px) {
+  .management-users-mobile-link { display: inline-flex; }
+  .management-readiness-grid { grid-template-columns: 1fr; }
+  .management-readiness-grid article { min-height: 0; border-right: 0; border-bottom: 1px solid #eee8f1; }
+  .management-readiness-grid article:last-child { border-bottom: 0; }
+}
+@media (max-width: 700px) {
+  .management-project-create-card { align-items: stretch; flex-direction: column; }
+  .management-project-create-card > button { width: 100%; }
+  .indicator-card-actions { width: 100%; justify-content: stretch; }
+  .indicator-grid footer .indicator-card-actions button { flex: 1; }
+}
