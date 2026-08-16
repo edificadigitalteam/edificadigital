@@ -4,7 +4,7 @@ import './index.css'
 import App from './App.jsx'
 import DashboardApp from './features/dashboard/DashboardApp.jsx'
 import OrganizationalManagementApp from './features/management/OrganizationalManagementApp.jsx'
-import GuidedUXController from './features/guidance/GuidedUXController.jsx'
+import GuidedUXControllerV2 from './features/guidance/GuidedUXControllerV2.jsx'
 import ActivateAccountPage from './features/auth/ActivateAccountPage.jsx'
 import GlobalLanguageController from './i18n/GlobalLanguageController.jsx'
 import { ToastProvider } from './features/notifications/ToastProvider.jsx'
@@ -50,7 +50,7 @@ function RootApplication() {
     <>
       <PublicLoginGuard />
       <GlobalLanguageController />
-      <GuidedUXController />
+      <GuidedUXControllerV2 />
       {isManagement ? <OrganizationalManagementApp /> : isDashboard ? <DashboardApp /> : <App />}
     </>
   )
