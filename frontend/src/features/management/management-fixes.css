@@ -24,84 +24,130 @@
 .management-mobile-actions a { color: #fff; text-decoration: none; font-size: .76rem; font-weight: 850; }
 .management-panel-heading > button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
 
-.management-readiness-card {
-  overflow: hidden;
-  border: 1px solid #e1d8e8;
-  border-left: 5px solid var(--mg-orange);
-  border-radius: 16px;
-  background: #fff;
+.management-form-title > div > p {
+  margin: 6px 0 0;
+  max-width: 780px;
+  color: var(--mg-muted);
+  font-size: .8rem;
+  line-height: 1.5;
 }
-.management-readiness-card.ready { border-left-color: var(--mg-purple); }
-.management-readiness-card > header { padding: 18px 20px; border-bottom: 1px solid #eee8f1; background: #fdfbff; }
-.management-readiness-card > header small { color: var(--mg-purple); font-size: .68rem; font-weight: 950; letter-spacing: .12em; }
-.management-readiness-card > header h2 { margin: 6px 0 5px; color: var(--mg-purple-dark); font-family: Georgia, serif; font-size: 1.42rem; font-weight: 500; }
-.management-readiness-card > header p { margin: 0; max-width: 900px; color: var(--mg-muted); line-height: 1.5; }
-.management-readiness-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 0; }
-.management-readiness-grid article { position: relative; display: grid; grid-template-columns: auto minmax(0,1fr); gap: 12px; align-content: start; min-height: 150px; padding: 18px; border-right: 1px solid #eee8f1; }
-.management-readiness-grid article:last-child { border-right: 0; }
-.management-readiness-grid article > span { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: #f1ebf5; color: var(--mg-purple); font-size: .72rem; font-weight: 950; }
-.management-readiness-grid article > div { display: grid; gap: 5px; }
-.management-readiness-grid strong { color: var(--mg-purple-dark); }
-.management-readiness-grid p { margin: 0; color: var(--mg-muted); font-size: .78rem; line-height: 1.45; }
-.management-readiness-grid b { grid-column: 2; width: fit-content; padding: 5px 8px; border-radius: 999px; background: #f2edf5; color: var(--mg-muted); font-size: .66rem; }
-.management-readiness-grid article.complete b { background: #eee6f6; color: var(--mg-purple); }
-.management-readiness-grid article.missing { background: #fffaf4; }
-.management-readiness-grid article.missing b { background: #fff0dd; color: #9a5b14; }
-.management-readiness-grid article.optional { background: #fcfbfd; }
-.management-readiness-grid a { grid-column: 2; width: fit-content; color: var(--mg-purple); font-size: .75rem; font-weight: 850; }
-
-.management-form-title > div > p { margin: 6px 0 0; max-width: 760px; color: var(--mg-muted); font-size: .78rem; line-height: 1.45; }
-.management-field-help { display: block; color: var(--mg-muted); font-size: .7rem; font-weight: 500; line-height: 1.4; }
+.management-field-help {
+  display: block;
+  color: var(--mg-muted);
+  font-size: .71rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
 .management-indicator-editor .management-form-grid,
 .management-progress-editor .management-form-grid { row-gap: 19px; }
-.management-calculated-preview {
+
+.management-prerequisite-alert {
   display: grid;
-  justify-items: start;
-  gap: 3px;
-  padding: 16px 18px;
-  border: 1px solid #dbcbe8;
-  border-left: 5px solid var(--mg-purple);
-  border-radius: 11px;
+  gap: 7px;
+  padding: 12px 15px;
+  border: 1px solid #ead9c6;
+  border-left: 4px solid var(--mg-orange);
+  border-radius: 10px;
+  background: #fffaf4;
+  color: #66566f;
+  font-size: .8rem;
+}
+.management-prerequisite-alert span { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+.management-prerequisite-alert a { color: var(--mg-purple); font-weight: 850; }
+
+.management-context-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 21px;
+  border-bottom: 1px solid #eee8f1;
+  background: #fbf8fd;
+  color: var(--mg-muted);
+  font-size: .78rem;
+}
+.management-context-note strong { color: var(--mg-purple-dark); }
+.management-context-note span { color: var(--mg-orange); font-weight: 900; }
+
+.management-target-reference {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  gap: 12px 18px;
+  align-items: center;
+  padding: 15px 21px;
+  border-bottom: 1px solid #eee8f1;
   background: #faf6fd;
 }
-.management-calculated-preview > span { color: var(--mg-purple); font-size: .67rem; font-weight: 950; letter-spacing: .1em; }
-.management-calculated-preview strong { color: var(--mg-purple-dark); font-size: 1.8rem; }
-.management-calculated-preview small { color: var(--mg-muted); }
+.management-target-reference > span {
+  color: var(--mg-purple);
+  font-size: .67rem;
+  font-weight: 950;
+  letter-spacing: .1em;
+}
+.management-target-reference strong {
+  color: var(--mg-purple-dark);
+  font-size: 1.35rem;
+}
+.management-target-reference small {
+  color: var(--mg-muted);
+  text-align: right;
+}
+
+.management-draft-check {
+  padding: 13px 15px;
+  border: 1px solid #e7e0eb;
+  border-radius: 10px;
+  background: #fcfbfd;
+}
+.management-draft-check > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.management-draft-check input {
+  width: 17px !important;
+  min-height: 17px !important;
+  accent-color: var(--mg-purple);
+}
+.management-draft-check span { color: var(--mg-purple-dark); font-weight: 850; }
 
 .indicator-card-footer { align-items: flex-end !important; flex-wrap: wrap; }
 .indicator-card-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
 .indicator-grid footer .indicator-card-actions button { min-height: 34px; }
-.indicator-grid footer .indicator-card-actions button.edit { border-color: var(--mg-line); color: var(--mg-purple-dark); background: #faf8fc; }
-
-#management-project-create-portal { display: block; }
-.management-project-create-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  padding: 19px 22px;
-  border: 1px solid #e2d7e9;
-  border-left: 5px solid var(--ed-orange, #f28c28);
-  border-radius: 15px;
-  background: #fffaf4;
+.indicator-grid footer .indicator-card-actions button.edit {
+  border-color: var(--mg-line);
+  color: var(--mg-purple-dark);
+  background: #faf8fc;
 }
-.management-project-create-card > div { display: grid; gap: 5px; }
-.management-project-create-card small { color: var(--ed-purple, #5b2e91); font-size: .68rem; font-weight: 950; letter-spacing: .1em; }
-.management-project-create-card strong { color: var(--ed-purple-dark, #31124f); font-size: 1.05rem; }
-.management-project-create-card p { margin: 0; max-width: 880px; color: var(--ed-muted, #756d79); font-size: .82rem; line-height: 1.45; }
-.management-project-create-card em { color: #963b34; font-size: .75rem; font-style: normal; }
-.management-project-create-card > button { min-height: 45px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--ed-purple, #5b2e91); color: #fff; font-weight: 900; white-space: nowrap; cursor: pointer; }
-.management-project-create-card > button:hover { background: var(--ed-purple-dark, #31124f); }
+
+/* Projects inside Gestión Organizacional use dashboard components whose
+   --ed-* variables are not guaranteed to exist in the management shell.
+   Give the real create button an explicit management-module treatment. */
+.management-shell .project-list-card .module-list-heading > button {
+  min-height: 44px !important;
+  padding: 0 17px !important;
+  border: 0 !important;
+  border-radius: 9px !important;
+  background: #5b2e91 !important;
+  color: #fff !important;
+  font-weight: 900 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  box-shadow: 0 8px 20px rgba(91,46,145,.16) !important;
+}
+.management-shell .project-list-card .module-list-heading > button:hover { background: #31124f !important; }
+
+/* The former injected project CTA is intentionally disabled. The project
+   component now owns its create action directly, avoiding duplicate actions. */
+#management-project-create-portal { display: none !important; }
 
 @media (max-width: 920px) {
   .management-users-mobile-link { display: inline-flex; }
-  .management-readiness-grid { grid-template-columns: 1fr; }
-  .management-readiness-grid article { min-height: 0; border-right: 0; border-bottom: 1px solid #eee8f1; }
-  .management-readiness-grid article:last-child { border-bottom: 0; }
+  .management-target-reference { grid-template-columns: 1fr; }
+  .management-target-reference small { text-align: left; }
 }
 @media (max-width: 700px) {
-  .management-project-create-card { align-items: stretch; flex-direction: column; }
-  .management-project-create-card > button { width: 100%; }
   .indicator-card-actions { width: 100%; justify-content: stretch; }
   .indicator-grid footer .indicator-card-actions button { flex: 1; }
+  .management-shell .project-list-card .module-list-heading > button { width: 100%; }
 }
