@@ -182,17 +182,11 @@ export function useOperatorAccess() {
 
     const bootstrap = async () => {
       setState((current) => ({ ...current, status: 'loading', message: '' }))
-      const params = new URLSearchParams(window.location.search)
-      const code = params.get('code')
-
-      if (code) {
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-        if (exchangeError && active) {
-          setState({ status: 'signed_out', ...emptyIdentity, message: exchangeError.message })
-          return
-        }
-      }
-
+      // detectSessionInUrl already exchanges the magic-link `code` for a session
+      // during client init, before getSession() (which awaits that same init)
+      // resolves. Exchanging it again here always loses that race and fails
+      // (the one-time code/verifier is already consumed), which was wiping a
+      // just-established session back to signed_out on first paint.
       const { data, error } = await supabase.auth.getSession()
       if (!active) return
       if (error) {
