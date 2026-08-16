@@ -19,39 +19,58 @@ export default function ManagementOperationalFixes() {
   useEffect(() => {
     if (!isManagement) return undefined
     let injectedMount = null
+    let frame = 0
 
     const updateLanguage = () => setLanguage(currentLanguage())
     const languageObserver = new MutationObserver(updateLanguage)
     languageObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] })
 
+    const root = document.getElementById('root') || document.body
+    const observerOptions = { childList: true, subtree: true }
+    const observer = new MutationObserver(() => {
+      // Coalesce bursts into one pass per frame; the pass itself detaches the
+      // observer while it writes, so our own edits never re-enter it.
+      if (frame) return
+      frame = window.requestAnimationFrame(() => { frame = 0; findTargets() })
+    })
+
+    // Writing the same value still replaces the text node, which counts as a
+    // childList mutation — so every write must be conditional or the observer
+    // re-triggers itself forever and the main thread never goes idle.
+    const setText = (node, value) => { if (node && node.textContent !== value) node.textContent = value }
+
     const findTargets = () => {
-      setFooterTarget(document.querySelector('.management-sidebar-footer'))
-      setMobileTarget(document.querySelector('.management-mobile-header'))
-      const nav = document.querySelector('.management-sidebar nav')
-      if (!nav || nav.classList.contains('management-canonical-nav')) {
-        setNavTarget(null)
-        return
+      observer.disconnect()
+      try {
+        setFooterTarget(document.querySelector('.management-sidebar-footer'))
+        setMobileTarget(document.querySelector('.management-mobile-header'))
+        const nav = document.querySelector('.management-sidebar nav')
+        if (!nav || nav.classList.contains('management-canonical-nav')) {
+          setNavTarget(null)
+          return
+        }
+        let mount = nav.querySelector('.management-extra-nav-mount')
+        if (!mount) {
+          mount = document.createElement('div')
+          mount.className = 'management-extra-nav-mount'
+          const buttons = Array.from(nav.children).filter((node) => node.tagName === 'BUTTON')
+          const trackingButton = buttons[4] || null
+          nav.insertBefore(mount, trackingButton)
+          injectedMount = mount
+        }
+        const directButtons = Array.from(nav.children).filter((node) => node.tagName === 'BUTTON')
+        setText(directButtons[4]?.querySelector('span'), '08')
+        setText(directButtons[5]?.querySelector('span'), '09')
+        setNavTarget(mount)
+      } finally {
+        observer.observe(root, observerOptions)
       }
-      let mount = nav.querySelector('.management-extra-nav-mount')
-      if (!mount) {
-        mount = document.createElement('div')
-        mount.className = 'management-extra-nav-mount'
-        const buttons = Array.from(nav.children).filter((node) => node.tagName === 'BUTTON')
-        const trackingButton = buttons[4] || null
-        nav.insertBefore(mount, trackingButton)
-        injectedMount = mount
-      }
-      const directButtons = Array.from(nav.children).filter((node) => node.tagName === 'BUTTON')
-      if (directButtons[4]?.querySelector('span')) directButtons[4].querySelector('span').textContent = '08'
-      if (directButtons[5]?.querySelector('span')) directButtons[5].querySelector('span').textContent = '09'
-      setNavTarget(mount)
     }
 
     findTargets()
-    const observer = new MutationObserver(findTargets)
-    observer.observe(document.getElementById('root') || document.body, { childList: true, subtree: true })
 
     return () => {
+      if (frame) window.cancelAnimationFrame(frame)
       observer.disconnect()
       languageObserver.disconnect()
       if (injectedMount?.isConnected) injectedMount.remove()
