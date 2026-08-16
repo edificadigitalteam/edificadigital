@@ -2,24 +2,14 @@ import './platform-home.css'
 
 const modules = [
   {
-    key: 'donations',
-    title: 'Donaciones y proyectos',
-    label: 'OPERACIÓN Y TRANSPARENCIA',
-    description: 'Gestiona donaciones, proyectos financiados, aliados, beneficiarios, voluntariado y ejecución.',
-    href: '/app/donations',
-    status: 'Disponible',
-    tone: 'purple',
-    features: ['Donaciones monetarias y en especies', 'Proyectos y ejecución', 'Aliados y beneficiarios'],
-  },
-  {
     key: 'management',
     title: 'Gestión organizacional',
-    label: 'PLANIFICACIÓN Y CUMPLIMIENTO',
-    description: 'Organiza estructura, objetivos, proyectos, indicadores y reportes dentro de una sola gestión institucional.',
+    label: 'OPERACIÓN, PLANIFICACIÓN Y TRANSPARENCIA',
+    description: 'Gestiona estructura, objetivos, proyectos, aportes y recursos, aliados, beneficiarios, voluntariado, indicadores y rendición institucional desde un solo lugar.',
     href: '/app/management',
     status: 'Disponible',
-    tone: 'orange',
-    features: ['Estructura y responsables', 'Objetivos e indicadores', 'Informes por unidad y consolidado'],
+    tone: 'purple',
+    features: ['Proyectos y ejecución completa', 'Aportes, aliados y beneficiarios', 'Indicadores e informes por unidad'],
   },
   {
     key: 'academy',
@@ -54,7 +44,7 @@ export default function PlatformHome({ access }) {
           <div>
             <p>ESPACIO DE TRABAJO</p>
             <h1>Bienvenido a Edifica</h1>
-            <span>Selecciona el módulo con el que deseas trabajar. Cada área comparte la organización, los usuarios y el plan contratado.</span>
+            <span>La gestión operativa de la organización vive en un solo núcleo. Los proyectos conectan objetivos, recursos, ejecución, evidencias, beneficiarios e informes sin duplicar información.</span>
           </div>
           <article>
             <span>ORGANIZACIÓN ACTIVA</span>
@@ -71,14 +61,14 @@ export default function PlatformHome({ access }) {
               <h2>{module.title}</h2>
               <p>{module.description}</p>
               <ul>{module.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
-              <div>Entrar al módulo <span>→</span></div>
+              <div>Entrar <span>→</span></div>
             </a>
           ))}
         </section>
 
         <section className="platform-account-summary">
-          <div><p>CUENTA DE LA ORGANIZACIÓN</p><h2>Una sola suscripción, varios espacios de trabajo.</h2><span>Los módulos, el número de usuarios y los productos incluidos se administran desde el plan de la organización.</span></div>
-          <div className="platform-account-stats"><article><span>Módulos</span><strong>3</strong></article><article><span>Cuenta</span><strong>Activa</strong></article><article><span>Idioma</span><strong>ES / EN</strong></article></div>
+          <div><p>CUENTA DE LA ORGANIZACIÓN</p><h2>Una sola suscripción, un núcleo operativo.</h2><span>Gestión Organizacional concentra el trabajo institucional; Productos Digitales amplía la formación y los recursos disponibles.</span></div>
+          <div className="platform-account-stats"><article><span>Espacios</span><strong>2</strong></article><article><span>Cuenta</span><strong>Activa</strong></article><article><span>Idioma</span><strong>ES / EN</strong></article></div>
           {(access.role === 'admin' || access.role === 'super_admin') && <a href="/app/admin/billing">Administrar plan y usuarios →</a>}
         </section>
       </main>
