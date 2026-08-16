@@ -44,6 +44,10 @@ Lightweight backlog for future work that does not yet have a plan in `docs/plans
 - [ ] Al registrar un voluntario, la organización se asigna automáticamente según el tenant del usuario (regla del tenant) — no debe pedirse al usuario que la seleccione (ya es así para admins de organización en `VolunteerPanel.jsx`; confirmar que se mantenga así al implementar el punto anterior y que no se le pida de nuevo la organización al agregarlo a un proyecto).
 - [ ] Evaluar un módulo de proveedores (suppliers) independiente de "Aliados y donantes" — por ejemplo proveedores de transporte, alimentación u otros insumos/servicios que la organización necesite contratar, distinto del donante/aliado que aporta fondos o especies.
 
+## Reported by product owner (2026-08-16)
+
+- [ ] El magic link de acceso (`/app`) llega apuntando a `localhost:3000` al solicitarlo desde `somosedificadigital.com`. Causa raíz confirmada: no es un bug de código — `getAppRedirectUrl` en `frontend/src/features/in-kind/useOperatorAccess.js` ya calcula correctamente `https://somosedificadigital.com/app?...` en producción (usa `window.location.origin`, y descarta `VITE_APP_URL` si es local). Supabase Auth solo redirige a la URL que el cliente pide si esa URL está en la lista blanca `Authentication > URL Configuration > Redirect URLs` del proyecto `edifydb`; si no está, sustituye en silencio por el **Site URL** configurado, que sigue en el valor por defecto de scaffold (`http://localhost:3000`, igual que `supabase/config.toml` local). Requiere una acción manual en el Dashboard de Supabase (no ejecutable por este agente: no hay una API/MCP tool con acceso a la configuración de Auth del proyecto) — ver los valores exactos a configurar en "Domain, DNS, and email" de `docs/ARCHITECTURE.md`. Pendiente que alguien con acceso al Dashboard de `edifydb` aplique el Site URL y la lista de Redirect URLs documentados ahí.
+
 ## Product strategy: modular ecosystem
 
 - [ ] Evaluate restructuring Edifica Digital as a suite of independently sellable, integrated modules/systems rather than a single donation-traceability product.
