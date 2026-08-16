@@ -1,9 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
+import { withTimeout } from '../../lib/withTimeout.js'
+import { trace as sharedTrace } from '../../lib/trace.js'
 import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ProjectsPanel from '../dashboard/ProjectsPanel.jsx'
 import './management.css'
+
+// Temporary diagnostic tracing: see lib/trace.js. Remove once the stuck-loading report is resolved.
+const trace = (step, extra) => sharedTrace('management-data', step, extra)
+// Upper bound on the full reload() fetch so a slow/wedged query (RLS, missing
+// index, cold pooler connection) can't leave "Cargando gestión
+// organizacional…" spinning forever with no error and no retry option.
+const RELOAD_TIMEOUT_MS = 15000
 
 const unitTypeLabels = {
   directorate: 'Dirección', department: 'Departamento', ministry: 'Ministerio', committee: 'Comité', auxiliary: 'Unión / auxiliar',
@@ -320,30 +329,43 @@ export default function OrganizationalManagementApp() {
   const loadOrganizations = useCallback(async () => {
     if (!supabase || access.status !== 'authorized') return
     if (!isSuperAdmin) { setOrganizations(access.organizationId ? [{ id: access.organizationId, name: access.organizationName }] : []); return }
+    trace('loadOrganizations:start')
     const { data, error: requestError } = await supabase.rpc('admin_list_organizations')
+    trace('loadOrganizations:done', { error: requestError?.message ?? null })
     if (requestError) setError(requestError.message); else { setOrganizations(data ?? []); setOrganizationId((current) => current || data?.find((item) => item.code === 'cnbv')?.id || data?.[0]?.id || '') }
   }, [access.organizationId, access.organizationName, access.status, isSuperAdmin])
 
   const reload = useCallback(async () => {
     if (!supabase || access.status !== 'authorized' || !organizationId) { setLoading(false); return }
+    trace('reload:start', { organizationId })
     setLoading(true); setError('')
-    const requests = await Promise.all([
-      supabase.from('organization_unit').select('*').eq('organization_id', organizationId).order('sort_order').order('name'),
-      supabase.from('organization_unit_member').select('*').eq('organization_id', organizationId),
-      supabase.from('management_period').select('*').eq('organization_id', organizationId).order('start_date', { ascending: false }),
-      supabase.from('institutional_objective').select('*').eq('organization_id', organizationId).order('code'),
-      supabase.from('objective_unit_assignment').select('*').eq('organization_id', organizationId),
-      supabase.from('management_indicator').select('*').eq('organization_id', organizationId).order('created_at'),
-      supabase.from('indicator_progress').select('*').eq('organization_id', organizationId).order('created_at'),
-      supabase.from('unit_management_report').select('*').eq('organization_id', organizationId).order('updated_at', { ascending: false }),
-      supabase.from('project').select('id, organization_id, code, name, status, project_type, funding_source, objective, approved_budget, currency').eq('organization_id', organizationId).order('created_at', { ascending: false }),
-      canAdmin ? supabase.rpc('admin_list_operator_access') : Promise.resolve({ data: [], error: null }),
-    ])
-    const firstError = requests.find((response) => response.error)?.error
-    if (firstError) setError(firstError.message)
-    else {
-      setUnits(requests[0].data ?? []); setMemberships(requests[1].data ?? []); setPeriods(requests[2].data ?? []); setObjectives(requests[3].data ?? []); setAssignments(requests[4].data ?? []); setIndicators(requests[5].data ?? []); setProgress(requests[6].data ?? []); setReports(requests[7].data ?? []); setProjects(requests[8].data ?? []); setOperators((requests[9].data ?? []).filter((item) => !item.organization_id || item.organization_id === organizationId));
-      setActivePeriodId((current) => current && (requests[2].data ?? []).some((item) => item.id === current) ? current : (requests[2].data ?? []).find((item) => item.status === 'active')?.id || requests[2].data?.[0]?.id || '')
+    const named = (name, query) => Promise.resolve(query).then(
+      (result) => { trace('reload:query-done', { name, error: result.error?.message ?? null }); return result },
+      (error) => { trace('reload:query-rejected', { name, message: error?.message }); return { data: null, error } },
+    )
+    try {
+      const requests = await withTimeout(Promise.all([
+        named('organization_unit', supabase.from('organization_unit').select('*').eq('organization_id', organizationId).order('sort_order').order('name')),
+        named('organization_unit_member', supabase.from('organization_unit_member').select('*').eq('organization_id', organizationId)),
+        named('management_period', supabase.from('management_period').select('*').eq('organization_id', organizationId).order('start_date', { ascending: false })),
+        named('institutional_objective', supabase.from('institutional_objective').select('*').eq('organization_id', organizationId).order('code')),
+        named('objective_unit_assignment', supabase.from('objective_unit_assignment').select('*').eq('organization_id', organizationId)),
+        named('management_indicator', supabase.from('management_indicator').select('*').eq('organization_id', organizationId).order('created_at')),
+        named('indicator_progress', supabase.from('indicator_progress').select('*').eq('organization_id', organizationId).order('created_at')),
+        named('unit_management_report', supabase.from('unit_management_report').select('*').eq('organization_id', organizationId).order('updated_at', { ascending: false })),
+        named('project', supabase.from('project').select('id, organization_id, code, name, status, project_type, funding_source, objective, approved_budget, currency').eq('organization_id', organizationId).order('created_at', { ascending: false })),
+        named('admin_list_operator_access', canAdmin ? supabase.rpc('admin_list_operator_access') : Promise.resolve({ data: [], error: null })),
+      ]), RELOAD_TIMEOUT_MS, 'La carga de Gestión Organizacional tardó demasiado.')
+      trace('reload:all-settled')
+      const firstError = requests.find((response) => response.error)?.error
+      if (firstError) setError(firstError.message)
+      else {
+        setUnits(requests[0].data ?? []); setMemberships(requests[1].data ?? []); setPeriods(requests[2].data ?? []); setObjectives(requests[3].data ?? []); setAssignments(requests[4].data ?? []); setIndicators(requests[5].data ?? []); setProgress(requests[6].data ?? []); setReports(requests[7].data ?? []); setProjects(requests[8].data ?? []); setOperators((requests[9].data ?? []).filter((item) => !item.organization_id || item.organization_id === organizationId));
+        setActivePeriodId((current) => current && (requests[2].data ?? []).some((item) => item.id === current) ? current : (requests[2].data ?? []).find((item) => item.status === 'active')?.id || requests[2].data?.[0]?.id || '')
+      }
+    } catch (timeoutError) {
+      trace('reload:ceiling-fired', { message: timeoutError?.message })
+      setError(timeoutError.message)
     }
     setLoading(false)
   }, [access.status, canAdmin, organizationId])
