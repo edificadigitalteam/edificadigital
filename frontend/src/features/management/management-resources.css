@@ -1,0 +1,23 @@
+.management-resources-page { display: grid; gap: 22px; }
+.management-resource-actions { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.management-resource-actions a { display: grid; gap: 6px; min-height: 105px; padding: 18px; border: 1px solid #ded5e6; border-radius: 14px; background: #fff; color: #341550; text-decoration: none; box-shadow: 0 8px 24px rgba(52,21,80,.04); }
+.management-resource-actions a.primary { border-color: #5b2e91; background: #5b2e91; color: #fff; }
+.management-resource-actions strong { font-size: .95rem; }
+.management-resource-actions span { font-size: .76rem; line-height: 1.45; opacity: .78; }
+.management-resource-summary { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
+.management-resource-summary article { display: grid; gap: 5px; padding: 17px; border: 1px solid #e5dfea; border-radius: 13px; background: #fff; }
+.management-resource-summary span { color: #6d6672; font-size: .7rem; font-weight: 850; text-transform: uppercase; letter-spacing: .06em; }
+.management-resource-summary strong { color: #341550; font-size: 1.45rem; }
+.management-resource-summary small { color: #7c7481; }
+.management-resource-records { overflow: hidden; border: 1px solid #e5dfea; border-radius: 15px; background: #fff; }
+.management-resource-table-wrap { overflow-x: auto; }
+.management-resource-table-wrap table { width: 100%; border-collapse: collapse; }
+.management-resource-table-wrap th,.management-resource-table-wrap td { padding: 14px 16px; border-bottom: 1px solid #eee8f1; text-align: left; vertical-align: top; }
+.management-resource-table-wrap th { color: #786d80; font-size: .67rem; letter-spacing: .07em; text-transform: uppercase; }
+.management-resource-table-wrap td { color: #5f5664; font-size: .8rem; }
+.management-resource-table-wrap td:last-child > div { display: flex; gap: 6px; }
+.management-resource-table-wrap button { border: 1px solid #d9cde3; border-radius: 7px; padding: 7px 9px; background: #fff; color: #5b2e91; font-weight: 800; cursor: pointer; }
+.management-resource-status { display: inline-flex; padding: 5px 8px; border-radius: 999px; background: #f2edf6; color: #5b2e91; font-size: .68rem; font-weight: 850; }
+.management-resource-status.verified,.management-resource-status.received,.management-resource-status.closed { background: #eaf7ef; color: #286747; }
+@media (max-width: 950px) { .management-resource-actions { grid-template-columns: 1fr; } .management-resource-summary { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 600px) { .management-resource-summary { grid-template-columns: 1fr; } }
