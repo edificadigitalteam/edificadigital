@@ -19,5 +19,12 @@
 .management-resource-table-wrap button { border: 1px solid #d9cde3; border-radius: 7px; padding: 7px 9px; background: #fff; color: #5b2e91; font-weight: 800; cursor: pointer; }
 .management-resource-status { display: inline-flex; padding: 5px 8px; border-radius: 999px; background: #f2edf6; color: #5b2e91; font-size: .68rem; font-weight: 850; }
 .management-resource-status.verified,.management-resource-status.received,.management-resource-status.closed { background: #eaf7ef; color: #286747; }
+.management-embedded-intake { padding: 18px clamp(12px,3vw,32px) 40px; }
+.management-embedded-intake-back { max-width: 1180px; margin: 0 auto 8px; }
+.management-embedded-intake-back a { color: #5b2e91; font-size: .8rem; font-weight: 850; text-decoration: none; }
+.management-embedded-intake .intake-shell { min-height: auto; background: transparent; }
+.management-embedded-intake .intake-main { width: min(100%,1180px); margin: 0 auto; padding: 0; }
+.management-embedded-intake .module-form-breadcrumb { display: none; }
+.management-embedded-intake .intake-success { min-height: auto; padding: 18px 0; background: transparent; }
 @media (max-width: 950px) { .management-resource-actions { grid-template-columns: 1fr; } .management-resource-summary { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media (max-width: 600px) { .management-resource-summary { grid-template-columns: 1fr; } }
