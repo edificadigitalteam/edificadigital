@@ -1,6 +1,32 @@
 import { useEffect, useState } from 'react'
 import { isSupabaseConfigured, supabase } from '../../lib/supabase.js'
 
+// Temporary bootstrap tracing: ships every step (not deduped, unlike
+// reportClientError) to /api/log so a stuck "recovering session" report can
+// be diagnosed from Vercel logs without needing the user's own console.
+const bootId = Math.random().toString(36).slice(2, 8)
+let traceSeq = 0
+function trace(step, extra = {}) {
+  const detail = { boot: bootId, seq: ++traceSeq, path: typeof window !== 'undefined' ? window.location.pathname : '', ...extra }
+  console.info('[auth]', step, detail)
+  if (typeof window === 'undefined' || typeof fetch !== 'function') return
+  fetch('/api/log', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      level: 'warn',
+      context: 'auth-bootstrap',
+      message: `[auth] ${step}`,
+      stack: JSON.stringify(detail),
+      url: window.location.href,
+      userAgent: window.navigator?.userAgent ?? '',
+    }),
+    keepalive: true,
+  }).catch(() => {})
+}
+
+trace('module:evaluated', { hasSupabase: isSupabaseConfigured })
+
 const initialStatus = isSupabaseConfigured ? 'loading' : 'configuration'
 const emptyIdentity = {
   email: '', userId: '', displayName: '', role: 'operator', organizationId: '', organizationName: '',
@@ -123,9 +149,11 @@ async function resolveCurrentTenant() {
 }
 
 async function performAccessCheck(session) {
+  trace('performAccessCheck:start', { hasSession: Boolean(session?.user) })
   if (!supabase || !session?.user) {
     lastAuthorizedToken = ''
     publish({ status: isSupabaseConfigured ? 'signed_out' : 'configuration', ...emptyIdentity })
+    trace('performAccessCheck:no-session')
     return
   }
 
@@ -135,6 +163,7 @@ async function performAccessCheck(session) {
       .catch((error) => ({ data: null, error })),
     resolveCurrentTenant(),
   ])
+  trace('performAccessCheck:rpc-settled', { profileError: profileResponse.error?.message ?? null, hasTenant: Boolean(tenant) })
   const { data: profile, error: profileError } = profileResponse
 
   if (!profileError) {
@@ -157,10 +186,11 @@ async function performAccessCheck(session) {
       message: tenantMismatch ? 'Este acceso pertenece a una organización diferente al tenant solicitado.' : '',
     }
     publish(nextState)
+    trace('performAccessCheck:published', { status: nextState.status })
     if (nextState.status === 'authorized') {
       lastAuthorizedToken = session.access_token || session.user.id
       const next = consumeNextPath()
-      if (next) { window.location.replace(next); return }
+      if (next) { trace('performAccessCheck:redirect', { next }); window.location.replace(next); return }
       clearCallbackUrl()
     }
     return
@@ -174,6 +204,7 @@ async function performAccessCheck(session) {
       displayName: '', role: 'operator', organizationId: '', organizationName: '',
       tenantHost: tenant?.hostname ?? '', tenantOrganizationId: tenant?.organization_id ?? '', message: '',
     })
+    trace('performAccessCheck:fallback-published', { status: data ? 'authorized' : 'restricted' })
     if (data) {
       lastAuthorizedToken = session.access_token || session.user.id
       const next = consumeNextPath()
@@ -181,6 +212,7 @@ async function performAccessCheck(session) {
       clearCallbackUrl()
     }
   } catch (error) {
+    trace('performAccessCheck:fallback-failed', { message: error.message })
     publish({ status: 'signed_out', ...emptyIdentity, email: identity.email, message: error.message || 'No fue posible verificar el acceso.' })
   }
 }
@@ -189,11 +221,16 @@ function checkAccess(session) {
   if (!session?.user) return performAccessCheck(session)
   const token = session.access_token || session.user.id
   if (lastAuthorizedToken === token && sharedState.status === 'authorized') {
+    trace('checkAccess:already-authorized')
     const next = consumeNextPath()
     if (next) window.location.replace(next)
     return Promise.resolve()
   }
-  if (sessionCheckPromise && sessionCheckToken === token) return sessionCheckPromise
+  if (sessionCheckPromise && sessionCheckToken === token) {
+    trace('checkAccess:dedup-reuse')
+    return sessionCheckPromise
+  }
+  trace('checkAccess:start')
   sessionCheckToken = token
   sessionCheckPromise = performAccessCheck(session).finally(() => {
     if (sessionCheckToken === token) {
@@ -205,11 +242,16 @@ function checkAccess(session) {
 }
 
 function ensureAuthStarted() {
-  if (!supabase || authStarted) return
+  if (!supabase || authStarted) {
+    trace('ensureAuthStarted:skip', { hasSupabase: Boolean(supabase), alreadyStarted: authStarted, statusNow: sharedState.status })
+    return
+  }
   authStarted = true
+  trace('ensureAuthStarted:begin')
   publish({ ...sharedState, status: 'loading', message: '' })
 
   const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+    trace('onAuthStateChange', { event, hasSession: Boolean(session?.user) })
     window.setTimeout(() => {
       if (event === 'SIGNED_OUT') {
         lastAuthorizedToken = ''
@@ -223,12 +265,18 @@ function ensureAuthStarted() {
 
   const bootstrap = withTimeout(supabase.auth.getSession(), SESSION_TIMEOUT_MS, 'La sesión guardada no respondió a tiempo.')
     .then(({ data, error }) => {
+      trace('getSession:resolved', { hasSession: Boolean(data?.session?.user), error: error?.message ?? null })
       if (error) throw error
       return checkAccess(data.session)
     })
+    .catch((error) => {
+      trace('getSession:rejected', { message: error?.message })
+      throw error
+    })
 
   withTimeout(bootstrap, BOOTSTRAP_TIMEOUT_MS, 'La verificación de acceso tardó demasiado.')
-    .catch(() => {
+    .catch((error) => {
+      trace('bootstrap:ceiling-fired', { message: error?.message, statusAtFire: sharedState.status })
       if (sharedState.status === 'loading') {
         publish({ status: 'signed_out', ...emptyIdentity, message: 'La sesión anterior no pudo recuperarse. Solicita un enlace nuevo.' })
       }
@@ -282,6 +330,7 @@ export function useOperatorAccess() {
   const [state, setState] = useState(sharedState)
 
   useEffect(() => {
+    trace('useOperatorAccess:mount', { statusNow: sharedState.status })
     subscribers.add(setState)
     setState(sharedState)
     ensureAuthStarted()
