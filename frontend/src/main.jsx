@@ -5,8 +5,10 @@ import './features/platform/two-space-layout.css'
 import App from './App.jsx'
 import DashboardApp from './features/dashboard/DashboardApp.jsx'
 import OrganizationalManagementApp from './features/management/OrganizationalManagementApp.jsx'
+import ManagementStructurePage from './features/management/ManagementStructurePage.jsx'
 import ManagementObjectivesPage from './features/management/ManagementObjectivesPage.jsx'
 import ManagementTrackingPage from './features/management/ManagementTrackingPage.jsx'
+import ManagementIndicatorFormPage from './features/management/ManagementIndicatorFormPage.jsx'
 import ManagementReportsPage from './features/management/ManagementReportsPage.jsx'
 import ManagementResourcesPage from './features/management/ManagementResourcesPage.jsx'
 import ManagementResourceFormPage from './features/management/ManagementResourceFormPage.jsx'
@@ -32,7 +34,9 @@ const isManagementMonetary = pathname.startsWith('/app/management/resources/mone
 const isManagementInKind = pathname.startsWith('/app/management/resources/in-kind')
 const isManagementAllies = pathname.startsWith('/app/management/allies')
 const isManagementVolunteers = pathname.startsWith('/app/management/volunteers')
+const isManagementStructure = pathname === '/app/management/structure' || pathname === '/app/management/structure/'
 const isManagementObjectives = pathname.startsWith('/app/management/objectives')
+const isManagementIndicatorNew = pathname === '/app/management/tracking/new' || pathname === '/app/management/tracking/new/'
 const isManagementTracking = pathname.startsWith('/app/management/tracking')
 const isManagementReports = pathname.startsWith('/app/management/reports')
 const isActivationPage = pathname === '/activar'
@@ -83,7 +87,9 @@ function RootApplication() {
   else if (isManagementResources) content = <ManagementResourcesPage />
   else if (isManagementAllies) content = <ManagementDirectoryPage kind="allies" />
   else if (isManagementVolunteers) content = <ManagementDirectoryPage kind="volunteers" />
+  else if (isManagementStructure) content = <ManagementStructurePage />
   else if (isManagementObjectives) content = <ManagementObjectivesPage />
+  else if (isManagementIndicatorNew) content = <ManagementIndicatorFormPage />
   else if (isManagementTracking) content = <ManagementTrackingPage />
   else if (isManagementReports) content = <ManagementReportsPage />
   else if (isManagement) content = <OrganizationalManagementApp />
