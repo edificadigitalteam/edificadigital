@@ -4,6 +4,8 @@ import './index.css'
 import App from './App.jsx'
 import DashboardApp from './features/dashboard/DashboardApp.jsx'
 import OrganizationalManagementApp from './features/management/OrganizationalManagementApp.jsx'
+import ManagementTrackingPage from './features/management/ManagementTrackingPage.jsx'
+import ManagementOperationalFixes from './features/management/ManagementOperationalFixes.jsx'
 import GuidedUXControllerV2 from './features/guidance/GuidedUXControllerV2.jsx'
 import ActivateAccountPage from './features/auth/ActivateAccountPage.jsx'
 import GlobalLanguageController from './i18n/GlobalLanguageController.jsx'
@@ -16,6 +18,7 @@ installGlobalErrorLogging()
 const pathname = window.location.pathname
 const isDashboard = pathname === '/app' || pathname.startsWith('/app/') || pathname.startsWith('/donations/')
 const isManagement = pathname.startsWith('/app/management') || pathname.startsWith('/app/church')
+const isManagementTracking = pathname.startsWith('/app/management/tracking')
 const isActivationPage = pathname === '/activar'
 
 function PublicLoginGuard() {
@@ -51,7 +54,8 @@ function RootApplication() {
       <PublicLoginGuard />
       <GlobalLanguageController />
       <GuidedUXControllerV2 />
-      {isManagement ? <OrganizationalManagementApp /> : isDashboard ? <DashboardApp /> : <App />}
+      {isManagement && <ManagementOperationalFixes />}
+      {isManagementTracking ? <ManagementTrackingPage /> : isManagement ? <OrganizationalManagementApp /> : isDashboard ? <DashboardApp /> : <App />}
     </>
   )
 }
