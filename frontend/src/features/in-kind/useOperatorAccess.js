@@ -8,32 +8,6 @@ const trace = (step, extra) => sharedTrace('auth', step, extra)
 
 trace('module:evaluated', { hasSupabase: isSupabaseConfigured })
 
-// Temporary bootstrap tracing: ships every step (not deduped, unlike
-// reportClientError) to /api/log so a stuck "recovering session" report can
-// be diagnosed from Vercel logs without needing the user's own console.
-const bootId = Math.random().toString(36).slice(2, 8)
-let traceSeq = 0
-function trace(step, extra = {}) {
-  const detail = { boot: bootId, seq: ++traceSeq, path: typeof window !== 'undefined' ? window.location.pathname : '', ...extra }
-  console.info('[auth]', step, detail)
-  if (typeof window === 'undefined' || typeof fetch !== 'function') return
-  fetch('/api/log', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      level: 'warn',
-      context: 'auth-bootstrap',
-      message: `[auth] ${step}`,
-      stack: JSON.stringify(detail),
-      url: window.location.href,
-      userAgent: window.navigator?.userAgent ?? '',
-    }),
-    keepalive: true,
-  }).catch(() => {})
-}
-
-trace('module:evaluated', { hasSupabase: isSupabaseConfigured })
-
 const initialStatus = isSupabaseConfigured ? 'loading' : 'configuration'
 const emptyIdentity = {
   email: '', userId: '', displayName: '', role: 'operator', organizationId: '', organizationName: '',
