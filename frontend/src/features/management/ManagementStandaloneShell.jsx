@@ -39,7 +39,7 @@ export default function ManagementStandaloneShell({ access, children }) {
         </div>
       </aside>
       <main className="management-main">
-        <div className="management-mobile-header no-print"><Brand /><div className="management-mobile-actions">{canAdmin && <a href="/app/admin/operators">Usuarios</a>}<button type="button" onClick={() => window.location.assign('/app')}>Módulos</button></div></div>
+        <div className="management-mobile-header no-print"><Brand /><div className="management-mobile-actions">{canAdmin && <a className="management-users-mobile-link" href="/app/admin/operators">Usuarios</a>}<a className="management-resources-mobile-link" href="/app/management/resources">Aportes</a><button type="button" onClick={() => window.location.assign('/app')}>Módulos</button></div></div>
         {children}
       </main>
     </div>
