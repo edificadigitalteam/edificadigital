@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { managementTranslationPatterns, managementTranslations } from './managementTranslations.js'
 import { platformTranslations } from './platformTranslations.js'
 import { portalTranslationPatterns, portalTranslations } from './portalTranslations.js'
 import './global-language.css'
@@ -7,7 +8,9 @@ const LANGUAGE_KEY = 'edifica-language'
 const translations = new Map([
   ...Object.entries(portalTranslations),
   ...Object.entries(platformTranslations),
+  ...Object.entries(managementTranslations),
 ])
+const translationPatterns = [...portalTranslationPatterns, ...managementTranslationPatterns]
 const textState = new WeakMap()
 const attributeState = new WeakMap()
 const translatedAttributes = ['placeholder', 'title', 'aria-label']
@@ -20,7 +23,7 @@ function translateValue(value) {
   if (!text) return value
   const exact = translations.get(text)
   if (exact) return `${prefix}${exact}${suffix}`
-  for (const [pattern, replacement] of portalTranslationPatterns) {
+  for (const [pattern, replacement] of translationPatterns) {
     pattern.lastIndex = 0
     if (pattern.test(text)) return `${prefix}${text.replace(pattern, replacement)}${suffix}`
   }
@@ -91,9 +94,7 @@ export default function GlobalLanguageController() {
       })
     })
     observer.observe(root, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: translatedAttributes })
-    return () => {
-      observer.disconnect()
-    }
+    return () => observer.disconnect()
   }, [isPortal, language])
 
   if (!isPortal) return null

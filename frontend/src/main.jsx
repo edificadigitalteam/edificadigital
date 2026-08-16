@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import DashboardApp from './features/dashboard/DashboardApp.jsx'
+import OrganizationalManagementApp from './features/management/OrganizationalManagementApp.jsx'
 import ActivateAccountPage from './features/auth/ActivateAccountPage.jsx'
 import GlobalLanguageController from './i18n/GlobalLanguageController.jsx'
 import { ToastProvider } from './features/notifications/ToastProvider.jsx'
@@ -11,8 +12,10 @@ import { installGlobalErrorLogging } from './lib/logger.js'
 
 installGlobalErrorLogging()
 
-const isDashboard = window.location.pathname === '/app' || window.location.pathname.startsWith('/app/') || window.location.pathname.startsWith('/donations/')
-const isActivationPage = window.location.pathname === '/activar'
+const pathname = window.location.pathname
+const isDashboard = pathname === '/app' || pathname.startsWith('/app/') || pathname.startsWith('/donations/')
+const isManagement = pathname.startsWith('/app/management') || pathname.startsWith('/app/church')
+const isActivationPage = pathname === '/activar'
 
 function PublicLoginGuard() {
   useEffect(() => {
@@ -46,7 +49,7 @@ function RootApplication() {
     <>
       <PublicLoginGuard />
       <GlobalLanguageController />
-      {isDashboard ? <DashboardApp /> : <App />}
+      {isManagement ? <OrganizationalManagementApp /> : isDashboard ? <DashboardApp /> : <App />}
     </>
   )
 }
