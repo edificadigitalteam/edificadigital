@@ -11,6 +11,10 @@ const SESSION_TIMEOUT_MS = 8000
 const RPC_TIMEOUT_MS = 6000
 const TENANT_TIMEOUT_MS = 3000
 const LINK_TIMEOUT_MS = 12000
+// Upper bound on the whole bootstrap (getSession + profile/tenant checks combined),
+// so a slow or wedged step downstream of getSession can't leave the UI on
+// "loading" past this point even though each individual step is also timed.
+const BOOTSTRAP_TIMEOUT_MS = 12000
 const redirectablePathPrefixes = ['/app', '/donations']
 const AUTH_NEXT_KEY = 'edifica-auth-next'
 
@@ -126,13 +130,11 @@ async function performAccessCheck(session) {
   }
 
   const identity = { email: session.user.email ?? '', userId: session.user.id ?? '' }
-  let profileResponse
-  try {
-    profileResponse = await withTimeout(supabase.rpc('current_operator_profile'), RPC_TIMEOUT_MS, 'La verificación del perfil tardó demasiado.')
-  } catch (error) {
-    profileResponse = { data: null, error }
-  }
-  const tenant = await resolveCurrentTenant()
+  const [profileResponse, tenant] = await Promise.all([
+    withTimeout(supabase.rpc('current_operator_profile'), RPC_TIMEOUT_MS, 'La verificación del perfil tardó demasiado.')
+      .catch((error) => ({ data: null, error })),
+    resolveCurrentTenant(),
+  ])
   const { data: profile, error: profileError } = profileResponse
 
   if (!profileError) {
@@ -219,11 +221,13 @@ function ensureAuthStarted() {
   })
   authSubscription = listener.subscription
 
-  withTimeout(supabase.auth.getSession(), SESSION_TIMEOUT_MS, 'La sesión guardada no respondió a tiempo.')
+  const bootstrap = withTimeout(supabase.auth.getSession(), SESSION_TIMEOUT_MS, 'La sesión guardada no respondió a tiempo.')
     .then(({ data, error }) => {
       if (error) throw error
       return checkAccess(data.session)
     })
+
+  withTimeout(bootstrap, BOOTSTRAP_TIMEOUT_MS, 'La verificación de acceso tardó demasiado.')
     .catch(() => {
       if (sharedState.status === 'loading') {
         publish({ status: 'signed_out', ...emptyIdentity, message: 'La sesión anterior no pudo recuperarse. Solicita un enlace nuevo.' })
