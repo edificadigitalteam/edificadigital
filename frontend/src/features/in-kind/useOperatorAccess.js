@@ -14,6 +14,10 @@ const emptyIdentity = {
   message: '',
 }
 const demoFallbackUrl = 'https://edificadigital-git-feature-demo-acces-a82faf-yangetzes-projects.vercel.app'
+const SESSION_TIMEOUT_MS = 6000
+const RPC_TIMEOUT_MS = 5000
+const TENANT_TIMEOUT_MS = 2500
+const LINK_TIMEOUT_MS = 10000
 
 function isLocalUrl(value) {
   try {
@@ -22,6 +26,14 @@ function isLocalUrl(value) {
   } catch {
     return false
   }
+}
+
+function withTimeout(promise, milliseconds, message) {
+  let timer
+  const timeout = new Promise((_, reject) => {
+    timer = window.setTimeout(() => reject(new Error(message)), milliseconds)
+  })
+  return Promise.race([Promise.resolve(promise), timeout]).finally(() => window.clearTimeout(timer))
 }
 
 const redirectablePathPrefixes = ['/app', '/donations']
@@ -41,9 +53,6 @@ function getOriginPath() {
 function getAppRedirectUrl(nextPath) {
   const configuredUrl = import.meta.env.VITE_APP_URL?.trim()
   const runtimeIsLocal = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname)
-  // In production the callback must return to the exact host where the login
-  // was requested. This prevents an old preview VITE_APP_URL from hijacking
-  // the Magic Link and leaving an otherwise valid session on another origin.
   const localConfiguredUrl = configuredUrl && !isLocalUrl(configuredUrl) ? configuredUrl : ''
   const baseUrl = runtimeIsLocal ? (localConfiguredUrl || demoFallbackUrl) : window.location.origin
   const normalizedBaseUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`
@@ -82,11 +91,19 @@ function clearLocalAuthCache() {
 
 async function resolveCurrentTenant() {
   if (!supabase) return null
-  const { data, error } = await supabase.rpc('resolve_tenant_host', {
-    host_input: window.location.hostname.toLowerCase(),
-  })
-  if (error) return null
-  return Array.isArray(data) ? data[0] ?? null : data ?? null
+  try {
+    const { data, error } = await withTimeout(
+      supabase.rpc('resolve_tenant_host', { host_input: window.location.hostname.toLowerCase() }),
+      TENANT_TIMEOUT_MS,
+      'Tenant lookup timed out.',
+    )
+    if (error) return null
+    return Array.isArray(data) ? data[0] ?? null : data ?? null
+  } catch {
+    // Tenant resolution is an additional boundary. RLS remains authoritative,
+    // so a slow host lookup must never freeze the whole sign-in experience.
+    return null
+  }
 }
 
 export function useOperatorAccess() {
@@ -103,11 +120,17 @@ export function useOperatorAccess() {
       userId: session.user.id ?? '',
     }
 
-    let profileResponse = await supabase.rpc('current_operator_profile')
-    if (profileResponse.error) {
-      await new Promise((resolve) => window.setTimeout(resolve, 250))
-      profileResponse = await supabase.rpc('current_operator_profile')
+    let profileResponse
+    try {
+      profileResponse = await withTimeout(
+        supabase.rpc('current_operator_profile'),
+        RPC_TIMEOUT_MS,
+        'La verificación del perfil tardó demasiado.',
+      )
+    } catch (error) {
+      profileResponse = { data: null, error }
     }
+
     const tenant = await resolveCurrentTenant()
     const { data: profile, error: profileError } = profileResponse
 
@@ -144,10 +167,16 @@ export function useOperatorAccess() {
       return
     }
 
-    const { data, error } = await supabase.rpc('current_operator_access')
-    if (error) {
+    try {
+      const { data, error } = await withTimeout(
+        supabase.rpc('current_operator_access'),
+        RPC_TIMEOUT_MS,
+        'La verificación del acceso tardó demasiado.',
+      )
+      if (error) throw error
+
       setState({
-        status: 'error',
+        status: data ? 'authorized' : 'restricted',
         ...identity,
         displayName: '',
         role: 'operator',
@@ -155,26 +184,20 @@ export function useOperatorAccess() {
         organizationName: '',
         tenantHost: tenant?.hostname ?? '',
         tenantOrganizationId: tenant?.organization_id ?? '',
-        message: error.message,
+        message: '',
       })
-      return
-    }
-
-    setState({
-      status: data ? 'authorized' : 'restricted',
-      ...identity,
-      displayName: '',
-      role: 'operator',
-      organizationId: '',
-      organizationName: '',
-      tenantHost: tenant?.hostname ?? '',
-      tenantOrganizationId: tenant?.organization_id ?? '',
-      message: '',
-    })
-    if (data) {
-      const next = consumeNextPath()
-      if (next) { window.location.replace(next); return }
-      clearCallbackUrl()
+      if (data) {
+        const next = consumeNextPath()
+        if (next) { window.location.replace(next); return }
+        clearCallbackUrl()
+      }
+    } catch (error) {
+      setState({
+        status: 'signed_out',
+        ...emptyIdentity,
+        email: identity.email,
+        message: error.message || 'No fue posible verificar el acceso. Solicita un enlace nuevo.',
+      })
     }
   }, [])
 
@@ -185,13 +208,23 @@ export function useOperatorAccess() {
 
     const bootstrap = async () => {
       setState((current) => ({ ...current, status: 'loading', message: '' }))
-      const { data, error } = await supabase.auth.getSession()
-      if (!active) return
-      if (error) {
-        setState({ status: 'signed_out', ...emptyIdentity, message: error.message })
-        return
+      try {
+        const { data, error } = await withTimeout(
+          supabase.auth.getSession(),
+          SESSION_TIMEOUT_MS,
+          'La sesión guardada no respondió a tiempo.',
+        )
+        if (!active) return
+        if (error) throw error
+        await checkAccess(data.session)
+      } catch (error) {
+        if (!active) return
+        setState({
+          status: 'signed_out',
+          ...emptyIdentity,
+          message: 'La sesión anterior no pudo recuperarse. Solicita un enlace nuevo para ingresar.',
+        })
       }
-      await checkAccess(data.session)
     }
 
     bootstrap()
@@ -203,7 +236,7 @@ export function useOperatorAccess() {
           setState({ status: 'signed_out', ...emptyIdentity })
           return
         }
-        checkAccess(session)
+        if (session?.user) checkAccess(session)
       }, 0)
     })
 
@@ -217,10 +250,19 @@ export function useOperatorAccess() {
     if (!supabase) return { error: new Error('Supabase configuration is unavailable.') }
     setState({ status: 'sending_link', ...emptyIdentity, email })
 
-    const { data: gate, error: gateError } = await supabase.rpc('request_login_access', { target_email: email })
-    if (gateError) {
-      setState({ status: 'signed_out', ...emptyIdentity, email, message: gateError.message })
-      return { error: gateError }
+    let gate
+    try {
+      const response = await withTimeout(
+        supabase.rpc('request_login_access', { target_email: email }),
+        RPC_TIMEOUT_MS,
+        'La validación del correo tardó demasiado.',
+      )
+      if (response.error) throw response.error
+      gate = response.data
+    } catch {
+      // Existing Auth users can still request a link safely. Authorization is
+      // enforced again by current_operator_profile and by RLS after sign-in.
+      gate = { ready: true, fallback: true }
     }
 
     if (!gate?.ready) {
@@ -228,23 +270,39 @@ export function useOperatorAccess() {
       return { error: null }
     }
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: getAppRedirectUrl(getOriginPath()),
-        shouldCreateUser: true,
-      },
-    })
-
-    setState(error
-      ? { status: 'signed_out', ...emptyIdentity, email, message: error.message }
-      : { status: 'link_sent', ...emptyIdentity, email })
-    return { error }
+    try {
+      const { error } = await withTimeout(
+        supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: getAppRedirectUrl(getOriginPath()),
+            shouldCreateUser: gate.fallback ? false : true,
+          },
+        }),
+        LINK_TIMEOUT_MS,
+        'El servicio de correo tardó demasiado en responder.',
+      )
+      if (error) throw error
+      setState({ status: 'link_sent', ...emptyIdentity, email })
+      return { error: null }
+    } catch (error) {
+      setState({
+        status: 'signed_out',
+        ...emptyIdentity,
+        email,
+        message: error.message || 'No fue posible enviar el enlace de acceso.',
+      })
+      return { error }
+    }
   }
 
   const signOut = async () => {
     setState({ status: 'loading', ...emptyIdentity })
-    if (supabase) await supabase.auth.signOut({ scope: 'local' })
+    try {
+      if (supabase) await withTimeout(supabase.auth.signOut({ scope: 'local' }), SESSION_TIMEOUT_MS, 'Sign out timed out.')
+    } catch {
+      // Local cache cleanup below is the last-resort escape hatch for a stuck session.
+    }
     clearLocalAuthCache()
     window.location.replace(`/?signed_out=1&t=${Date.now()}`)
   }
