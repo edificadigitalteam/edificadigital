@@ -31,9 +31,9 @@ function getOriginPath() {
   const params = new URLSearchParams(search)
   params.delete('login')
   params.delete('t')
+  params.delete('auth')
   const cleanedSearch = params.toString()
   const path = cleanedSearch ? `${pathname}?${cleanedSearch}` : pathname
-  // A bare "/app" (or the plain login trigger) isn't a deep link worth restoring.
   if (path === '/app' || path === '/') return ''
   return path
 }
@@ -41,8 +41,11 @@ function getOriginPath() {
 function getAppRedirectUrl(nextPath) {
   const configuredUrl = import.meta.env.VITE_APP_URL?.trim()
   const runtimeIsLocal = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname)
-  const usableConfiguredUrl = configuredUrl && !isLocalUrl(configuredUrl) ? configuredUrl : ''
-  const baseUrl = usableConfiguredUrl || (runtimeIsLocal ? demoFallbackUrl : window.location.origin)
+  // In production the callback must return to the exact host where the login
+  // was requested. This prevents an old preview VITE_APP_URL from hijacking
+  // the Magic Link and leaving an otherwise valid session on another origin.
+  const localConfiguredUrl = configuredUrl && !isLocalUrl(configuredUrl) ? configuredUrl : ''
+  const baseUrl = runtimeIsLocal ? (localConfiguredUrl || demoFallbackUrl) : window.location.origin
   const normalizedBaseUrl = baseUrl.startsWith('http') ? baseUrl : `https://${baseUrl}`
   const redirect = new URL('/app', normalizedBaseUrl)
   redirect.searchParams.set('auth', 'callback')
@@ -182,11 +185,6 @@ export function useOperatorAccess() {
 
     const bootstrap = async () => {
       setState((current) => ({ ...current, status: 'loading', message: '' }))
-      // detectSessionInUrl already exchanges the magic-link `code` for a session
-      // during client init, before getSession() (which awaits that same init)
-      // resolves. Exchanging it again here always loses that race and fails
-      // (the one-time code/verifier is already consumed), which was wiping a
-      // just-established session back to signed_out on first paint.
       const { data, error } = await supabase.auth.getSession()
       if (!active) return
       if (error) {

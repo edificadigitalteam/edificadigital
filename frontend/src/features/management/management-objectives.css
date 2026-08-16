@@ -1,0 +1,9 @@
+.management-objectives-page { display: grid; gap: 22px; }
+.objective-guided-form .management-form-title p { margin: 7px 0 0; max-width: 760px; color: var(--mg-muted); font-size: .8rem; line-height: 1.5; }
+.objective-guided-form label > small { display: block; margin-top: 6px; color: var(--mg-muted); font-size: .69rem; font-weight: 500; line-height: 1.45; }
+.objective-leader-field { padding: 14px; border: 1px solid #e2d7e9; border-left: 4px solid var(--mg-orange); border-radius: 10px; background: #fffaf5; }
+.objective-leader-field > span { color: var(--mg-purple-dark); font-size: .84rem !important; }
+.objective-guided-form input[readonly] { border-color: #d9cce3; background: #f6f1f9; color: var(--mg-purple-dark); font-weight: 900; letter-spacing: .035em; cursor: default; }
+.objective-guided-form .management-multiselect.wide { grid-column: 1 / -1; }
+.objective-guided-form .management-form-actions .primary:disabled { opacity: .5; cursor: not-allowed; }
+@media (max-width: 720px) { .objective-leader-field { padding: 12px; } }

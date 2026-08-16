@@ -5,6 +5,7 @@ import './features/platform/two-space-layout.css'
 import App from './App.jsx'
 import DashboardApp from './features/dashboard/DashboardApp.jsx'
 import OrganizationalManagementApp from './features/management/OrganizationalManagementApp.jsx'
+import ManagementObjectivesPage from './features/management/ManagementObjectivesPage.jsx'
 import ManagementTrackingPage from './features/management/ManagementTrackingPage.jsx'
 import ManagementReportsPage from './features/management/ManagementReportsPage.jsx'
 import ManagementResourcesPage from './features/management/ManagementResourcesPage.jsx'
@@ -14,6 +15,7 @@ import ManagementProjectWorkspacePage from './features/management/ManagementProj
 import ManagementOperationalFixes from './features/management/ManagementOperationalFixes.jsx'
 import GuidedUXControllerV2 from './features/guidance/GuidedUXControllerV2.jsx'
 import ActivateAccountPage from './features/auth/ActivateAccountPage.jsx'
+import AuthLandingRecovery from './features/auth/AuthLandingRecovery.jsx'
 import GlobalLanguageController from './i18n/GlobalLanguageController.jsx'
 import { ToastProvider } from './features/notifications/ToastProvider.jsx'
 import { ErrorBoundary } from './lib/ErrorBoundary.jsx'
@@ -30,6 +32,7 @@ const isManagementMonetary = pathname.startsWith('/app/management/resources/mone
 const isManagementInKind = pathname.startsWith('/app/management/resources/in-kind')
 const isManagementAllies = pathname.startsWith('/app/management/allies')
 const isManagementVolunteers = pathname.startsWith('/app/management/volunteers')
+const isManagementObjectives = pathname.startsWith('/app/management/objectives')
 const isManagementTracking = pathname.startsWith('/app/management/tracking')
 const isManagementReports = pathname.startsWith('/app/management/reports')
 const isActivationPage = pathname === '/activar'
@@ -80,6 +83,7 @@ function RootApplication() {
   else if (isManagementResources) content = <ManagementResourcesPage />
   else if (isManagementAllies) content = <ManagementDirectoryPage kind="allies" />
   else if (isManagementVolunteers) content = <ManagementDirectoryPage kind="volunteers" />
+  else if (isManagementObjectives) content = <ManagementObjectivesPage />
   else if (isManagementTracking) content = <ManagementTrackingPage />
   else if (isManagementReports) content = <ManagementReportsPage />
   else if (isManagement) content = <OrganizationalManagementApp />
@@ -88,6 +92,7 @@ function RootApplication() {
 
   return (
     <>
+      <AuthLandingRecovery />
       <PublicLoginGuard />
       <GlobalLanguageController />
       <GuidedUXControllerV2 />
