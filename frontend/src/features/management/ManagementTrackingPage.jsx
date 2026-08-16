@@ -26,22 +26,22 @@ const metricTypes = {
 
 const aggregationOptions = {
   es: {
-    sum: 'Sumar todos los avances',
+    sum: 'Sumar todos los resultados cargados',
     average: 'Calcular un promedio',
-    latest: 'Usar el último dato registrado',
+    latest: 'Usar el último resultado cargado',
     max: 'Usar el valor más alto',
     unique_people: 'Contar personas diferentes',
-    calculated: 'Calcular automáticamente un porcentaje',
-    non_aggregable: 'Mostrar cada dato por separado',
+    calculated: 'Usar el porcentaje reportado',
+    non_aggregable: 'Mostrar cada resultado por separado',
   },
   en: {
-    sum: 'Add all progress entries',
+    sum: 'Add all recorded results',
     average: 'Calculate an average',
-    latest: 'Use the latest recorded value',
+    latest: 'Use the latest recorded result',
     max: 'Use the highest value',
     unique_people: 'Count unique people',
-    calculated: 'Automatically calculate a percentage',
-    non_aggregable: 'Keep each value separate',
+    calculated: 'Use the reported percentage',
+    non_aggregable: 'Keep each result separate',
   },
 }
 
@@ -58,90 +58,79 @@ const copy = {
     users: 'Usuarios y accesos',
     signOut: 'Cerrar sesión',
     eyebrow: 'SEGUIMIENTO',
-    title: 'Indicadores y avances',
-    intro: 'Define qué quieres medir, fija una meta y registra lo logrado. Edifica realiza los cálculos y consolida los avances.',
+    title: 'Indicadores y resultados',
+    intro: 'Define una vez la meta de cada indicador. Después registra únicamente lo que realmente se logró en cada período; Edifica compara y consolida los resultados.',
     newIndicator: '＋ Crear indicador',
     editIndicator: 'Editar indicador',
-    progress: 'Registrar avance',
-    prerequisites: 'ANTES DE CREAR UN INDICADOR',
-    prerequisiteTitle: 'Solo necesitas dos cosas previamente',
-    prerequisiteIntro: 'Un objetivo institucional y un proyecto pueden relacionarse después. Ninguno de los dos es obligatorio para crear un indicador.',
-    period: 'Período de gestión',
-    periodReady: 'Hay un período seleccionado para saber a qué ciclo pertenece el indicador.',
-    periodMissing: 'Primero crea un período de gestión para ubicar el indicador en el tiempo.',
-    unit: 'Área o unidad organizativa',
-    unitReady: 'Hay un área seleccionada como responsable del indicador.',
-    unitMissing: 'Primero crea al menos una dirección, ministerio, departamento o área.',
-    optional: 'Objetivo y proyecto',
-    optionalHelp: 'Opcionales. Úsalos cuando quieras relacionar el indicador con un objetivo o proyecto específico.',
-    ready: 'Listo',
-    required: 'Requerido',
-    optionalLabel: 'Opcional',
-    configure: 'Configurar',
+    progress: 'Registrar resultado',
     periodFilter: 'Período',
     unitFilter: 'Área responsable',
     noPeriod: 'Sin período disponible',
     noUnit: 'Sin áreas disponibles',
+    missingPeriod: 'Falta crear un período de gestión antes de registrar indicadores.',
+    missingUnit: 'Falta crear al menos un área o unidad organizativa antes de registrar indicadores.',
+    configurePeriod: 'Configurar período',
+    configureUnit: 'Configurar estructura',
     indicator: 'INDICADOR',
     createIndicatorTitle: 'Crear indicador',
     editIndicatorTitle: 'Editar indicador',
-    editIndicatorIntro: 'Aquí cambias el nombre, la meta y la forma de calcular el indicador. Los avances ya registrados se conservan.',
+    indicatorContext: 'El período y el área responsable ya están seleccionados. Objetivo institucional y proyecto son relaciones opcionales que puedes agregar ahora o después.',
+    editIndicatorIntro: 'Aquí puedes cambiar el nombre, la meta y la forma de consolidar el indicador. Los resultados ya registrados se conservan.',
     measure: '¿Qué quieres medir? *',
-    measureExample: 'Ej.: Personas capacitadas, iglesias participantes, presupuesto ejecutado.',
+    measureExample: 'Ej.: Personas capacitadas, iglesias participantes, ingresos anuales, presupuesto ejecutado.',
     metricType: '¿Qué clase de resultado vas a registrar?',
-    aggregation: 'Cuando registres varios avances, ¿cómo debe obtenerse el resultado final?',
-    aggregationHelp: 'Ejemplo: si reportas 40 personas en enero y 60 en febrero, “sumar” mostrará 100; “promedio” mostrará 50.',
+    aggregation: 'Cuando cargues varios resultados, ¿cómo debe quedar el total?',
+    aggregationHelp: 'Ej.: 40 personas en enero + 60 en febrero = 100 si eliges sumar. Para porcentajes normalmente conviene usar el último resultado.',
     unitLabel: '¿En qué unidad lo vas a contar?',
     unitExample: 'Ej.: personas, iglesias, kits, publicaciones, litros.',
-    target: '¿Qué quieres alcanzar?',
-    targetExample: 'Escribe la meta del período. Ej.: 300 personas.',
+    target: 'Meta del indicador',
+    targetExample: 'Se registra una sola vez. Ej.: 300 personas, 85 %, 50.000 USD.',
     currency: 'Moneda',
-    frequency: '¿Cada cuánto actualizarás este indicador?',
-    objective: '¿Qué objetivo ayuda a cumplir? (opcional)',
+    frequency: '¿Cada cuánto esperas actualizar este indicador?',
+    objective: 'Objetivo institucional relacionado (opcional)',
     noObjective: 'Sin objetivo relacionado',
-    objectiveHelp: 'Puedes crear el indicador aunque todavía no existan objetivos.',
-    project: '¿Pertenece a algún proyecto? (opcional)',
+    objectiveHelp: 'El indicador puede existir aunque todavía no hayas creado objetivos.',
+    project: 'Proyecto relacionado (opcional)',
     noProject: 'Sin proyecto relacionado',
-    projectHelp: 'Puedes vincularlo después. Un indicador también puede pertenecer únicamente a un área.',
+    projectHelp: 'Puedes vincular un proyecto después sin perder el historial del indicador.',
     description: '¿Qué significa este indicador?',
-    descriptionExample: 'Explica brevemente qué cuenta y qué queda fuera del cálculo.',
+    descriptionExample: 'Aclara qué se cuenta para evitar interpretaciones distintas entre quienes cargan información.',
     source: '¿De dónde saldrá este dato?',
-    sourceExample: 'Ej.: lista de asistencia, formulario de registro, reporte financiero, acta o base de datos.',
+    sourceExample: 'Ej.: reporte financiero, lista de asistencia, formulario, acta o base de datos.',
     cancel: 'Cancelar',
     saveIndicator: 'Guardar indicador',
     saveChanges: 'Guardar cambios',
     saving: 'Guardando…',
-    progressEyebrow: 'NUEVO AVANCE',
-    progressIntro: 'Estás agregando un resultado al indicador. Para cambiar su nombre, meta o configuración utiliza “Editar indicador”.',
-    from: 'Desde',
-    to: 'Hasta',
-    achieved: '¿Cuánto se logró?',
-    achievedExample: 'Ej.: 42 iglesias participaron.',
-    total: '¿Cuál era el total previsto o posible?',
-    totalExample: 'Ej.: 50 iglesias estaban convocadas.',
-    calculatedResult: 'RESULTADO CALCULADO',
-    reportedValue: '¿Qué resultado alcanzaste?',
-    reportedText: '¿Qué resultado o información deseas reportar?',
-    status: 'Estado del avance',
-    draft: 'Borrador — todavía no cuenta en el resultado',
-    submitted: 'Enviado — ya cuenta en el resultado',
-    verified: 'Verificado — revisado y confirmado',
-    statusHelp: 'Los borradores se guardan pero no modifican el resultado del indicador. “Enviado” y “Verificado” sí se incluyen.',
+    resultEyebrow: 'RESULTADO DEL PERÍODO',
+    resultIntro: 'La meta ya está guardada en el indicador. Aquí solo cargas el resultado real alcanzado durante este período.',
+    targetReference: 'META REGISTRADA',
+    startDate: 'Inicio del período reportado (opcional)',
+    startDateHelp: 'Úsalo únicamente cuando el resultado corresponda a un intervalo.',
+    endDate: 'Fecha o cierre del resultado',
+    endDateHelp: 'Fecha hasta la cual estás reportando este resultado.',
+    resultValue: 'Resultado logrado',
+    amountValue: 'Monto logrado',
+    percentageValue: 'Porcentaje logrado (%)',
+    ratioValue: 'Valor logrado',
+    textValue: '¿Qué resultado o información deseas reportar?',
+    resultHelp: 'Escribe únicamente el dato real. Edifica lo comparará con la meta que ya está registrada.',
+    yesNoValue: '¿Se cumplió?',
+    saveAsDraft: 'Guardar como borrador',
+    draftHelp: 'Actívalo solo si este resultado todavía no debe entrar en los cálculos del indicador.',
     notes: '¿Qué ocurrió durante este período?',
-    notesExample: 'Agrega contexto, incidencias, aclaraciones o información útil para el informe.',
-    saveProgress: 'Guardar avance',
+    notesExample: 'Agrega contexto, incidencias, aclaraciones o información que pueda ser útil al generar el informe.',
+    saveResult: 'Guardar resultado',
     board: 'TABLERO DE SEGUIMIENTO',
     indicators: 'indicadores',
-    noIndicators: 'Todavía no hay indicadores para esta área y período. Crea el primero definiendo qué quieres medir y qué meta quieres alcanzar.',
+    noIndicators: 'Todavía no hay indicadores para esta área y período. Crea el primero definiendo qué quieres medir y cuál es su meta.',
     targetLabel: 'Meta',
-    executed: 'Ejecutado',
-    advances: 'avances registrados',
+    executed: 'Resultado actual',
+    results: 'resultados cargados',
     indicatorSaved: 'Indicador guardado.',
     indicatorUpdated: 'Indicador actualizado.',
-    progressSaved: 'Avance registrado.',
+    resultSaved: 'Resultado registrado.',
+    requiredResult: 'Debes registrar el resultado alcanzado antes de guardar.',
     loading: 'Cargando indicadores…',
-    loadError: 'No fue posible cargar el seguimiento',
-    retry: 'Intentar nuevamente',
   },
   en: {
     module: 'ORGANIZATIONAL MANAGEMENT',
@@ -150,90 +139,79 @@ const copy = {
     users: 'Users and access',
     signOut: 'Sign out',
     eyebrow: 'TRACKING',
-    title: 'Indicators and progress',
-    intro: 'Define what you want to measure, set a target, and record what was achieved. Edifica performs the calculations and consolidates progress.',
+    title: 'Indicators and results',
+    intro: 'Define each indicator target once. Then record only what was actually achieved in each period; Edifica compares and consolidates the results.',
     newIndicator: '＋ Create indicator',
     editIndicator: 'Edit indicator',
-    progress: 'Record progress',
-    prerequisites: 'BEFORE CREATING AN INDICATOR',
-    prerequisiteTitle: 'Only two things are required beforehand',
-    prerequisiteIntro: 'An institutional objective and a project can be linked later. Neither is required to create an indicator.',
-    period: 'Management period',
-    periodReady: 'A period is selected so Edifica knows which management cycle the indicator belongs to.',
-    periodMissing: 'Create a management period first so the indicator has a time frame.',
-    unit: 'Area or organizational unit',
-    unitReady: 'An area is selected as the indicator owner.',
-    unitMissing: 'Create at least one directorate, ministry, department, or area first.',
-    optional: 'Objective and project',
-    optionalHelp: 'Optional. Use them when the indicator needs to be linked to a specific objective or project.',
-    ready: 'Ready',
-    required: 'Required',
-    optionalLabel: 'Optional',
-    configure: 'Configure',
+    progress: 'Record result',
     periodFilter: 'Period',
     unitFilter: 'Responsible area',
     noPeriod: 'No period available',
     noUnit: 'No areas available',
+    missingPeriod: 'Create a management period before registering indicators.',
+    missingUnit: 'Create at least one organizational area or unit before registering indicators.',
+    configurePeriod: 'Configure period',
+    configureUnit: 'Configure structure',
     indicator: 'INDICATOR',
     createIndicatorTitle: 'Create indicator',
     editIndicatorTitle: 'Edit indicator',
-    editIndicatorIntro: 'Change the name, target, and calculation method here. Previously recorded progress is preserved.',
+    indicatorContext: 'The management period and responsible area are already selected. Institutional objective and project are optional relationships that can be added now or later.',
+    editIndicatorIntro: 'Change the name, target, and consolidation rule here. Previously recorded results are preserved.',
     measure: 'What do you want to measure? *',
-    measureExample: 'Example: People trained, participating churches, budget executed.',
+    measureExample: 'Example: People trained, participating churches, annual income, budget executed.',
     metricType: 'What kind of result will you record?',
-    aggregation: 'When several progress entries exist, how should the final result be obtained?',
-    aggregationHelp: 'Example: if you report 40 people in January and 60 in February, “add” shows 100 while “average” shows 50.',
+    aggregation: 'When several results are entered, how should the final total be obtained?',
+    aggregationHelp: 'Example: 40 people in January + 60 in February = 100 when using sum. For percentages, the latest result is usually appropriate.',
     unitLabel: 'What unit will you use?',
     unitExample: 'Example: people, churches, kits, posts, liters.',
-    target: 'What do you want to achieve?',
-    targetExample: 'Enter the target for the period. Example: 300 people.',
+    target: 'Indicator target',
+    targetExample: 'Set it once. Example: 300 people, 85%, USD 50,000.',
     currency: 'Currency',
-    frequency: 'How often will this indicator be updated?',
-    objective: 'Which objective does it support? (optional)',
+    frequency: 'How often do you expect to update this indicator?',
+    objective: 'Related institutional objective (optional)',
     noObjective: 'No related objective',
-    objectiveHelp: 'You can create the indicator even if objectives have not been created yet.',
-    project: 'Does it belong to a project? (optional)',
+    objectiveHelp: 'The indicator can exist even if objectives have not been created yet.',
+    project: 'Related project (optional)',
     noProject: 'No related project',
-    projectHelp: 'You can link it later. An indicator can also belong only to an organizational area.',
+    projectHelp: 'A project can be linked later without losing indicator history.',
     description: 'What does this indicator mean?',
-    descriptionExample: 'Briefly explain what is included and excluded from the measurement.',
+    descriptionExample: 'Clarify what is counted so everyone reports it consistently.',
     source: 'Where will this data come from?',
-    sourceExample: 'Example: attendance list, registration form, financial report, minutes, or database.',
+    sourceExample: 'Example: financial report, attendance list, form, minutes, or database.',
     cancel: 'Cancel',
     saveIndicator: 'Save indicator',
     saveChanges: 'Save changes',
     saving: 'Saving…',
-    progressEyebrow: 'NEW PROGRESS',
-    progressIntro: 'You are adding a result to the indicator. To change its name, target, or configuration, use “Edit indicator”.',
-    from: 'From',
-    to: 'Through',
-    achieved: 'How much was achieved?',
-    achievedExample: 'Example: 42 churches participated.',
-    total: 'What was the planned or possible total?',
-    totalExample: 'Example: 50 churches were invited.',
-    calculatedResult: 'CALCULATED RESULT',
-    reportedValue: 'What result did you achieve?',
-    reportedText: 'What result or information do you want to report?',
-    status: 'Progress status',
-    draft: 'Draft — does not count toward the result yet',
-    submitted: 'Submitted — counts toward the result',
-    verified: 'Verified — reviewed and confirmed',
-    statusHelp: 'Drafts are saved but do not change the indicator result. Submitted and Verified entries are included.',
+    resultEyebrow: 'PERIOD RESULT',
+    resultIntro: 'The target is already stored in the indicator. Here you only enter the actual result achieved during this period.',
+    targetReference: 'SAVED TARGET',
+    startDate: 'Start of reported period (optional)',
+    startDateHelp: 'Use this only when the result covers an interval.',
+    endDate: 'Result date or period end',
+    endDateHelp: 'Date through which this result is being reported.',
+    resultValue: 'Result achieved',
+    amountValue: 'Amount achieved',
+    percentageValue: 'Percentage achieved (%)',
+    ratioValue: 'Value achieved',
+    textValue: 'What result or information do you want to report?',
+    resultHelp: 'Enter only the actual result. Edifica will compare it with the target already stored in the indicator.',
+    yesNoValue: 'Was it achieved?',
+    saveAsDraft: 'Save as draft',
+    draftHelp: 'Use this only if the result should not be included in indicator calculations yet.',
     notes: 'What happened during this period?',
-    notesExample: 'Add context, incidents, clarifications, or useful information for the report.',
-    saveProgress: 'Save progress',
+    notesExample: 'Add context, incidents, clarifications, or information that may be useful in the final report.',
+    saveResult: 'Save result',
     board: 'TRACKING BOARD',
     indicators: 'indicators',
-    noIndicators: 'There are no indicators for this area and period yet. Create the first one by defining what you want to measure and the target you want to achieve.',
+    noIndicators: 'There are no indicators for this area and period yet. Create the first one by defining what you want to measure and its target.',
     targetLabel: 'Target',
-    executed: 'Executed',
-    advances: 'progress entries',
+    executed: 'Current result',
+    results: 'results recorded',
     indicatorSaved: 'Indicator saved.',
     indicatorUpdated: 'Indicator updated.',
-    progressSaved: 'Progress recorded.',
+    resultSaved: 'Result recorded.',
+    requiredResult: 'Enter the achieved result before saving.',
     loading: 'Loading indicators…',
-    loadError: 'Tracking could not be loaded',
-    retry: 'Try again',
   },
 }
 
@@ -243,12 +221,15 @@ const emptyIndicator = {
 }
 
 const emptyProgress = {
-  indicator_id: '', unit_id: '', reporting_period_start: '', reporting_period_end: '', numeric_value: '', text_value: '',
-  numerator: '', denominator: '', notes: '', status: 'submitted',
+  indicator_id: '', unit_id: '', reporting_period_start: '', reporting_period_end: '', numeric_value: '', text_value: '', notes: '', status: 'submitted',
 }
 
 function readLanguage() {
-  return document.documentElement.lang === 'en' || window.localStorage.getItem('edifica-language') === 'en' ? 'en' : 'es'
+  try {
+    return document.documentElement.lang === 'en' || window.localStorage.getItem('edifica-language') === 'en' ? 'en' : 'es'
+  } catch {
+    return 'es'
+  }
 }
 
 function formatNumber(value, language) {
@@ -267,24 +248,40 @@ function aggregateIndicator(indicator, progressRows) {
     const value = Number(Boolean(Number(latestProgress(rows)?.numeric_value || 0)))
     return { value, text: '', completion: value * 100 }
   }
+
   let value = 0
   if (indicator.aggregation_method === 'average') value = rows.reduce((sum, row) => sum + Number(row.numeric_value || 0), 0) / rows.length
   else if (['latest', 'unique_people', 'non_aggregable'].includes(indicator.aggregation_method)) value = Number(latestProgress(rows)?.numeric_value || 0)
   else if (indicator.aggregation_method === 'max') value = Math.max(...rows.map((row) => Number(row.numeric_value || 0)))
   else if (indicator.aggregation_method === 'calculated') {
     const row = latestProgress(rows)
-    value = Number(row?.denominator || 0) > 0 ? (Number(row?.numerator || 0) / Number(row.denominator)) * 100 : Number(row?.numeric_value || 0)
+    value = Number(row?.denominator || 0) > 0
+      ? (Number(row?.numerator || 0) / Number(row.denominator)) * 100
+      : Number(row?.numeric_value || 0)
   } else value = rows.reduce((sum, row) => sum + Number(row.numeric_value || 0), 0)
+
   const target = Number(indicator.target_value || 0)
   return { value, text: '', completion: target > 0 ? Math.round((value / target) * 1000) / 10 : 0 }
 }
 
 function metricDisplay(value, indicator, language) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return '—'
-  if (indicator.metric_type === 'currency') return new Intl.NumberFormat(language === 'en' ? 'en-US' : 'es-VE', { style: 'currency', currency: indicator.currency || 'USD', maximumFractionDigits: 2 }).format(Number(value))
+  if (indicator.metric_type === 'currency') {
+    return new Intl.NumberFormat(language === 'en' ? 'en-US' : 'es-VE', {
+      style: 'currency', currency: indicator.currency || 'USD', maximumFractionDigits: 2,
+    }).format(Number(value))
+  }
   if (indicator.metric_type === 'percentage' || indicator.aggregation_method === 'calculated') return `${formatNumber(value, language)}%`
   if (indicator.metric_type === 'boolean') return Number(value) ? (language === 'en' ? 'Yes' : 'Sí') : 'No'
   return `${formatNumber(value, language)}${indicator.unit_label ? ` ${indicator.unit_label}` : ''}`
+}
+
+function resultFieldLabel(indicator, t) {
+  if (!indicator) return t.resultValue
+  if (indicator.metric_type === 'currency') return t.amountValue
+  if (indicator.metric_type === 'percentage' || indicator.aggregation_method === 'calculated') return t.percentageValue
+  if (indicator.metric_type === 'ratio') return t.ratioValue
+  return t.resultValue
 }
 
 function Brand() {
@@ -373,7 +370,9 @@ export default function ManagementTrackingPage() {
       setProjects(responses[4].data ?? [])
       setIndicators(responses[5].data ?? [])
       setProgress(responses[6].data ?? [])
-      setActivePeriodId((current) => current && periodRows.some((item) => item.id === current) ? current : periodRows.find((item) => item.status === 'active')?.id || periodRows[0]?.id || '')
+      setActivePeriodId((current) => current && periodRows.some((item) => item.id === current)
+        ? current
+        : periodRows.find((item) => item.status === 'active')?.id || periodRows[0]?.id || '')
     }
     setLoading(false)
   }, [access.status, organizationId])
@@ -383,10 +382,15 @@ export default function ManagementTrackingPage() {
 
   const manageableUnitIds = useMemo(() => {
     if (canAdmin) return units.map((unit) => unit.id)
-    return memberships.filter((item) => item.active && ['director', 'manager', 'operator', 'reviewer'].includes(item.unit_role)).map((item) => item.unit_id)
+    return memberships
+      .filter((item) => item.active && ['director', 'manager', 'operator', 'reviewer'].includes(item.unit_role))
+      .map((item) => item.unit_id)
   }, [canAdmin, memberships, units])
 
-  const visibleUnits = useMemo(() => canAdmin ? units : units.filter((unit) => manageableUnitIds.includes(unit.id)), [canAdmin, manageableUnitIds, units])
+  const visibleUnits = useMemo(
+    () => canAdmin ? units : units.filter((unit) => manageableUnitIds.includes(unit.id)),
+    [canAdmin, manageableUnitIds, units],
+  )
 
   useEffect(() => {
     if (!visibleUnits.some((unit) => unit.id === unitId)) setUnitId(visibleUnits[0]?.id || '')
@@ -397,6 +401,8 @@ export default function ManagementTrackingPage() {
   const hasPeriod = Boolean(activePeriodId)
   const hasUnit = Boolean(unitId)
   const readyToCreate = hasPeriod && hasUnit && canManageSelected
+  const selectedPeriod = periods.find((period) => period.id === activePeriodId)
+  const selectedUnit = units.find((unit) => unit.id === unitId)
 
   const startNewIndicator = () => {
     setIndicatorForm({ ...emptyIndicator })
@@ -433,6 +439,7 @@ export default function ManagementTrackingPage() {
     setSaving(true)
     setError('')
     setMessage('')
+
     const payload = {
       organization_id: organizationId,
       management_period_id: activePeriodId,
@@ -451,11 +458,13 @@ export default function ManagementTrackingPage() {
       source_note: indicatorForm.source_note.trim() || null,
       active: true,
     }
+
     const wasEditing = Boolean(indicatorForm.id)
     const request = wasEditing
       ? supabase.from('management_indicator').update(payload).eq('id', indicatorForm.id)
       : supabase.from('management_indicator').insert(payload)
     const { error: requestError } = await request
+
     if (requestError) setError(requestError.message)
     else {
       setMessage(wasEditing ? t.indicatorUpdated : t.indicatorSaved)
@@ -467,7 +476,13 @@ export default function ManagementTrackingPage() {
   }
 
   const startProgress = (indicator) => {
-    setProgressForm({ ...emptyProgress, indicator_id: indicator.id, unit_id: indicator.unit_id, reporting_period_end: new Date().toISOString().slice(0, 10) })
+    setProgressForm({
+      ...emptyProgress,
+      indicator_id: indicator.id,
+      unit_id: indicator.unit_id,
+      reporting_period_end: new Date().toISOString().slice(0, 10),
+      status: 'submitted',
+    })
     setProgressOpen(true)
     setIndicatorOpen(false)
     setError('')
@@ -478,10 +493,18 @@ export default function ManagementTrackingPage() {
   const saveProgress = async (event) => {
     event.preventDefault()
     if (saving || !progressForm.indicator_id) return
+    const indicator = indicators.find((item) => item.id === progressForm.indicator_id)
+    const needsText = indicator?.metric_type === 'text'
+    const missingValue = needsText ? !progressForm.text_value.trim() : progressForm.numeric_value === ''
+    if (missingValue) {
+      setError(t.requiredResult)
+      return
+    }
+
     setSaving(true)
     setError('')
     setMessage('')
-    const indicator = indicators.find((item) => item.id === progressForm.indicator_id)
+
     const payload = {
       organization_id: organizationId,
       indicator_id: progressForm.indicator_id,
@@ -490,16 +513,16 @@ export default function ManagementTrackingPage() {
       reporting_period_end: progressForm.reporting_period_end || null,
       numeric_value: progressForm.numeric_value === '' ? null : Number(progressForm.numeric_value),
       text_value: progressForm.text_value.trim() || null,
-      numerator: progressForm.numerator === '' ? null : Number(progressForm.numerator),
-      denominator: progressForm.denominator === '' ? null : Number(progressForm.denominator),
+      numerator: null,
+      denominator: null,
       notes: progressForm.notes.trim() || null,
       status: progressForm.status,
     }
-    if (indicator?.aggregation_method === 'calculated' && Number(payload.denominator || 0) > 0) payload.numeric_value = (Number(payload.numerator || 0) / Number(payload.denominator)) * 100
+
     const { error: requestError } = await supabase.from('indicator_progress').insert(payload)
     if (requestError) setError(requestError.message)
     else {
-      setMessage(t.progressSaved)
+      setMessage(t.resultSaved)
       setProgressForm(emptyProgress)
       setProgressOpen(false)
       await reload()
@@ -507,12 +530,15 @@ export default function ManagementTrackingPage() {
     setSaving(false)
   }
 
-  if (access.status !== 'authorized') return <OperatorAccessScreen access={access} copy={{ languageLabel: language === 'en' ? 'Language' : 'Idioma' }} language={language} onLanguageChange={() => {}} />
+  if (access.status !== 'authorized') {
+    return <OperatorAccessScreen access={access} copy={{ languageLabel: language === 'en' ? 'Language' : 'Idioma' }} language={language} onLanguageChange={() => {}} />
+  }
 
-  if (loading) return <div className="management-shell"><aside className="management-sidebar no-print"><div className="management-sidebar-top"><Brand /><small>{t.module}</small></div></aside><main className="management-main"><div className="management-loading"><span /><p>{t.loading}</p></div></main></div>
+  if (loading) {
+    return <div className="management-shell"><aside className="management-sidebar no-print"><div className="management-sidebar-top"><Brand /><small>{t.module}</small></div></aside><main className="management-main"><div className="management-loading"><span /><p>{t.loading}</p></div></main></div>
+  }
 
   const progressIndicator = indicators.find((item) => item.id === progressForm.indicator_id)
-  const preview = Number(progressForm.denominator || 0) > 0 ? (Number(progressForm.numerator || 0) / Number(progressForm.denominator)) * 100 : null
   const navRoutes = ['', 'structure', 'objectives', 'projects', 'tracking', 'reports']
 
   return (
@@ -534,19 +560,17 @@ export default function ManagementTrackingPage() {
         <div className="management-panel">
           <div className="management-panel-heading">
             <div><p>{t.eyebrow}</p><h1>{t.title}</h1><span>{t.intro}</span></div>
-            {canManageSelected && <button type="button" onClick={startNewIndicator} disabled={!readyToCreate} title={!hasPeriod ? t.periodMissing : !hasUnit ? t.unitMissing : ''}>{t.newIndicator}</button>}
+            {canManageSelected && <button type="button" onClick={startNewIndicator} disabled={!readyToCreate}>{t.newIndicator}</button>}
           </div>
 
           <Flash error={error} message={message} />
 
-          <section className={`management-readiness-card ${readyToCreate ? 'ready' : ''}`}>
-            <header><small>{t.prerequisites}</small><h2>{t.prerequisiteTitle}</h2><p>{t.prerequisiteIntro}</p></header>
-            <div className="management-readiness-grid">
-              <article className={hasPeriod ? 'complete' : 'missing'}><span>1</span><div><strong>{t.period}</strong><p>{hasPeriod ? t.periodReady : t.periodMissing}</p></div><b>{hasPeriod ? t.ready : t.required}</b>{!hasPeriod && canAdmin && <a href="/app/management/objectives">{t.configure}</a>}</article>
-              <article className={hasUnit ? 'complete' : 'missing'}><span>2</span><div><strong>{t.unit}</strong><p>{hasUnit ? t.unitReady : t.unitMissing}</p></div><b>{hasUnit ? t.ready : t.required}</b>{!hasUnit && canAdmin && <a href="/app/management/structure">{t.configure}</a>}</article>
-              <article className="optional"><span>3</span><div><strong>{t.optional}</strong><p>{t.optionalHelp}</p></div><b>{t.optionalLabel}</b></article>
+          {!readyToCreate && (
+            <div className="management-prerequisite-alert">
+              {!hasPeriod && <span>{t.missingPeriod} {canAdmin && <a href="/app/management/objectives">{t.configurePeriod}</a>}</span>}
+              {!hasUnit && <span>{t.missingUnit} {canAdmin && <a href="/app/management/structure">{t.configureUnit}</a>}</span>}
             </div>
-          </section>
+          )}
 
           <section className="management-filter-row">
             <label><span>{t.periodFilter}</span><select value={activePeriodId} onChange={(event) => setActivePeriodId(event.target.value)} disabled={!periods.length}><option value="">{t.noPeriod}</option>{periods.map((period) => <option value={period.id} key={period.id}>{period.name}</option>)}</select></label>
@@ -555,15 +579,16 @@ export default function ManagementTrackingPage() {
 
           {indicatorOpen && (
             <form className="management-form-card management-indicator-editor" onSubmit={saveIndicator}>
-              <div className="management-form-title"><div><small>{t.indicator}</small><h2>{indicatorForm.id ? t.editIndicatorTitle : t.createIndicatorTitle}</h2>{indicatorForm.id && <p>{t.editIndicatorIntro}</p>}</div><button type="button" onClick={() => setIndicatorOpen(false)}>{language === 'en' ? 'Close' : 'Cerrar'}</button></div>
+              <div className="management-form-title"><div><small>{t.indicator}</small><h2>{indicatorForm.id ? t.editIndicatorTitle : t.createIndicatorTitle}</h2><p>{indicatorForm.id ? t.editIndicatorIntro : t.indicatorContext}</p></div><button type="button" onClick={() => setIndicatorOpen(false)}>{language === 'en' ? 'Close' : 'Cerrar'}</button></div>
+              <div className="management-context-note"><strong>{selectedPeriod?.name || t.periodFilter}</strong><span>·</span><strong>{selectedUnit ? `${selectedUnit.code} · ${selectedUnit.name}` : t.unitFilter}</strong></div>
               <div className="management-form-grid">
                 <label className="wide"><span>{t.measure}</span><input value={indicatorForm.name} onChange={(event) => setIndicatorForm((current) => ({ ...current, name: event.target.value }))} required /><small className="management-field-help">{t.measureExample}</small></label>
-                <label><span>{t.metricType}</span><select value={indicatorForm.metric_type} onChange={(event) => { const value = event.target.value; setIndicatorForm((current) => ({ ...current, metric_type: value, aggregation_method: value === 'percentage' ? 'calculated' : ['text', 'boolean'].includes(value) ? 'latest' : current.aggregation_method, target_value: value === 'boolean' ? '1' : current.target_value })) }}>{Object.entries(metricTypes[language]).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
+                <label><span>{t.metricType}</span><select value={indicatorForm.metric_type} onChange={(event) => { const value = event.target.value; setIndicatorForm((current) => ({ ...current, metric_type: value, aggregation_method: value === 'percentage' ? 'latest' : ['text', 'boolean'].includes(value) ? 'latest' : current.aggregation_method, target_value: value === 'boolean' ? '1' : current.target_value })) }}>{Object.entries(metricTypes[language]).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
+                <label><span>{t.frequency}</span><select value={indicatorForm.frequency} onChange={(event) => setIndicatorForm((current) => ({ ...current, frequency: event.target.value }))}>{Object.entries(frequencyOptions[language]).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
                 <label className="wide"><span>{t.aggregation}</span><select value={indicatorForm.aggregation_method} onChange={(event) => setIndicatorForm((current) => ({ ...current, aggregation_method: event.target.value }))}>{Object.entries(aggregationOptions[language]).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select><small className="management-field-help">{t.aggregationHelp}</small></label>
                 {!['currency', 'percentage', 'boolean', 'text'].includes(indicatorForm.metric_type) && <label><span>{t.unitLabel}</span><input value={indicatorForm.unit_label} onChange={(event) => setIndicatorForm((current) => ({ ...current, unit_label: event.target.value }))} /><small className="management-field-help">{t.unitExample}</small></label>}
                 {indicatorForm.metric_type !== 'text' && indicatorForm.metric_type !== 'boolean' && <label><span>{t.target}</span><input type="number" step="0.01" value={indicatorForm.target_value} onChange={(event) => setIndicatorForm((current) => ({ ...current, target_value: event.target.value }))} /><small className="management-field-help">{t.targetExample}</small></label>}
                 {indicatorForm.metric_type === 'currency' && <label><span>{t.currency}</span><select value={indicatorForm.currency} onChange={(event) => setIndicatorForm((current) => ({ ...current, currency: event.target.value }))}><option>USD</option><option>EUR</option><option>VES</option></select></label>}
-                <label><span>{t.frequency}</span><select value={indicatorForm.frequency} onChange={(event) => setIndicatorForm((current) => ({ ...current, frequency: event.target.value }))}>{Object.entries(frequencyOptions[language]).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
                 <label><span>{t.objective}</span><select value={indicatorForm.objective_id} onChange={(event) => setIndicatorForm((current) => ({ ...current, objective_id: event.target.value }))}><option value="">{t.noObjective}</option>{objectives.filter((item) => item.management_period_id === activePeriodId).map((objective) => <option key={objective.id} value={objective.id}>{objective.code} · {objective.title}</option>)}</select><small className="management-field-help">{t.objectiveHelp}</small></label>
                 <label><span>{t.project}</span><select value={indicatorForm.project_id} onChange={(event) => setIndicatorForm((current) => ({ ...current, project_id: event.target.value }))}><option value="">{t.noProject}</option>{projects.map((project) => <option key={project.id} value={project.id}>{project.code} · {project.name}</option>)}</select><small className="management-field-help">{t.projectHelp}</small></label>
                 <label className="wide"><span>{t.description}</span><textarea value={indicatorForm.description} onChange={(event) => setIndicatorForm((current) => ({ ...current, description: event.target.value }))} /><small className="management-field-help">{t.descriptionExample}</small></label>
@@ -575,19 +600,20 @@ export default function ManagementTrackingPage() {
 
           {progressOpen && (
             <form className="management-form-card compact management-progress-editor" onSubmit={saveProgress}>
-              <div className="management-form-title"><div><small>{t.progressEyebrow}</small><h2>{progressIndicator?.name}</h2><p>{t.progressIntro}</p></div><button type="button" onClick={() => setProgressOpen(false)}>{language === 'en' ? 'Close' : 'Cerrar'}</button></div>
+              <div className="management-form-title"><div><small>{t.resultEyebrow}</small><h2>{progressIndicator?.name}</h2><p>{t.resultIntro}</p></div><button type="button" onClick={() => setProgressOpen(false)}>{language === 'en' ? 'Close' : 'Cerrar'}</button></div>
+              <div className="management-target-reference"><span>{t.targetReference}</span><strong>{progressIndicator?.target_value === null || progressIndicator?.target_value === undefined ? (progressIndicator?.target_text || '—') : metricDisplay(progressIndicator.target_value, progressIndicator, language)}</strong><small>{selectedPeriod?.name} · {selectedUnit ? `${selectedUnit.code} · ${selectedUnit.name}` : ''}</small></div>
               <div className="management-form-grid">
-                <label><span>{t.from}</span><input type="date" value={progressForm.reporting_period_start} onChange={(event) => setProgressForm((current) => ({ ...current, reporting_period_start: event.target.value }))} /></label>
-                <label><span>{t.to}</span><input type="date" value={progressForm.reporting_period_end} onChange={(event) => setProgressForm((current) => ({ ...current, reporting_period_end: event.target.value }))} /></label>
-                {progressIndicator?.aggregation_method === 'calculated' ? <>
-                  <label><span>{t.achieved}</span><input type="number" step="0.01" value={progressForm.numerator} onChange={(event) => setProgressForm((current) => ({ ...current, numerator: event.target.value }))} /><small className="management-field-help">{t.achievedExample}</small></label>
-                  <label><span>{t.total}</span><input type="number" step="0.01" value={progressForm.denominator} onChange={(event) => setProgressForm((current) => ({ ...current, denominator: event.target.value }))} /><small className="management-field-help">{t.totalExample}</small></label>
-                  <div className="management-calculated-preview wide"><span>{t.calculatedResult}</span><strong>{preview === null ? '—' : `${formatNumber(preview, language)} %`}</strong>{preview !== null && <small>{formatNumber(progressForm.numerator, language)} / {formatNumber(progressForm.denominator, language)} = {formatNumber(preview, language)}%</small>}</div>
-                </> : progressIndicator?.metric_type === 'text' ? <label className="wide"><span>{t.reportedText}</span><textarea value={progressForm.text_value} onChange={(event) => setProgressForm((current) => ({ ...current, text_value: event.target.value }))} /></label> : progressIndicator?.metric_type === 'boolean' ? <label><span>{t.reportedValue}</span><select value={progressForm.numeric_value} onChange={(event) => setProgressForm((current) => ({ ...current, numeric_value: event.target.value }))}><option value="">—</option><option value="1">{language === 'en' ? 'Yes' : 'Sí'}</option><option value="0">No</option></select></label> : <label><span>{t.reportedValue}</span><input type="number" step="0.01" value={progressForm.numeric_value} onChange={(event) => setProgressForm((current) => ({ ...current, numeric_value: event.target.value }))} /></label>}
-                <label><span>{t.status}</span><select value={progressForm.status} onChange={(event) => setProgressForm((current) => ({ ...current, status: event.target.value }))}><option value="draft">{t.draft}</option><option value="submitted">{t.submitted}</option><option value="verified">{t.verified}</option></select><small className="management-field-help">{t.statusHelp}</small></label>
+                <label><span>{t.startDate}</span><input type="date" value={progressForm.reporting_period_start} onChange={(event) => setProgressForm((current) => ({ ...current, reporting_period_start: event.target.value }))} /><small className="management-field-help">{t.startDateHelp}</small></label>
+                <label><span>{t.endDate}</span><input type="date" value={progressForm.reporting_period_end} onChange={(event) => setProgressForm((current) => ({ ...current, reporting_period_end: event.target.value }))} /><small className="management-field-help">{t.endDateHelp}</small></label>
+                {progressIndicator?.metric_type === 'text'
+                  ? <label className="wide"><span>{t.textValue}</span><textarea value={progressForm.text_value} onChange={(event) => setProgressForm((current) => ({ ...current, text_value: event.target.value }))} required /></label>
+                  : progressIndicator?.metric_type === 'boolean'
+                    ? <label><span>{t.yesNoValue}</span><select value={progressForm.numeric_value} onChange={(event) => setProgressForm((current) => ({ ...current, numeric_value: event.target.value }))} required><option value="">—</option><option value="1">{language === 'en' ? 'Yes' : 'Sí'}</option><option value="0">No</option></select></label>
+                    : <label className="wide"><span>{resultFieldLabel(progressIndicator, t)}</span><input type="number" step="0.01" value={progressForm.numeric_value} onChange={(event) => setProgressForm((current) => ({ ...current, numeric_value: event.target.value }))} required /><small className="management-field-help">{t.resultHelp}</small></label>}
+                <label className="wide management-draft-check"><div><input type="checkbox" checked={progressForm.status === 'draft'} onChange={(event) => setProgressForm((current) => ({ ...current, status: event.target.checked ? 'draft' : 'submitted' }))} /><span>{t.saveAsDraft}</span></div><small className="management-field-help">{t.draftHelp}</small></label>
                 <label className="wide"><span>{t.notes}</span><textarea value={progressForm.notes} onChange={(event) => setProgressForm((current) => ({ ...current, notes: event.target.value }))} /><small className="management-field-help">{t.notesExample}</small></label>
               </div>
-              <div className="management-form-actions"><button type="button" onClick={() => setProgressOpen(false)}>{t.cancel}</button><button className="primary" disabled={saving}>{saving ? t.saving : t.saveProgress}</button></div>
+              <div className="management-form-actions"><button type="button" onClick={() => setProgressOpen(false)}>{t.cancel}</button><button className="primary" disabled={saving}>{saving ? t.saving : t.saveResult}</button></div>
             </form>
           )}
 
@@ -601,7 +627,7 @@ export default function ManagementTrackingPage() {
                 <h3>{indicator.name}</h3>
                 <div className="indicator-values"><div><span>{t.targetLabel}</span><strong>{indicator.target_value === null ? (indicator.target_text || '—') : metricDisplay(indicator.target_value, indicator, language)}</strong></div><div><span>{t.executed}</span><strong>{result.text || metricDisplay(result.value, indicator, language)}</strong></div></div>
                 {Number(indicator.target_value || 0) > 0 && <div className="indicator-progress"><span style={{ width: `${Math.min(result.completion, 100)}%` }} /><b>{result.completion}%</b></div>}
-                <footer className="indicator-card-footer"><small>{frequencyOptions[language][indicator.frequency]} · {indicatorProgress.length} {t.advances}</small>{canManageSelected && <div className="indicator-card-actions"><button className="edit" type="button" onClick={() => editIndicator(indicator)}>{t.editIndicator}</button><button type="button" onClick={() => startProgress(indicator)}>{t.progress}</button></div>}</footer>
+                <footer className="indicator-card-footer"><small>{frequencyOptions[language][indicator.frequency]} · {indicatorProgress.length} {t.results}</small>{canManageSelected && <div className="indicator-card-actions"><button className="edit" type="button" onClick={() => editIndicator(indicator)}>{t.editIndicator}</button><button type="button" onClick={() => startProgress(indicator)}>{t.progress}</button></div>}</footer>
               </article>
             })}</div>}
           </section>
