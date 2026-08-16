@@ -77,6 +77,28 @@ export default function ManagementOperationalFixes() {
     }
   }, [isManagement])
 
+  useEffect(() => {
+    const cleanPath = window.location.pathname.replace(/\/$/, '')
+    if (cleanPath !== '/app/management/tracking') return undefined
+    const openDedicatedIndicatorPage = (event) => {
+      const button = event.target.closest?.('.management-panel-heading button')
+      if (!button || button.disabled) return
+      const label = button.textContent || ''
+      if (!label.includes('Crear indicador') && !label.includes('Create indicator')) return
+      event.preventDefault()
+      event.stopPropagation()
+      event.stopImmediatePropagation?.()
+      const filters = Array.from(document.querySelectorAll('.management-filter-row select'))
+      const params = new URLSearchParams()
+      if (filters[0]?.value) params.set('period', filters[0].value)
+      if (filters[1]?.value) params.set('unit', filters[1].value)
+      const query = params.toString()
+      window.location.assign(`/app/management/tracking/new${query ? `?${query}` : ''}`)
+    }
+    document.addEventListener('click', openDedicatedIndicatorPage, true)
+    return () => document.removeEventListener('click', openDedicatedIndicatorPage, true)
+  }, [])
+
   if (!isManagement || access.status !== 'authorized') return null
 
   const usersText = language === 'en' ? 'Users and access' : 'Usuarios y accesos'
