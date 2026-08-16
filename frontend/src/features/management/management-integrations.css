@@ -1,0 +1,21 @@
+.management-shell {
+  --ed-purple: #5b2e91;
+  --ed-purple-dark: #341550;
+  --ed-purple-soft: #eee6f6;
+  --ed-orange: #f28c28;
+  --ed-yellow: #ffd166;
+  --ed-paper: #fbfaff;
+  --ed-white: #ffffff;
+  --ed-ink: #201a26;
+  --ed-muted: #6d6672;
+  --ed-line: #ddd7e2;
+}
+.management-integrated-dashboard-panel { padding: 28px clamp(18px,4vw,54px) 52px; }
+.management-integrated-dashboard-panel .edifica-dashboard-header { margin-bottom: 18px; }
+.management-project-workspace { display: grid; gap: 22px; padding: 24px clamp(18px,3vw,42px) 52px; }
+.management-project-workspace > .operations-page { margin: 0; }
+.management-project-workspace .edifica-dashboard-header { align-items: flex-start; }
+@media (max-width: 760px) {
+  .management-integrated-dashboard-panel,
+  .management-project-workspace { padding: 18px 14px 36px; }
+}
