@@ -31,6 +31,7 @@ All database identifiers and stored enum-like values use English `snake_case`. S
 | — | `20260727031500_move_pg_net_to_extensions_schema.sql` | — | Corrective: `pg_net` does not support `ALTER EXTENSION ... SET SCHEMA`; reinstalled in the `extensions` schema (matching `pgcrypto`, `uuid-ossp`) to clear the "extension in public" security advisory. `net.http_post` lives in its own `net` schema regardless, so no application code changed |
 | — | `20260727040000_organization_language_preference.sql` | — | `organization.language` (`'es'\|'en'`, default `'en'`) added; `admin_save_organization` validates/persists it; `admin_list_organizations` exposes it (required a `drop function` first — Postgres rejects adding an OUT column via `create or replace`); `notify_operator_invitation` forwards it to the Edge Function so invitation email is sent in a single language matching the organization, not bilingual |
 | — | `20260727040500_fix_admin_list_organizations_grants.sql` | — | Corrective: the `drop function`/`create function` in the previous migration silently wiped `admin_list_organizations`'s grants, briefly re-exposing it to `anon`; reinstates `revoke ... from public, anon` / `grant ... to authenticated` |
+| — | `20260902234500_optional_unit_leader_access.sql` | — | Updates `admin_save_organization_unit_v2` so a leader requires only a display name; email remains optional unless `leader.create_access` is true, and operator provisioning, invitation, and primary membership occur only when access is requested |
 
 DDL changes must be added as new migration files and applied through Supabase migration history. Existing applied migrations remain immutable.
 
@@ -150,6 +151,10 @@ Reports for international organizations must present cash received, in-kind refe
 - The MVP grants authenticated team members operational access. Granular role permissions remain a later security milestone.
 
 Client code may use the Supabase project URL and publishable client key. Service-role credentials and database secrets belong only in protected server environments.
+
+### Organizational unit leader access
+
+`public.admin_save_organization_unit_v2(payload jsonb)` treats the visible leader and application access as separate concerns. `leader.display_name` is always required. `leader.email` can be omitted when the person is recorded only as the visible leader. `leader.create_access = true` requires a valid email and provisions or reactivates `private.operator_access`, sends an invitation when needed, and creates the primary `organization_unit_member` relationship. With `create_access = false`, the RPC stores the visible name and optional contact email on `organization_unit` without creating or linking an operator account. Existing clients that omit `create_access` retain the previous behavior because the RPC defaults it to `true`.
 
 ## Verification baseline
 
