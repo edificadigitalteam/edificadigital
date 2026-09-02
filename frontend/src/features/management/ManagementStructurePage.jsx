@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase.js'
 import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from './ManagementStandaloneShell.jsx'
+import OrganizationTree from './OrganizationTree.jsx'
 import './management-structure.css'
 
 const unitTypes = {
@@ -138,12 +139,6 @@ export default function ManagementStructurePage() {
     setSaving(false)
   }
 
-  const depthFor = (unit) => {
-    let depth = 0; let current = unit; const seen = new Set()
-    while (current?.parent_unit_id && depth < 6 && !seen.has(current.id)) { seen.add(current.id); current = units.find((item) => item.id === current.parent_unit_id); depth += 1 }
-    return depth
-  }
-
   if (access.status !== 'authorized') return <OperatorAccessScreen access={access} copy={{ languageLabel: 'Idioma' }} language="es" onLanguageChange={() => {}} />
 
   return <ManagementStandaloneShell access={access}>
@@ -159,7 +154,7 @@ export default function ManagementStructurePage() {
           <label className="wide"><span>Nombre de la unidad *</span><input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} required /></label>
           <label><span>Tipo de unidad</span><select value={form.unit_type} onChange={(event) => setForm((current) => ({ ...current, unit_type: event.target.value }))}>{Object.entries(unitTypes).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
           <label><span>Depende de</span><select value={form.parent_unit_id} onChange={(event) => setForm((current) => ({ ...current, parent_unit_id: event.target.value }))}><option value="">Nivel principal</option>{units.filter((unit) => unit.id !== form.id).map((unit) => <option key={unit.id} value={unit.id}>{unit.code} · {unit.name}</option>)}</select></label>
-          <label><span>Orden</span><input type="number" value={form.sort_order} onChange={(event) => setForm((current) => ({ ...current, sort_order: event.target.value }))} /></label>
+          <label><span>Orden dentro de la unidad superior</span><input type="number" min="1" value={form.sort_order || ''} placeholder="1" onChange={(event) => setForm((current) => ({ ...current, sort_order: event.target.value }))} /><small className="management-field-help">Ordena esta unidad junto a otras que dependan de la misma área.</small></label>
           <label className="management-check"><input type="checkbox" checked={form.active} onChange={(event) => setForm((current) => ({ ...current, active: event.target.checked }))} /><span>Unidad activa</span></label>
           <label className="wide"><span>Descripción</span><textarea value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} /></label>
         </div>
@@ -182,12 +177,12 @@ export default function ManagementStructurePage() {
         <div className="management-form-actions"><button type="button" onClick={reset}>Cancelar</button><button className="primary" disabled={saving}>{saving ? 'Guardando unidad y accesos…' : 'Guardar unidad y equipo'}</button></div>
       </form>}
 
-      <section className="management-tree-card structure-tree"><div className="management-card-heading"><div><small>ORGANIGRAMA</small><h2>{units.length} unidades registradas</h2></div></div>{loading ? <p className="management-empty">Cargando estructura…</p> : !units.length ? <p className="management-empty">Todavía no existe una estructura organizacional.</p> : <div className="management-unit-list">{units.map((unit) => {
+      <section className="management-tree-card structure-tree"><div className="management-card-heading"><div><small>ORGANIGRAMA</small><h2>{units.length} unidades registradas</h2><p>Selecciona una unidad principal para mostrar u ocultar las áreas que dependen de ella.</p></div></div>{loading ? <p className="management-empty">Cargando estructura…</p> : !units.length ? <p className="management-empty">Todavía no existe una estructura organizacional.</p> : <OrganizationTree units={units} unitTypeLabels={unitTypes} canAdmin={canAdmin} onEdit={editUnit} renderPeople={(unit) => {
         const rows = membershipsByUnit.get(unit.id) ?? []
         const primary = rows.find((item) => item.is_primary) ?? rows.find((item) => item.unit_role === 'director')
         const leader = primary ? operatorById.get(primary.operator_access_id) : null
-        return <article className={!unit.active ? 'inactive' : ''} key={unit.id} style={{ '--unit-depth': depthFor(unit) }}><div className="unit-line"><span>{unit.code}</span><div><strong>{unit.name}</strong><small>{unitTypes[unit.unit_type] || unit.unit_type}{unit.parent_unit_id ? ` · depende de ${units.find((parent) => parent.id === unit.parent_unit_id)?.code || 'otra unidad'}` : ''}</small></div></div><div className="unit-people"><strong>{leader?.display_name || unit.manager_name || 'Responsable pendiente'}</strong><span>{leader?.email || unit.manager_email || 'Sin correo'} · {rows.length} usuario{rows.length === 1 ? '' : 's'} vinculado{rows.length === 1 ? '' : 's'}</span></div>{canAdmin && <button type="button" onClick={() => editUnit(unit)}>Editar equipo</button>}</article>
-      })}</div>}</section>
+        return <><strong>{leader?.display_name || unit.manager_name || 'Responsable pendiente'}</strong><span>{leader?.email || unit.manager_email || 'Sin correo'} · {rows.length} usuario{rows.length === 1 ? '' : 's'} vinculado{rows.length === 1 ? '' : 's'}</span></>
+      }} />}</section>
     </div>
   </ManagementStandaloneShell>
 }
