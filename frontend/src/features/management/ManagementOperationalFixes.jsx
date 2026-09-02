@@ -98,7 +98,7 @@ export default function ManagementOperationalFixes() {
   const resourcesText = language === 'en' ? 'Contributions and resources' : 'Aportes y recursos'
   const alliesText = language === 'en' ? 'Partners and donors' : 'Aliados y donantes'
   const volunteersText = language === 'en' ? 'Volunteers' : 'Voluntariado'
-  const financeText = language === 'en' ? 'Finance / DIAF' : 'Finanzas / DIAF'
+  const financeText = language === 'en' ? 'Finance' : 'Finanzas'
   const path = window.location.pathname
 
   return <>
