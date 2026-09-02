@@ -1,0 +1,13 @@
+create index if not exists finance_fund_created_by_idx on public.finance_fund(created_by) where created_by is not null;
+create index if not exists finance_fund_updated_by_idx on public.finance_fund(updated_by) where updated_by is not null;
+create index if not exists finance_submission_submitted_by_idx on public.finance_submission(submitted_by) where submitted_by is not null;
+create index if not exists finance_submission_reviewed_by_idx on public.finance_submission(reviewed_by) where reviewed_by is not null;
+create index if not exists finance_submission_paid_by_idx on public.finance_submission(paid_by) where paid_by is not null;
+create index if not exists finance_submission_attachment_org_idx on public.finance_submission_attachment(organization_id);
+create index if not exists finance_submission_attachment_uploaded_by_idx on public.finance_submission_attachment(uploaded_by) where uploaded_by is not null;
+create index if not exists finance_transaction_counterpart_fund_idx on public.finance_transaction(counterpart_fund_id) where counterpart_fund_id is not null;
+create index if not exists finance_transaction_created_by_idx on public.finance_transaction(created_by) where created_by is not null;
+create index if not exists unit_management_report_item_org_idx on public.unit_management_report_item(organization_id);
+create index if not exists unit_management_report_item_period_idx on public.unit_management_report_item(management_period_id);
+create index if not exists unit_management_report_item_created_by_idx on public.unit_management_report_item(created_by) where created_by is not null;
+create index if not exists unit_management_report_item_updated_by_idx on public.unit_management_report_item(updated_by) where updated_by is not null;

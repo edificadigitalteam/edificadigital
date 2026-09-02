@@ -9,7 +9,8 @@ import ManagementStructurePage from './features/management/ManagementStructurePa
 import ManagementObjectivesPage from './features/management/ManagementObjectivesPage.jsx'
 import ManagementTrackingPage from './features/management/ManagementTrackingPage.jsx'
 import ManagementIndicatorFormPage from './features/management/ManagementIndicatorFormPage.jsx'
-import ManagementReportsPage from './features/management/ManagementReportsPage.jsx'
+import ManagementReportsV2Page from './features/management/ManagementReportsV2Page.jsx'
+import ManagementFinancePage from './features/management/ManagementFinancePage.jsx'
 import ManagementResourcesPage from './features/management/ManagementResourcesPage.jsx'
 import ManagementResourceFormPage from './features/management/ManagementResourceFormPage.jsx'
 import ManagementDirectoryPage from './features/management/ManagementDirectoryPage.jsx'
@@ -38,6 +39,7 @@ const isManagementStructure = pathname === '/app/management/structure' || pathna
 const isManagementObjectives = pathname.startsWith('/app/management/objectives')
 const isManagementIndicatorNew = pathname === '/app/management/tracking/new' || pathname === '/app/management/tracking/new/'
 const isManagementTracking = pathname.startsWith('/app/management/tracking')
+const isManagementFinance = pathname.startsWith('/app/management/finance')
 const isManagementReports = pathname.startsWith('/app/management/reports')
 const isActivationPage = pathname === '/activar'
 
@@ -75,9 +77,7 @@ function PublicLoginGuard() {
 
 function RootApplication() {
   const redirect = legacyTarget()
-  if (isActivationPage) {
-    return <><GlobalLanguageController /><ActivateAccountPage /></>
-  }
+  if (isActivationPage) return <><GlobalLanguageController /><ActivateAccountPage /></>
   if (redirect) return <LegacyRedirect target={redirect} />
 
   let content
@@ -91,7 +91,8 @@ function RootApplication() {
   else if (isManagementObjectives) content = <ManagementObjectivesPage />
   else if (isManagementIndicatorNew) content = <ManagementIndicatorFormPage />
   else if (isManagementTracking) content = <ManagementTrackingPage />
-  else if (isManagementReports) content = <ManagementReportsPage />
+  else if (isManagementFinance) content = <ManagementFinancePage />
+  else if (isManagementReports) content = <ManagementReportsV2Page />
   else if (isManagement) content = <OrganizationalManagementApp />
   else if (isDashboard) content = <DashboardApp />
   else content = <App />
