@@ -9,6 +9,7 @@ const navigation = [
   ['Aportes y recursos', '/app/management/resources', '/app/management/resources'],
   ['Aliados y donantes', '/app/management/allies', '/app/management/allies'],
   ['Voluntariado', '/app/management/volunteers', '/app/management/volunteers'],
+  ['Finanzas / DIAF', '/app/management/finance', '/app/management/finance'],
   ['Seguimiento', '/app/management/tracking', '/app/management/tracking'],
   ['Informes', '/app/management/reports', '/app/management/reports'],
 ]
@@ -39,7 +40,7 @@ export default function ManagementStandaloneShell({ access, children }) {
         </div>
       </aside>
       <main className="management-main">
-        <div className="management-mobile-header no-print"><Brand /><div className="management-mobile-actions">{canAdmin && <a className="management-users-mobile-link" href="/app/admin/operators">Usuarios</a>}<a className="management-resources-mobile-link" href="/app/management/resources">Aportes</a><button type="button" onClick={() => window.location.assign('/app')}>Módulos</button></div></div>
+        <div className="management-mobile-header no-print"><Brand /><div className="management-mobile-actions">{canAdmin && <a className="management-users-mobile-link" href="/app/admin/operators">Usuarios</a>}<a className="management-resources-mobile-link" href="/app/management/resources">Aportes</a><a className="management-finance-mobile-link" href="/app/management/finance">Finanzas</a><button type="button" onClick={() => window.location.assign('/app')}>Módulos</button></div></div>
         {children}
       </main>
     </div>
