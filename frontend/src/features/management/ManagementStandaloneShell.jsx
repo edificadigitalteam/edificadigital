@@ -9,7 +9,7 @@ const navigation = [
   ['Aportes y recursos', '/app/management/resources', '/app/management/resources'],
   ['Aliados y donantes', '/app/management/allies', '/app/management/allies'],
   ['Voluntariado', '/app/management/volunteers', '/app/management/volunteers'],
-  ['Finanzas / DIAF', '/app/management/finance', '/app/management/finance'],
+  ['Finanzas', '/app/management/finance', '/app/management/finance'],
   ['Seguimiento', '/app/management/tracking', '/app/management/tracking'],
   ['Informes', '/app/management/reports', '/app/management/reports'],
 ]

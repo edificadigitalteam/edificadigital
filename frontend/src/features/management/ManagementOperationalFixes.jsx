@@ -13,12 +13,14 @@ export default function ManagementOperationalFixes() {
   const [footerTarget, setFooterTarget] = useState(null)
   const [mobileTarget, setMobileTarget] = useState(null)
   const [navTarget, setNavTarget] = useState(null)
+  const [financeNoticeTarget, setFinanceNoticeTarget] = useState(null)
   const isManagement = window.location.pathname.startsWith('/app/management') || window.location.pathname.startsWith('/app/church')
   const canAdmin = access.role === 'admin' || access.role === 'super_admin'
 
   useEffect(() => {
     if (!isManagement) return undefined
     let injectedMount = null
+    let injectedFinanceMount = null
     let frame = 0
 
     const updateLanguage = () => setLanguage(currentLanguage())
@@ -38,6 +40,22 @@ export default function ManagementOperationalFixes() {
       try {
         setFooterTarget(document.querySelector('.management-sidebar-footer'))
         setMobileTarget(document.querySelector('.management-mobile-header'))
+
+        const financeHeading = document.querySelector('.finance-page .management-panel-heading')
+        if (financeHeading) {
+          setText(financeHeading.querySelector('p'), currentLanguage() === 'en' ? 'FINANCE' : 'FINANZAS')
+          let financeMount = document.querySelector('.finance-access-note-mount')
+          if (!financeMount) {
+            financeMount = document.createElement('div')
+            financeMount.className = 'finance-access-note-mount'
+            financeHeading.insertAdjacentElement('afterend', financeMount)
+            injectedFinanceMount = financeMount
+          }
+          setFinanceNoticeTarget(financeMount)
+        } else {
+          setFinanceNoticeTarget(null)
+        }
+
         const nav = document.querySelector('.management-sidebar nav')
         if (!nav || nav.classList.contains('management-canonical-nav')) {
           setNavTarget(null)
@@ -67,6 +85,7 @@ export default function ManagementOperationalFixes() {
       observer.disconnect()
       languageObserver.disconnect()
       if (injectedMount?.isConnected) injectedMount.remove()
+      if (injectedFinanceMount?.isConnected) injectedFinanceMount.remove()
     }
   }, [isManagement])
 
@@ -98,7 +117,7 @@ export default function ManagementOperationalFixes() {
   const resourcesText = language === 'en' ? 'Contributions and resources' : 'Aportes y recursos'
   const alliesText = language === 'en' ? 'Partners and donors' : 'Aliados y donantes'
   const volunteersText = language === 'en' ? 'Volunteers' : 'Voluntariado'
-  const financeText = language === 'en' ? 'Finance / DIAF' : 'Finanzas / DIAF'
+  const financeText = language === 'en' ? 'Finance' : 'Finanzas'
   const path = window.location.pathname
 
   return <>
@@ -110,6 +129,13 @@ export default function ManagementOperationalFixes() {
         <a className={path.startsWith('/app/management/finance') ? 'management-extra-nav-link active' : 'management-extra-nav-link'} href="/app/management/finance"><span>08</span>{financeText}</a>
       </>,
       navTarget,
+    )}
+    {financeNoticeTarget && createPortal(
+      <section className="finance-access-note">
+        <div><span>{language === 'en' ? 'AVAILABLE TO EVERY UNIT' : 'DISPONIBLE PARA TODAS LAS UNIDADES'}</span><strong>{language === 'en' ? 'Each directorate, agency, auxiliary, or other organizational unit can submit its own invoices.' : 'Cada Dirección, agencia, auxiliar u otra unidad puede cargar sus propias facturas.'}</strong></div>
+        <p>{language === 'en' ? 'The document is sent to Finance for institutional review. Fund administration, transfers, approvals, and payments remain under the finance administration role.' : 'El documento llega a Finanzas para su revisión institucional. La administración de fondos, transferencias, aprobaciones y pagos permanece en el rol financiero de DIAF.'}</p>
+      </section>,
+      financeNoticeTarget,
     )}
     {canAdmin && footerTarget && !footerTarget.querySelector('.management-users-link') && createPortal(
       <a className="management-users-link" href="/app/admin/operators">{usersText}</a>,

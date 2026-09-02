@@ -71,11 +71,19 @@
 .management-shell .project-list-card .module-list-heading > button { min-height: 44px !important; padding: 0 17px !important; border: 0 !important; border-radius: 9px !important; background: #5b2e91 !important; color: #fff !important; font-weight: 900 !important; opacity: 1 !important; visibility: visible !important; box-shadow: 0 8px 20px rgba(91,46,145,.16) !important; }
 .management-shell .project-list-card .module-list-heading > button:hover { background: #31124f !important; }
 #management-project-create-portal { display: none !important; }
+.finance-access-note-mount { min-width: 0; }
+.finance-access-note { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(280px,.85fr); gap: 22px; align-items: center; padding: 17px 20px; border: 1px solid #dfd2e8; border-left: 4px solid var(--mg-orange); border-radius: 14px; background: linear-gradient(100deg,#fff 0%,#fbf7fe 100%); box-shadow: 0 8px 22px rgba(49,18,79,.04); }
+.finance-access-note > div { display: grid; gap: 5px; }
+.finance-access-note span { color: var(--mg-orange); font-size: .66rem; font-weight: 950; letter-spacing: .11em; }
+.finance-access-note strong { color: var(--mg-purple-dark); font-size: .98rem; line-height: 1.4; }
+.finance-access-note p { margin: 0; color: var(--mg-muted); font-size: .79rem; line-height: 1.55; }
 @media (max-width: 920px) {
   .management-users-mobile-link,
-  .management-resources-mobile-link { display: inline-flex; }
+  .management-resources-mobile-link,
+  .management-finance-mobile-link { display: inline-flex; }
   .management-target-reference { grid-template-columns: 1fr; }
   .management-target-reference small { text-align: left; }
+  .finance-access-note { grid-template-columns: 1fr; gap: 9px; }
 }
 @media (max-width: 700px) {
   .indicator-card-actions { width: 100%; justify-content: stretch; }
@@ -83,4 +91,5 @@
   .management-shell .project-list-card .module-list-heading > button { width: 100%; }
   .indicator-values-three { grid-template-columns: 1fr !important; }
   .history-main { grid-template-columns: 1fr; }
+  .finance-access-note { padding: 15px 16px; }
 }
