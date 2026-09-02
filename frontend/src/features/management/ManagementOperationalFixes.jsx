@@ -28,15 +28,9 @@ export default function ManagementOperationalFixes() {
     const root = document.getElementById('root') || document.body
     const observerOptions = { childList: true, subtree: true }
     const observer = new MutationObserver(() => {
-      // Coalesce bursts into one pass per frame; the pass itself detaches the
-      // observer while it writes, so our own edits never re-enter it.
       if (frame) return
       frame = window.requestAnimationFrame(() => { frame = 0; findTargets() })
     })
-
-    // Writing the same value still replaces the text node, which counts as a
-    // childList mutation — so every write must be conditional or the observer
-    // re-triggers itself forever and the main thread never goes idle.
     const setText = (node, value) => { if (node && node.textContent !== value) node.textContent = value }
 
     const findTargets = () => {
@@ -59,8 +53,8 @@ export default function ManagementOperationalFixes() {
           injectedMount = mount
         }
         const directButtons = Array.from(nav.children).filter((node) => node.tagName === 'BUTTON')
-        setText(directButtons[4]?.querySelector('span'), '08')
-        setText(directButtons[5]?.querySelector('span'), '09')
+        setText(directButtons[4]?.querySelector('span'), '09')
+        setText(directButtons[5]?.querySelector('span'), '10')
         setNavTarget(mount)
       } finally {
         observer.observe(root, observerOptions)
@@ -68,7 +62,6 @@ export default function ManagementOperationalFixes() {
     }
 
     findTargets()
-
     return () => {
       if (frame) window.cancelAnimationFrame(frame)
       observer.disconnect()
@@ -105,6 +98,7 @@ export default function ManagementOperationalFixes() {
   const resourcesText = language === 'en' ? 'Contributions and resources' : 'Aportes y recursos'
   const alliesText = language === 'en' ? 'Partners and donors' : 'Aliados y donantes'
   const volunteersText = language === 'en' ? 'Volunteers' : 'Voluntariado'
+  const financeText = language === 'en' ? 'Finance / DIAF' : 'Finanzas / DIAF'
   const path = window.location.pathname
 
   return <>
@@ -113,6 +107,7 @@ export default function ManagementOperationalFixes() {
         <a className={path.startsWith('/app/management/resources') ? 'management-extra-nav-link active' : 'management-extra-nav-link'} href="/app/management/resources"><span>05</span>{resourcesText}</a>
         <a className={path.startsWith('/app/management/allies') ? 'management-extra-nav-link active' : 'management-extra-nav-link'} href="/app/management/allies"><span>06</span>{alliesText}</a>
         <a className={path.startsWith('/app/management/volunteers') ? 'management-extra-nav-link active' : 'management-extra-nav-link'} href="/app/management/volunteers"><span>07</span>{volunteersText}</a>
+        <a className={path.startsWith('/app/management/finance') ? 'management-extra-nav-link active' : 'management-extra-nav-link'} href="/app/management/finance"><span>08</span>{financeText}</a>
       </>,
       navTarget,
     )}
@@ -122,6 +117,10 @@ export default function ManagementOperationalFixes() {
     )}
     {mobileTarget && !mobileTarget.querySelector('.management-resources-mobile-link') && createPortal(
       <a className="management-resources-mobile-link" href="/app/management/resources">{language === 'en' ? 'Resources' : 'Aportes'}</a>,
+      mobileTarget,
+    )}
+    {mobileTarget && !mobileTarget.querySelector('.management-finance-mobile-link') && createPortal(
+      <a className="management-finance-mobile-link" href="/app/management/finance">{language === 'en' ? 'Finance' : 'Finanzas'}</a>,
       mobileTarget,
     )}
     {canAdmin && mobileTarget && !mobileTarget.querySelector('.management-users-mobile-link') && createPortal(
