@@ -43,6 +43,7 @@ export default function ManagementOperationalFixes() {
 
         const financeHeading = document.querySelector('.finance-page .management-panel-heading')
         if (financeHeading) {
+          setText(financeHeading.querySelector('p'), currentLanguage() === 'en' ? 'FINANCE' : 'FINANZAS')
           let financeMount = document.querySelector('.finance-access-note-mount')
           if (!financeMount) {
             financeMount = document.createElement('div')
