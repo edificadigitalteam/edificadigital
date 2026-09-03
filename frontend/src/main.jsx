@@ -11,6 +11,7 @@ import ManagementTrackingPage from './features/management/ManagementTrackingPage
 import ManagementIndicatorFormPage from './features/management/ManagementIndicatorFormPage.jsx'
 import ManagementReportsV2Page from './features/management/ManagementReportsV2Page.jsx'
 import ManagementFinancePage from './features/management/ManagementFinancePage.jsx'
+import ManagementFinanceRequestsPage from './features/management/ManagementFinanceRequestsPage.jsx'
 import ManagementResourcesPage from './features/management/ManagementResourcesPage.jsx'
 import ManagementResourceFormPage from './features/management/ManagementResourceFormPage.jsx'
 import ManagementDirectoryPage from './features/management/ManagementDirectoryPage.jsx'
@@ -39,6 +40,7 @@ const isManagementStructure = pathname === '/app/management/structure' || pathna
 const isManagementObjectives = pathname.startsWith('/app/management/objectives')
 const isManagementIndicatorNew = pathname === '/app/management/tracking/new' || pathname === '/app/management/tracking/new/'
 const isManagementTracking = pathname.startsWith('/app/management/tracking')
+const isManagementFinanceRequests = pathname.startsWith('/app/management/finance/requests')
 const isManagementFinance = pathname.startsWith('/app/management/finance')
 const isManagementReports = pathname.startsWith('/app/management/reports')
 const isActivationPage = pathname === '/activar'
@@ -91,6 +93,7 @@ function RootApplication() {
   else if (isManagementObjectives) content = <ManagementObjectivesPage />
   else if (isManagementIndicatorNew) content = <ManagementIndicatorFormPage />
   else if (isManagementTracking) content = <ManagementTrackingPage />
+  else if (isManagementFinanceRequests) content = <ManagementFinanceRequestsPage />
   else if (isManagementFinance) content = <ManagementFinancePage />
   else if (isManagementReports) content = <ManagementReportsV2Page />
   else if (isManagement) content = <OrganizationalManagementApp />
