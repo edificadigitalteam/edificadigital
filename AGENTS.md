@@ -82,6 +82,7 @@ exists to prevent (see the TODO item this plan resolved).
 - Design mobile-first with one primary action per step, persistent labels, short instructions, safe defaults, visible progress, and generous touch targets.
 - Validation messages state the exact action needed to continue.
 - Support keyboard navigation, visible focus, screen readers, sufficient contrast, and reduced motion.
+- Treat visual alignment and responsive verification as release requirements for every interface change. Controls sharing a row must use a common grid and alignment baseline; helper or validation text must reserve its own space without stretching or displacing sibling controls. Verify the rendered result at 320, 375, 414, and 768 CSS pixels plus a representative desktop width before review.
 - Product and marketing copy uses direct statements and avoids antitheses, comparisons, and personification of non-human subjects.
 - Replace the word “no” with a direct construction when clarity and accuracy remain intact.
 - Avoid generic AI-page motifs, excessive gradients, ornamental grids, floating cards without purpose, and filler metrics.
