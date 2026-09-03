@@ -6,6 +6,7 @@ import ManagementStandaloneShell from './ManagementStandaloneShell.jsx'
 import OrganizationTree from './OrganizationTree.jsx'
 import { buildLeaderPayload, normalizeLeaderEmail, validateUnitLeader } from './unitLeader.js'
 import './management-structure.css'
+import './unit-leader-layout.css'
 
 const unitTypes = {
   directorate: 'Dirección', department: 'Departamento', ministry: 'Ministerio', committee: 'Comité', auxiliary: 'Unión / auxiliar',
