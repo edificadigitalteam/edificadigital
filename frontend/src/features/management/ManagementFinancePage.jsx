@@ -4,7 +4,9 @@ import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from './ManagementStandaloneShell.jsx'
 import { createFinanceAttachmentPath } from './financeAttachments.js'
+import { filterFinanceMovements, paginateFinanceMovements } from './financeLedger.js'
 import './management-finance.css'
+import './finance-ledger.css'
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024
 const allowedTypes = new Set([
@@ -28,6 +30,10 @@ const movementTypes = {
   es: { income: 'Entrada de fondos', expense: 'Egreso manual', adjustment_in: 'Ajuste positivo', adjustment_out: 'Ajuste negativo' },
   en: { income: 'Funds received', expense: 'Manual expense', adjustment_in: 'Positive adjustment', adjustment_out: 'Negative adjustment' },
 }
+const ledgerMovementTypes = {
+  es: { income: 'Entrada de fondos', expense: 'Egreso', transfer_in: 'Transferencia recibida', transfer_out: 'Transferencia enviada', adjustment_in: 'Ajuste positivo', adjustment_out: 'Ajuste negativo' },
+  en: { income: 'Funds received', expense: 'Expense', transfer_in: 'Transfer received', transfer_out: 'Transfer sent', adjustment_in: 'Positive adjustment', adjustment_out: 'Negative adjustment' },
+}
 
 const copy = {
   es: {
@@ -37,7 +43,7 @@ const copy = {
     loading: 'Cargando información financiera…', organization: 'Organización', funds: 'Fondos activos', pending: 'Pendientes en Finanzas', paid: 'Pagadas', submittedTotal: 'Documentos recibidos',
     newInvoice: '＋ Cargar factura o solicitud', newFund: '＋ Crear fondo', movement: '＋ Registrar movimiento', transfer: '⇄ Transferir entre fondos', close: 'Cerrar',
     inbox: 'BANDEJA FINANCIERA', inboxTitle: 'Facturas y solicitudes', inboxHelpManager: 'Todo lo enviado por las unidades aparece aquí para revisión financiera.', inboxHelpUnit: 'Aquí puedes seguir las facturas y solicitudes enviadas por tu unidad.',
-    noSubmissions: 'Todavía no hay documentos financieros registrados.', fundsTitle: 'Bancos, cajas y potes', noFunds: 'Todavía no existen fondos visibles.', ledger: 'MOVIMIENTOS', ledgerTitle: 'Últimos movimientos financieros', noMovements: 'Todavía no hay movimientos.',
+    noSubmissions: 'Todavía no hay documentos financieros registrados.', fundsTitle: 'Bancos, cajas y potes', noFunds: 'Todavía no existen fondos visibles.', ledger: 'MOVIMIENTOS', ledgerTitle: 'Últimos movimientos financieros', noMovements: 'Todavía no hay movimientos.', noFilteredMovements: 'Ningún movimiento coincide con los filtros seleccionados.', dateFrom: 'Desde', dateTo: 'Hasta', allTypes: 'Todos los tipos', allUnits: 'Todas las unidades', allFunds: 'Todos los fondos', clearFilters: 'Limpiar filtros', results: 'resultados', previous: 'Anterior', next: 'Siguiente', page: 'Página', of: 'de', movementTypeFilter: 'Tipo de movimiento',
     unit: 'Unidad', period: 'Período de gestión', documentType: 'Tipo de documento', vendor: 'Proveedor / beneficiario', documentNumber: 'N.º de factura o documento', documentDate: 'Fecha del documento', dueDate: 'Fecha de vencimiento', description: 'Concepto / descripción', amount: 'Monto', currency: 'Moneda', files: 'Factura y soportes', fileHelp: 'PDF, imagen, Excel o CSV · máximo 20 MB por archivo.', submit: 'Enviar a Finanzas', saving: 'Guardando…',
     fundName: 'Nombre del fondo', fundCode: 'Código', fundType: 'Tipo', institution: 'Banco / institución', accountRef: 'Referencia de cuenta', purpose: 'Propósito', assignedUnit: 'Dirección asignada (opcional)', openingBalance: 'Saldo inicial (opcional)', createFund: 'Crear fondo',
     selectFund: 'Fondo', movementType: 'Tipo de movimiento', date: 'Fecha', reference: 'Referencia', saveMovement: 'Registrar movimiento', sourceFund: 'Fondo de origen', targetFund: 'Fondo de destino', transferAmount: 'Monto a transferir', transferDescription: 'Motivo de la transferencia', saveTransfer: 'Transferir',
@@ -51,7 +57,7 @@ const copy = {
     loading: 'Loading financial information…', organization: 'Organization', funds: 'Active funds', pending: 'Pending in Finance', paid: 'Paid', submittedTotal: 'Documents received',
     newInvoice: '＋ Upload invoice or request', newFund: '＋ Create fund', movement: '＋ Record movement', transfer: '⇄ Transfer between funds', close: 'Close',
     inbox: 'FINANCE INBOX', inboxTitle: 'Invoices and requests', inboxHelpManager: 'Everything submitted by the units appears here for Finance review.', inboxHelpUnit: 'Track invoices and requests submitted by your unit here.',
-    noSubmissions: 'No financial documents have been recorded yet.', fundsTitle: 'Banks, cash boxes, and funds', noFunds: 'No visible funds yet.', ledger: 'MOVEMENTS', ledgerTitle: 'Latest financial movements', noMovements: 'No movements yet.',
+    noSubmissions: 'No financial documents have been recorded yet.', fundsTitle: 'Banks, cash boxes, and funds', noFunds: 'No visible funds yet.', ledger: 'MOVEMENTS', ledgerTitle: 'Latest financial movements', noMovements: 'No movements yet.', noFilteredMovements: 'No movements match the selected filters.', dateFrom: 'From', dateTo: 'To', allTypes: 'All types', allUnits: 'All units', allFunds: 'All funds', clearFilters: 'Clear filters', results: 'results', previous: 'Previous', next: 'Next', page: 'Page', of: 'of', movementTypeFilter: 'Movement type',
     unit: 'Unit / directorate', period: 'Management period', documentType: 'Document type', vendor: 'Vendor / beneficiary', documentNumber: 'Invoice or document number', documentDate: 'Document date', dueDate: 'Due date', description: 'Purpose / description', amount: 'Amount', currency: 'Currency', files: 'Invoice and supporting files', fileHelp: 'PDF, image, Excel, or CSV · 20 MB maximum per file.', submit: 'Send to Finance', saving: 'Saving…',
     fundName: 'Fund name', fundCode: 'Code', fundType: 'Type', institution: 'Bank / institution', accountRef: 'Account reference', purpose: 'Purpose', assignedUnit: 'Assigned unit (optional)', openingBalance: 'Opening balance (optional)', createFund: 'Create fund',
     selectFund: 'Fund', movementType: 'Movement type', date: 'Date', reference: 'Reference', saveMovement: 'Record movement', sourceFund: 'Source fund', targetFund: 'Destination fund', transferAmount: 'Transfer amount', transferDescription: 'Transfer purpose', saveTransfer: 'Transfer',
@@ -92,6 +98,8 @@ export default function ManagementFinancePage() {
   const [transferForm, setTransferForm] = useState(emptyTransfer)
   const [reviewForm, setReviewForm] = useState(emptyReview)
   const [paymentFiles, setPaymentFiles] = useState([])
+  const [ledgerFilters, setLedgerFilters] = useState({ dateFrom: '', dateTo: '', movementType: '', unitId: '', fundId: '' })
+  const [ledgerPage, setLedgerPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -139,6 +147,11 @@ export default function ManagementFinancePage() {
   const attachmentsFor = (id) => attachments.filter((item) => item.submission_id === id)
   const fundFor = (id) => funds.find((item) => item.id === id)
   const unitFor = (id) => units.find((item) => item.id === id)
+  const filteredTransactions = useMemo(() => filterFinanceMovements(transactions, ledgerFilters), [ledgerFilters, transactions])
+  const ledgerPagination = useMemo(() => paginateFinanceMovements(filteredTransactions, ledgerPage), [filteredTransactions, ledgerPage])
+  const hasLedgerFilters = Object.values(ledgerFilters).some(Boolean)
+
+  useEffect(() => { setLedgerPage(1) }, [ledgerFilters])
 
   useEffect(() => {
     if (!submissionForm.unit_id && availableUnits[0]) setSubmissionForm((current) => ({ ...current, unit_id: availableUnits[0].id }))
@@ -278,7 +291,22 @@ export default function ManagementFinancePage() {
 
         <section className="finance-funds-section"><div className="management-card-heading"><div><small>{t.financeAction}</small><h2>{t.fundsTitle}</h2></div>{canManage && <div className="finance-inline-actions"><button type="button" onClick={() => setActiveForm('movement')}>{t.movement}</button><button type="button" onClick={() => setActiveForm('transfer')}>{t.transfer}</button></div>}</div>{!funds.length ? <p className="management-empty">{t.noFunds}</p> : <div className="finance-fund-grid">{funds.map((fund) => <article key={fund.id}><header><span>{fund.code}</span><b>{fundTypes[language][fund.fund_type]}</b></header><h3>{fund.name}</h3><p>{fund.purpose || fund.institution || '—'}</p><strong>{formatMoney(fund.balance,fund.currency,language)}</strong><small>{t.available}</small><footer><span>{t.inflows}: {formatMoney(fund.inflows,fund.currency,language)}</span><span>{t.outflows}: {formatMoney(fund.outflows,fund.currency,language)}</span>{fund.owner_unit_code && <span>{t.assigned}: {fund.owner_unit_code}</span>}</footer></article>)}</div>}</section>
 
-        <section className="finance-ledger-card"><div className="management-card-heading"><div><small>{t.ledger}</small><h2>{t.ledgerTitle}</h2></div></div>{!transactions.length ? <p className="management-empty">{t.noMovements}</p> : <div className="finance-ledger-table"><div className="finance-ledger-head"><span>{t.date}</span><span>{t.selectFund}</span><span>{t.description}</span><span>{t.unit}</span><span>{t.amount}</span></div>{transactions.slice(0,40).map((movement) => { const outgoing = ['expense','transfer_out','adjustment_out'].includes(movement.movement_type); return <div key={movement.id}><span>{formatDate(movement.occurred_on,language)}</span><span>{fundFor(movement.fund_id)?.name || '—'}</span><span>{movement.description}<small>{movement.reference || ''}</small></span><span>{unitFor(movement.unit_id)?.code || '—'}</span><strong className={outgoing ? 'out' : 'in'}>{outgoing ? '−' : '+'}{formatMoney(movement.amount,movement.currency,language)}</strong></div> })}</div>}</section>
+        <section className="finance-ledger-card">
+          <div className="management-card-heading"><div><small>{t.ledger}</small><h2>{t.ledgerTitle}</h2></div></div>
+          <div className="finance-ledger-filters" aria-label={language === 'en' ? 'Filter financial movements' : 'Filtrar movimientos financieros'}>
+            <label><span>{t.dateFrom}</span><input type="date" value={ledgerFilters.dateFrom} max={ledgerFilters.dateTo || undefined} onChange={(event) => setLedgerFilters((current) => ({ ...current, dateFrom: event.target.value }))} /></label>
+            <label><span>{t.dateTo}</span><input type="date" value={ledgerFilters.dateTo} min={ledgerFilters.dateFrom || undefined} onChange={(event) => setLedgerFilters((current) => ({ ...current, dateTo: event.target.value }))} /></label>
+            <label><span>{t.movementTypeFilter}</span><select value={ledgerFilters.movementType} onChange={(event) => setLedgerFilters((current) => ({ ...current, movementType: event.target.value }))}><option value="">{t.allTypes}</option>{Object.entries(ledgerMovementTypes[language]).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            <label><span>{t.unit}</span><select value={ledgerFilters.unitId} onChange={(event) => setLedgerFilters((current) => ({ ...current, unitId: event.target.value }))}><option value="">{t.allUnits}</option>{units.map((unit) => <option key={unit.id} value={unit.id}>{unit.code} · {unit.name}</option>)}</select></label>
+            <label><span>{t.selectFund}</span><select value={ledgerFilters.fundId} onChange={(event) => setLedgerFilters((current) => ({ ...current, fundId: event.target.value }))}><option value="">{t.allFunds}</option>{funds.map((fund) => <option key={fund.id} value={fund.id}>{fund.code} · {fund.name}</option>)}</select></label>
+            <button type="button" disabled={!hasLedgerFilters} onClick={() => setLedgerFilters({ dateFrom: '', dateTo: '', movementType: '', unitId: '', fundId: '' })}>{t.clearFilters}</button>
+          </div>
+          <div className="finance-ledger-result-meta" aria-live="polite"><span>{filteredTransactions.length} {t.results}</span></div>
+          {!transactions.length ? <p className="management-empty">{t.noMovements}</p> : !filteredTransactions.length ? <p className="management-empty">{t.noFilteredMovements}</p> : <>
+            <div className="finance-ledger-table"><div className="finance-ledger-head"><span>{t.date}</span><span>{t.selectFund}</span><span>{t.description}</span><span>{t.unit}</span><span>{t.amount}</span></div>{ledgerPagination.items.map((movement) => { const outgoing = ['expense','transfer_out','adjustment_out'].includes(movement.movement_type); return <div key={movement.id}><span>{formatDate(movement.occurred_on,language)}</span><span>{fundFor(movement.fund_id)?.name || '—'}</span><span>{movement.description}<small>{movement.reference || ''}</small></span><span>{unitFor(movement.unit_id)?.code || '—'}</span><strong className={outgoing ? 'out' : 'in'}>{outgoing ? '−' : '+'}{formatMoney(movement.amount,movement.currency,language)}</strong></div> })}</div>
+            <nav className="finance-ledger-pagination" aria-label={language === 'en' ? 'Financial movements pages' : 'Páginas de movimientos financieros'}><button type="button" disabled={ledgerPagination.page === 1} onClick={() => setLedgerPage((page) => page - 1)}>{t.previous}</button><span>{t.page} {ledgerPagination.page} {t.of} {ledgerPagination.totalPages}</span><button type="button" disabled={ledgerPagination.page === ledgerPagination.totalPages} onClick={() => setLedgerPage((page) => page + 1)}>{t.next}</button></nav>
+          </>}
+        </section>
       </>}
     </div>
   </ManagementStandaloneShell>
