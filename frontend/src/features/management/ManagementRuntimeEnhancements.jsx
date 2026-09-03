@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import './management-runtime-enhancements.css'
 
 function currentLanguage() {
   try {
