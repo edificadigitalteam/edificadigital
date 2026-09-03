@@ -2,6 +2,7 @@ import ManagementRuntimeEnhancements from './ManagementRuntimeEnhancements.jsx'
 import './management.css'
 import './management-fixes.css'
 import './management-visual-hotfix.css'
+import './management-runtime-enhancements.css'
 
 const navigation = [
   ['Resumen', '/app/management', '/app/management'],
