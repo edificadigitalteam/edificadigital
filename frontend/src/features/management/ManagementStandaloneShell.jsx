@@ -1,6 +1,8 @@
+import ManagementRuntimeEnhancements from './ManagementRuntimeEnhancements.jsx'
 import './management.css'
 import './management-fixes.css'
 import './management-visual-hotfix.css'
+import './management-runtime-enhancements.css'
 
 const navigation = [
   ['Resumen', '/app/management', '/app/management'],
@@ -25,6 +27,7 @@ export default function ManagementStandaloneShell({ access, children }) {
 
   return (
     <div className="management-shell management-unified-shell">
+      <ManagementRuntimeEnhancements />
       <aside className="management-sidebar no-print">
         <div className="management-sidebar-top"><Brand /><small>GESTIÓN ORGANIZACIONAL</small></div>
         <a className="management-back" href="/app">← Todos los módulos</a>
