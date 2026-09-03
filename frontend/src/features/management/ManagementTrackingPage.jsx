@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
 import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
@@ -109,6 +109,8 @@ export default function ManagementTrackingPage() {
   const [indicatorOpen, setIndicatorOpen] = useState(false)
   const [progressOpen, setProgressOpen] = useState(false)
   const [expandedIndicatorId, setExpandedIndicatorId] = useState('')
+  const detailTriggerRef = useRef(null)
+  const detailDrawerRef = useRef(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -164,6 +166,32 @@ export default function ManagementTrackingPage() {
   const readyToCreate = hasPeriod && hasUnit && canManageSelected
   const selectedPeriod = periods.find((period) => period.id === activePeriodId)
   const selectedUnit = units.find((unit) => unit.id === unitId)
+  const detailIndicator = currentIndicators.find((indicator) => indicator.id === expandedIndicatorId)
+  const detailRows = detailIndicator ? progress.filter((row) => row.indicator_id === detailIndicator.id).sort((a, b) => new Date(b.reporting_period_end || b.created_at || 0) - new Date(a.reporting_period_end || a.created_at || 0) || new Date(b.created_at || 0) - new Date(a.created_at || 0)) : []
+
+  const closeIndicatorDetail = useCallback(() => {
+    setExpandedIndicatorId('')
+    window.requestAnimationFrame(() => detailTriggerRef.current?.focus())
+  }, [])
+
+  useEffect(() => {
+    if (!detailIndicator) return undefined
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.requestAnimationFrame(() => detailDrawerRef.current?.querySelector('button')?.focus())
+    return () => { document.body.style.overflow = previousOverflow }
+  }, [detailIndicator])
+
+  const handleDetailKeyDown = (event) => {
+    if (event.key === 'Escape') { closeIndicatorDetail(); return }
+    if (event.key !== 'Tab' || !detailDrawerRef.current) return
+    const focusable = [...detailDrawerRef.current.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+    if (!focusable.length) return
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
+  }
 
   const startNewIndicator = () => { setIndicatorForm({ ...emptyIndicator }); setIndicatorOpen(true); setProgressOpen(false); setError(''); setMessage(''); window.scrollTo({ top: 0, behavior: 'smooth' }) }
   const editIndicator = (indicator) => {
@@ -288,12 +316,18 @@ export default function ManagementTrackingPage() {
               <header><span>{metricTypes[language][indicator.metric_type] || indicator.metric_type}</span><b>{aggregationOptions[language][normalizedMethod(indicator)] || normalizedMethod(indicator)}</b></header><h3>{indicator.name}</h3>
               <div className="indicator-values indicator-values-three"><div><span>{t.targetLabel}</span><strong>{indicator.target_value == null ? (indicator.target_text || '—') : metricDisplay(indicator.target_value, indicator, language)}</strong></div><div><span>{t.achieved}</span><strong>{result.text || metricDisplay(result.value, indicator, language)}</strong></div><div><span>{t.pending}</span><strong>{pendingValue == null ? '—' : metricDisplay(pendingValue, indicator, language)}</strong></div></div>
               {target > 0 && <div className="indicator-progress"><span style={{ width: `${Math.min(result.completion, 100)}%` }} /><b>{t.execution}: {result.completion}%</b></div>}
-              <footer className="indicator-card-footer"><small>{frequencyOptions[language][indicator.frequency]} · {rows.length} {t.results}</small><div className="indicator-card-actions"><button className="detail" type="button" onClick={() => setExpandedIndicatorId(expanded ? '' : indicator.id)}>{expanded ? t.hideDetail : t.detail}</button>{canManageSelected && <button className="edit" type="button" onClick={() => editIndicator(indicator)}>{t.editIndicator}</button>}{canManageSelected && <button type="button" onClick={() => startProgress(indicator)}>{t.recordResult}</button>}{canAdmin && <button className="archive" type="button" onClick={() => archiveIndicator(indicator)}>{t.archive}</button>}{isSuperAdmin && <button className="danger" type="button" onClick={() => deleteIndicator(indicator)}>{t.delete}</button>}</div></footer>
-              {expanded && <div className="indicator-history"><div className="indicator-history-heading"><strong>{t.history}</strong><span>{rows.length}</span></div>{!rows.length ? <p>{t.noHistory}</p> : <div className="indicator-history-list">{rows.map((row) => <article key={row.id}><div className="history-main"><span>{formatDate(row.reporting_period_end || row.reporting_period_start, language)}</span><strong>{rowDisplay(row, indicator, language)}</strong><b className={`history-status ${row.status}`}>{row.status === 'draft' ? t.draft : row.status === 'verified' ? t.verified : t.submitted}</b></div><div className="history-accountability"><span><b>{t.person}:</b> {row.responsible_name || '—'}</span><span><b>{t.registered}:</b> {formatDateTime(row.created_at, language)}</span>{row.updated_at && row.updated_at !== row.created_at && <span><b>{t.modified}:</b> {formatDateTime(row.updated_at, language)}</span>}</div>{row.notes && <p><b>{t.observations}:</b> {row.notes}</p>}{canManageSelected && <button type="button" onClick={() => editProgress(row)}>{t.editResult}</button>}</article>)}</div>}</div>}
+              <footer className="indicator-card-footer"><small>{frequencyOptions[language][indicator.frequency]} · {rows.length} {t.results}</small><div className="indicator-card-actions"><button className="detail" type="button" aria-expanded={expanded} aria-controls="indicator-detail-drawer" onClick={(event) => { detailTriggerRef.current = event.currentTarget; setExpandedIndicatorId(indicator.id) }}>{t.detail}</button>{canManageSelected && <button className="edit" type="button" onClick={() => editIndicator(indicator)}>{t.editIndicator}</button>}{canManageSelected && <button type="button" onClick={() => startProgress(indicator)}>{t.recordResult}</button>}{canAdmin && <button className="archive" type="button" onClick={() => archiveIndicator(indicator)}>{t.archive}</button>}{isSuperAdmin && <button className="danger" type="button" onClick={() => deleteIndicator(indicator)}>{t.delete}</button>}</div></footer>
             </article>
           })}</div>}
         </section>
       </div>
     </main>
+    {detailIndicator && <div className="indicator-detail-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeIndicatorDetail() }}>
+      <aside id="indicator-detail-drawer" className="indicator-detail-drawer" role="dialog" aria-modal="true" aria-labelledby="indicator-detail-title" ref={detailDrawerRef} onKeyDown={handleDetailKeyDown}>
+        <header className="indicator-detail-header"><div><span>{t.indicator}</span><h2 id="indicator-detail-title">{detailIndicator.name}</h2><p>{selectedUnit ? `${selectedUnit.code} · ${selectedUnit.name}` : t.unitFilter} · {selectedPeriod?.name || t.periodFilter}</p></div><button type="button" onClick={closeIndicatorDetail}>{language === 'en' ? 'Close' : 'Cerrar'}</button></header>
+        <div className="indicator-detail-summary"><div><span>{t.targetLabel}</span><strong>{detailIndicator.target_value == null ? (detailIndicator.target_text || '—') : metricDisplay(detailIndicator.target_value, detailIndicator, language)}</strong></div><div><span>{t.achieved}</span><strong>{aggregateIndicator(detailIndicator, progress).text || metricDisplay(aggregateIndicator(detailIndicator, progress).value, detailIndicator, language)}</strong></div><div><span>{t.results}</span><strong>{detailRows.length}</strong></div></div>
+        <section className="indicator-history"><div className="indicator-history-heading"><strong>{t.history}</strong><span>{detailRows.length}</span></div>{!detailRows.length ? <p>{t.noHistory}</p> : <div className="indicator-history-list">{detailRows.map((row) => <article key={row.id}><div className="history-main"><span>{formatDate(row.reporting_period_end || row.reporting_period_start, language)}</span><strong>{rowDisplay(row, detailIndicator, language)}</strong><b className={`history-status ${row.status}`}>{row.status === 'draft' ? t.draft : row.status === 'verified' ? t.verified : t.submitted}</b></div><div className="history-accountability"><span><b>{t.person}:</b> {row.responsible_name || '—'}</span><span><b>{t.registered}:</b> {formatDateTime(row.created_at, language)}</span>{row.updated_at && row.updated_at !== row.created_at && <span><b>{t.modified}:</b> {formatDateTime(row.updated_at, language)}</span>}</div>{row.notes && <p><b>{t.observations}:</b> {row.notes}</p>}{canManageSelected && <button type="button" onClick={() => { closeIndicatorDetail(); editProgress(row) }}>{t.editResult}</button>}</article>)}</div>}</section>
+      </aside>
+    </div>}
   </div>
 }
