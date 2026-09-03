@@ -4,6 +4,19 @@
   gap: 14px !important;
   padding: 10px 14px 18px !important;
 }
+.management-legacy-nav-replaced {
+  padding: 0 !important;
+}
+.management-legacy-nav-replaced > button,
+.management-legacy-nav-replaced > .management-extra-nav-mount {
+  display: none !important;
+}
+.management-grouped-nav-mount {
+  display: block;
+}
+.management-grouped-nav-mount > .management-grouped-nav {
+  padding-inline: 14px !important;
+}
 .management-nav-group {
   display: grid;
   gap: 3px;
