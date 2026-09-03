@@ -1,0 +1,176 @@
+/* Visual corrections for management tracking and reports. */
+
+/* Indicators: keep Meta / Logrado / Pendiente values inside their cards. */
+.indicator-values-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+.indicator-values-three > div {
+  min-width: 0;
+  overflow: hidden;
+  padding: 13px 11px !important;
+}
+.indicator-values-three > div > span {
+  display: block;
+  margin-bottom: 6px;
+}
+.indicator-values-three > div > strong {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--mg-purple-dark);
+  font-size: clamp(.92rem, 1.35vw, 1.15rem) !important;
+  line-height: 1.12;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+.indicator-progress {
+  min-width: 0;
+}
+.indicator-progress > b {
+  white-space: nowrap;
+}
+
+/* Reports directory: restore Edifica layout and button language. */
+.management-unit-report-directory .management-card-heading p {
+  margin: 6px 0 0;
+  color: var(--mg-muted);
+  font-size: .8rem;
+  line-height: 1.45;
+}
+.management-unit-report-directory > div:last-child > article {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 17px 24px;
+  border-top: 1px solid #ebe4ee;
+}
+.management-unit-report-directory > div:last-child > article > span {
+  color: var(--mg-purple);
+  font-size: .86rem;
+  font-weight: 950;
+}
+.management-unit-report-directory > div:last-child > article > div:nth-child(2) {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.management-unit-report-directory > div:last-child > article > div:nth-child(2) strong {
+  color: var(--mg-purple-dark);
+  font-size: 1rem;
+}
+.management-unit-report-directory > div:last-child > article > div:nth-child(2) small {
+  color: var(--mg-muted);
+}
+
+.unit-report-row-actions,
+.unit-report-v2-actions,
+.report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.unit-report-row-actions button,
+.unit-report-v2-actions button,
+.report-actions button,
+.report-item-editor-heading button {
+  min-height: 40px;
+  padding: 0 15px;
+  border: 1px solid #d8cce5;
+  border-radius: 9px;
+  background: #fff;
+  color: var(--mg-purple);
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 850;
+  cursor: pointer;
+  box-shadow: 0 5px 14px rgba(49,18,79,.05);
+  transition: background .16s ease, border-color .16s ease, color .16s ease, transform .16s ease, box-shadow .16s ease;
+}
+.unit-report-row-actions button:hover,
+.unit-report-v2-actions button:hover,
+.report-actions button:hover,
+.report-item-editor-heading button:hover {
+  border-color: var(--mg-purple);
+  background: var(--mg-purple-soft);
+  color: var(--mg-purple-dark);
+  transform: translateY(-1px);
+}
+.unit-report-row-actions button:focus-visible,
+.unit-report-v2-actions button:focus-visible,
+.report-actions button:focus-visible,
+.report-item-editor-heading button:focus-visible {
+  outline: 3px solid rgba(242,140,40,.22);
+  outline-offset: 2px;
+}
+
+/* Primary report action: Crear/Editar, Enviar, Imprimir/PDF. */
+.unit-report-row-actions button.secondary,
+.unit-report-v2-actions button.primary,
+.report-actions button.primary {
+  border-color: var(--mg-purple);
+  background: var(--mg-purple);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(91,46,145,.16);
+}
+.unit-report-row-actions button.secondary:hover,
+.unit-report-v2-actions button.primary:hover,
+.report-actions button.primary:hover {
+  border-color: var(--mg-purple-dark);
+  background: var(--mg-purple-dark);
+  color: #fff;
+}
+.report-actions button.approve {
+  border-color: var(--mg-orange);
+  background: var(--mg-orange);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(242,140,40,.16);
+}
+.report-actions button.approve:hover {
+  border-color: #d87516;
+  background: #d87516;
+  color: #fff;
+}
+.unit-report-row-actions button:disabled,
+.unit-report-v2-actions button:disabled,
+.report-actions button:disabled,
+.report-item-editor-heading button:disabled {
+  opacity: .48;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 850px) {
+  .management-unit-report-directory > div:last-child > article {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 10px 14px;
+    padding: 16px 18px;
+  }
+  .management-unit-report-directory > div:last-child > article > .report-state,
+  .unit-report-row-actions {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 700px) {
+  .indicator-values-three {
+    grid-template-columns: 1fr !important;
+  }
+  .indicator-values-three > div > strong {
+    font-size: 1.08rem !important;
+  }
+  .unit-report-row-actions {
+    width: 100%;
+  }
+  .unit-report-row-actions button {
+    flex: 1 1 130px;
+  }
+}

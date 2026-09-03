@@ -1,5 +1,6 @@
 import './management.css'
 import './management-fixes.css'
+import './management-visual-hotfix.css'
 
 const navigation = [
   ['Resumen', '/app/management', '/app/management'],
