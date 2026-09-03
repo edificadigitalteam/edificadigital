@@ -7,12 +7,16 @@
 .indicator-values-three {
   min-width: 0 !important;
   gap: 10px !important;
+  align-items: stretch !important;
 }
 .indicator-values-three > div {
   min-width: 0 !important;
   max-width: 100% !important;
   overflow: hidden !important;
   padding: 13px 10px !important;
+  display: grid !important;
+  align-content: center !important;
+  justify-items: start !important;
 }
 .indicator-values-three > div > strong {
   display: block !important;
@@ -28,6 +32,54 @@
   word-break: break-word !important;
   overflow-wrap: anywhere !important;
   text-wrap: balance;
+}
+
+/* Execution is always centered below a dedicated progress track. */
+.indicator-progress {
+  display: grid !important;
+  grid-template-columns: minmax(0,1fr) !important;
+  grid-template-rows: 10px auto !important;
+  gap: 8px !important;
+  align-items: center !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin-top: 14px !important;
+  background: transparent !important;
+  overflow: visible !important;
+  border-radius: 0 !important;
+}
+.indicator-progress::before {
+  content: '';
+  grid-column: 1;
+  grid-row: 1;
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: #ece6f0;
+}
+.indicator-progress > span {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  height: 10px !important;
+  max-width: 100% !important;
+  border-radius: 999px !important;
+  background: var(--mg-orange) !important;
+  z-index: 1;
+}
+.indicator-progress > b {
+  grid-column: 1;
+  grid-row: 2;
+  justify-self: center !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  text-align: center !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  line-height: 1.2 !important;
+  color: var(--mg-purple) !important;
 }
 
 @container (max-width: 500px) {
@@ -117,6 +169,9 @@
   0% { box-shadow: 0 0 0 0 rgba(242,140,40,.35), 0 14px 30px rgba(49,18,79,.05); }
   45% { box-shadow: 0 0 0 5px rgba(242,140,40,.16), 0 18px 36px rgba(49,18,79,.08); }
   100% { box-shadow: 0 0 0 0 rgba(242,140,40,0), 0 14px 30px rgba(49,18,79,.05); }
+}
+.finance-resource-requests-link {
+  order: -1;
 }
 
 @media (max-width: 600px) {

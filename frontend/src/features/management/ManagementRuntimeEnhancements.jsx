@@ -54,6 +54,18 @@ function normalizeTrackingValues() {
   })
 }
 
+function ensureResourceRequestLink() {
+  if (window.location.pathname !== '/app/management/finance' && window.location.pathname !== '/app/management/finance/') return
+  const actions = document.querySelector('.finance-page .finance-heading-actions')
+  if (!actions || actions.querySelector('.finance-resource-requests-link')) return
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.className = 'finance-resource-requests-link'
+  button.textContent = currentLanguage() === 'en' ? '＋ Resource requests' : '＋ Solicitudes de recursos'
+  button.addEventListener('click', () => window.location.assign('/app/management/finance/requests'))
+  actions.prepend(button)
+}
+
 function removePaymentRequestOption() {
   if (!window.location.pathname.startsWith('/app/management/finance')) return
 
@@ -78,6 +90,16 @@ function removePaymentRequestOption() {
     if (heading.textContent === 'Facturas y solicitudes') heading.textContent = 'Facturas y documentos'
     if (heading.textContent === 'Invoices and requests') heading.textContent = 'Invoices and documents'
   })
+
+  document.querySelectorAll('.finance-page .management-panel-heading span, .finance-inbox-card .management-card-heading p').forEach((node) => {
+    const text = node.textContent || ''
+    if (text.includes('facturas y solicitudes financieras')) node.textContent = text.replace('facturas y solicitudes financieras', 'facturas y documentos financieros')
+    if (text.includes('facturas y solicitudes enviadas')) node.textContent = text.replace('facturas y solicitudes enviadas', 'facturas y documentos enviados')
+    if (text.includes('invoices and financial requests')) node.textContent = text.replace('invoices and financial requests', 'invoices and financial documents')
+    if (text.includes('invoices and requests submitted')) node.textContent = text.replace('invoices and requests submitted', 'invoices and documents submitted')
+  })
+
+  ensureResourceRequestLink()
 }
 
 function scrollToActiveFinanceForm() {
@@ -106,6 +128,7 @@ export default function ManagementRuntimeEnhancements() {
       enhanceReportIndicators()
       normalizeTrackingValues()
       removePaymentRequestOption()
+      ensureResourceRequestLink()
     }
 
     const observer = new MutationObserver(() => {
