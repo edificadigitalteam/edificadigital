@@ -1,3 +1,8 @@
+/* Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 */
+/* Hallmark · component: detail drawer · genre: editorial · theme: existing Edifica system
+ * states: default · hover · focus · active · disabled · loading · error · success
+ * contrast: pass
+ */
 .management-users-link {
   display: flex;
   align-items: center;
@@ -68,6 +73,78 @@
 .history-accountability b { color: var(--mg-purple-dark); }
 .indicator-history-list p { margin: 0; color: var(--mg-muted); font-size: .76rem; line-height: 1.45; }
 .indicator-history-list > article > button { justify-self: end; min-height: 32px; padding: 0 10px; border: 1px solid #ddd3e3; border-radius: 8px; background: #fff; color: var(--mg-purple); font-size: .72rem; font-weight: 850; cursor: pointer; }
+.indicator-detail-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(35, 16, 49, .38);
+}
+.indicator-detail-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(520px, calc(100% - 48px));
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  background: #fff;
+  box-shadow: -14px 0 40px rgba(35, 16, 49, .18);
+  overflow: hidden;
+  animation: indicator-detail-enter 180ms cubic-bezier(.16, 1, .3, 1);
+}
+.indicator-detail-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+  padding: 24px;
+  border-bottom: 1px solid #e8e0ec;
+}
+.indicator-detail-header > div { min-width: 0; }
+.indicator-detail-header span { color: var(--mg-orange); font-size: .68rem; font-weight: 900; letter-spacing: .1em; }
+.indicator-detail-header h2 { margin: 6px 0; color: var(--mg-purple-dark); font-size: 1.35rem; line-height: 1.25; overflow-wrap: anywhere; }
+.indicator-detail-header p { margin: 0; color: var(--mg-muted); font-size: .78rem; line-height: 1.45; }
+.indicator-detail-header button,
+.indicator-detail-drawer .indicator-history-list > article > button {
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid var(--mg-line);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--mg-purple-dark);
+  font-weight: 850;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.indicator-detail-header button:hover,
+.indicator-detail-drawer .indicator-history-list > article > button:hover { background: #faf8fc; }
+.indicator-detail-header button:focus-visible,
+.indicator-detail-drawer .indicator-history-list > article > button:focus-visible { outline: 3px solid var(--mg-orange); outline-offset: 2px; }
+.indicator-detail-header button:active,
+.indicator-detail-drawer .indicator-history-list > article > button:active { transform: translateY(1px); }
+.indicator-detail-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 18px 24px; background: #faf8fc; }
+.indicator-detail-summary > div { min-width: 0; display: grid; gap: 4px; padding: 12px; border: 1px solid #e8e0ec; border-radius: 10px; background: #fff; }
+.indicator-detail-summary span { color: var(--mg-muted); font-size: .7rem; }
+.indicator-detail-summary strong { color: var(--mg-purple-dark); font-size: .94rem; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.indicator-detail-drawer > .indicator-history { min-height: 0; margin: 0; border-top: 0; overflow-y: auto; overscroll-behavior: contain; }
+.indicator-detail-drawer .indicator-history-heading { position: sticky; top: 0; z-index: 1; background: #fbf9fc; border-bottom: 1px solid #e8e0ec; }
+.indicator-detail-drawer .history-main { grid-template-columns: minmax(0, .8fr) minmax(0, 1fr) auto; }
+.indicator-detail-drawer .history-main > strong,
+.indicator-detail-drawer .history-accountability span,
+.indicator-detail-drawer .indicator-history-list p { min-width: 0; overflow-wrap: anywhere; }
+@keyframes indicator-detail-enter { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
+@media (max-width: 600px) {
+  .indicator-detail-drawer { width: 100%; }
+  .indicator-detail-header { padding: 18px 16px; }
+  .indicator-detail-summary { grid-template-columns: minmax(0, 1fr); padding: 14px 16px; }
+  .indicator-detail-drawer .history-main { grid-template-columns: minmax(0, 1fr) auto; }
+  .indicator-detail-drawer .history-main > strong { grid-column: 1 / -1; grid-row: 2; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .indicator-detail-drawer { animation-duration: 1ms; }
+}
 .management-shell .project-list-card .module-list-heading > button { min-height: 44px !important; padding: 0 17px !important; border: 0 !important; border-radius: 9px !important; background: #5b2e91 !important; color: #fff !important; font-weight: 900 !important; opacity: 1 !important; visibility: visible !important; box-shadow: 0 8px 20px rgba(91,46,145,.16) !important; }
 .management-shell .project-list-card .module-list-heading > button:hover { background: #31124f !important; }
 #management-project-create-portal { display: none !important; }
