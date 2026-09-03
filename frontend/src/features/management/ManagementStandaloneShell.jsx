@@ -3,18 +3,25 @@ import './management.css'
 import './management-fixes.css'
 import './management-visual-hotfix.css'
 import './management-runtime-enhancements.css'
+import './management-grouped-nav.css'
 
-const navigation = [
-  ['Resumen', '/app/management', '/app/management'],
-  ['Estructura', '/app/management/structure', '/app/management/structure'],
-  ['Objetivos', '/app/management/objectives', '/app/management/objectives'],
-  ['Proyectos', '/app/management/projects', '/app/management/projects'],
-  ['Aportes y recursos', '/app/management/resources', '/app/management/resources'],
-  ['Aliados y donantes', '/app/management/allies', '/app/management/allies'],
-  ['Voluntariado', '/app/management/volunteers', '/app/management/volunteers'],
-  ['Finanzas', '/app/management/finance', '/app/management/finance'],
-  ['Seguimiento', '/app/management/tracking', '/app/management/tracking'],
-  ['Informes', '/app/management/reports', '/app/management/reports'],
+const navigationGroups = [
+  { label: 'Inicio', items: [['Resumen', '/app/management', '/app/management']] },
+  { label: 'Planificación', items: [
+    ['Estructura', '/app/management/structure', '/app/management/structure'],
+    ['Objetivos', '/app/management/objectives', '/app/management/objectives'],
+    ['Proyectos', '/app/management/projects', '/app/management/projects'],
+  ] },
+  { label: 'Recursos y operación', items: [
+    ['Aportes y recursos', '/app/management/resources', '/app/management/resources'],
+    ['Aliados y donantes', '/app/management/allies', '/app/management/allies'],
+    ['Voluntariado', '/app/management/volunteers', '/app/management/volunteers'],
+    ['Finanzas', '/app/management/finance', '/app/management/finance'],
+  ] },
+  { label: 'Control y rendición', items: [
+    ['Seguimiento', '/app/management/tracking', '/app/management/tracking'],
+    ['Informes', '/app/management/reports', '/app/management/reports'],
+  ] },
 ]
 
 function Brand() {
@@ -31,14 +38,20 @@ export default function ManagementStandaloneShell({ access, children }) {
       <aside className="management-sidebar no-print">
         <div className="management-sidebar-top"><Brand /><small>GESTIÓN ORGANIZACIONAL</small></div>
         <a className="management-back" href="/app">← Todos los módulos</a>
-        <nav className="management-canonical-nav">
-          {navigation.map(([label, href, prefix], index) => {
-            const active = href === '/app/management' ? path === href : path.startsWith(prefix)
-            return <button className={active ? 'active' : ''} type="button" onClick={() => window.location.assign(href)} key={href}><span>{String(index + 1).padStart(2, '0')}</span>{label}</button>
-          })}
+        <nav className="management-canonical-nav management-grouped-nav">
+          {navigationGroups.map((group) => <div className="management-nav-group" key={group.label}>
+            <p className="management-nav-group-label">{group.label}</p>
+            {group.items.map(([label, href, prefix]) => {
+              const active = href === '/app/management' ? path === href : path.startsWith(prefix)
+              return <button className={active ? 'active' : ''} type="button" onClick={() => window.location.assign(href)} key={href}>{label}</button>
+            })}
+          </div>)}
+          {canAdmin && <div className="management-nav-group">
+            <p className="management-nav-group-label">Administración</p>
+            <a className="management-nav-action" href="/app/admin/operators">Usuarios y accesos</a>
+          </div>}
         </nav>
         <div className="management-sidebar-footer">
-          {canAdmin && <a className="management-users-link" href="/app/admin/operators">Usuarios y accesos</a>}
           <div><strong>{access.organizationName || 'Organización'}</strong><span>{access.displayName || access.email}</span></div>
           <button type="button" onClick={access.signOut}>Cerrar sesión</button>
         </div>
