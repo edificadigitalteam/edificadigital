@@ -46,6 +46,30 @@ function enhanceReportIndicators() {
   })
 }
 
+function ensureReportDataIntegrityNote() {
+  if (!window.location.pathname.startsWith('/app/management/reports')) return
+  const editor = document.querySelector('.reports-v2-page .report-v2-editor')
+  if (!editor) return
+  let note = editor.querySelector('.report-data-integrity-note')
+  if (!note) {
+    note = document.createElement('section')
+    note.className = 'report-data-integrity-note'
+    const icon = document.createElement('span')
+    icon.textContent = '#'
+    const copy = document.createElement('div')
+    copy.innerHTML = '<strong></strong><p></p>'
+    note.append(icon, copy)
+    const title = editor.querySelector(':scope > .management-form-title')
+    if (title) title.insertAdjacentElement('afterend', note)
+    else editor.prepend(note)
+  }
+  const english = currentLanguage() === 'en'
+  note.querySelector('strong').textContent = english ? 'Official indicator figures stay connected to Tracking' : 'Las cifras oficiales permanecen conectadas con Seguimiento'
+  note.querySelector('p').textContent = english
+    ? 'Targets, recorded results and execution percentages are read from the indicator data. This form stores the narrative report; numeric indicator values are not retyped here.'
+    : 'Las metas, resultados cargados y porcentajes de ejecución se leen desde los datos de cada indicador. Este formulario guarda el relato del informe; las cifras de los indicadores no se vuelven a escribir aquí.'
+}
+
 function normalizeTrackingValues() {
   if (!window.location.pathname.startsWith('/app/management/tracking')) return
   document.querySelectorAll('.indicator-values-three > div > strong').forEach((node) => {
@@ -126,6 +150,7 @@ export default function ManagementRuntimeEnhancements() {
 
     const applyEnhancements = () => {
       enhanceReportIndicators()
+      ensureReportDataIntegrityNote()
       normalizeTrackingValues()
       removePaymentRequestOption()
       ensureResourceRequestLink()

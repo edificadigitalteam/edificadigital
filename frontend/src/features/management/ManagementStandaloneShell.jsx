@@ -4,6 +4,7 @@ import './management-fixes.css'
 import './management-visual-hotfix.css'
 import './management-runtime-enhancements.css'
 import './management-grouped-nav.css'
+import './management-report-editor-modern.css'
 
 const navigationGroups = [
   { label: 'Inicio', items: [['Resumen', '/app/management', '/app/management']] },
