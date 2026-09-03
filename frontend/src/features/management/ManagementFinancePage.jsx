@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase.js'
 import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from './ManagementStandaloneShell.jsx'
+import { createFinanceAttachmentPath } from './financeAttachments.js'
 import './management-finance.css'
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024
@@ -69,8 +70,6 @@ const emptyReview = () => ({ id: '', status: 'in_review', fund_id: '', diaf_note
 function readLanguage() { try { return document.documentElement.lang === 'en' || window.localStorage.getItem('edifica-language') === 'en' ? 'en' : 'es' } catch { return 'es' } }
 function formatMoney(value, currency, language) { try { return new Intl.NumberFormat(language === 'en' ? 'en-US' : 'es-VE', { style: 'currency', currency: currency || 'USD', maximumFractionDigits: 2 }).format(Number(value || 0)) } catch { return `${Number(value || 0).toFixed(2)} ${currency || ''}` } }
 function formatDate(value, language) { if (!value) return '—'; return new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'es-VE', { dateStyle: 'medium' }).format(new Date(`${String(value).slice(0,10)}T00:00:00`)) }
-function sanitizeFileName(name) { const dot = name.lastIndexOf('.'); const ext = dot >= 0 ? name.slice(dot).toLowerCase().replace(/[^.a-z0-9]/g, '') : ''; const base = (dot >= 0 ? name.slice(0,dot) : name).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,70) || 'archivo'; return `${base}${ext}` }
-
 export default function ManagementFinancePage() {
   const access = useOperatorAccess()
   const [language, setLanguage] = useState(readLanguage)
@@ -156,7 +155,7 @@ export default function ManagementFinancePage() {
   const uploadAttachments = async (submissionId, files, attachmentType) => {
     for (const file of files) {
       const unique = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`
-      const path = `${organizationId}/finance/${submissionId}/${unique}-${sanitizeFileName(file.name)}`
+      const path = createFinanceAttachmentPath({ userId: access.userId, submissionId, uniqueId: unique, fileName: file.name })
       const upload = await supabase.storage.from('attachments').upload(path, file, { contentType: file.type, cacheControl: '3600', upsert: false })
       if (upload.error) throw upload.error
       const { error: recordError } = await supabase.rpc('record_finance_attachment', { payload: { submission_id: submissionId, attachment_type: attachmentType, storage_path: upload.data?.path ?? path, file_name: file.name, mime_type: file.type, file_size_bytes: file.size } })
