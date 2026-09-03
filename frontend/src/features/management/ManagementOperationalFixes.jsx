@@ -133,7 +133,7 @@ export default function ManagementOperationalFixes() {
     {financeNoticeTarget && createPortal(
       <section className="finance-access-note">
         <div><span>{language === 'en' ? 'AVAILABLE TO EVERY UNIT' : 'DISPONIBLE PARA TODAS LAS UNIDADES'}</span><strong>{language === 'en' ? 'Each directorate, agency, auxiliary, or other organizational unit can submit its own invoices.' : 'Cada Dirección, agencia, auxiliar u otra unidad puede cargar sus propias facturas.'}</strong></div>
-        <p>{language === 'en' ? 'The document is sent to Finance for institutional review. Fund administration, transfers, approvals, and payments remain under the finance administration role.' : 'El documento llega a Finanzas para su revisión institucional. La administración de fondos, transferencias, aprobaciones y pagos permanece en el rol financiero de DIAF.'}</p>
+        <p>{language === 'en' ? 'The document is sent to Finance for institutional review. Fund administration, transfers, approvals, and payments remain under the finance administration role.' : 'El documento llega a Finanzas para su revisión institucional. La administración de fondos, transferencias, aprobaciones y pagos permanece en el rol de administración financiera.'}</p>
       </section>,
       financeNoticeTarget,
     )}
