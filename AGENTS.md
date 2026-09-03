@@ -83,6 +83,7 @@ exists to prevent (see the TODO item this plan resolved).
 - Validation messages state the exact action needed to continue.
 - Support keyboard navigation, visible focus, screen readers, sufficient contrast, and reduced motion.
 - Treat visual alignment and responsive verification as release requirements for every interface change. Controls sharing a row must use a common grid and alignment baseline; helper or validation text must reserve its own space without stretching or displacing sibling controls. Verify the rendered result at 320, 375, 414, and 768 CSS pixels plus a representative desktop width before review.
+- Keep every action label fully legible at every supported width. Button groups must allocate enough width for each label, preserve at least a 44 × 44 CSS-pixel target, use consistent alignment and spacing, and reflow or stack before labels overlap, clip, or break into unreadable fragments. Never solve constrained space by shrinking text or touch targets below the interface baseline.
 - Product and marketing copy uses direct statements and avoids antitheses, comparisons, and personification of non-human subjects.
 - Replace the word “no” with a direct construction when clarity and accuracy remain intact.
 - Avoid generic AI-page motifs, excessive gradients, ornamental grids, floating cards without purpose, and filler metrics.
