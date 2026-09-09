@@ -41,6 +41,7 @@ All project plans are stored in `/docs/plans/` with a consistent naming conventi
 | S1-D6 | (TBD) | 📋 Planned | Day 6: PDF + QA + Polish |
 | S1-OBS | [SPRINT-S1-v1_vercel-observability.md](SPRINT-S1-v1_vercel-observability.md) | ✅ Complete | Client error tracking reported into Vercel Runtime Logs |
 | S1-LANDING | [SPRINT-S1-v1_landing-page-best-practices.md](SPRINT-S1-v1_landing-page-best-practices.md) | 🧪 In Review | Public landing page: SEO, Open Graph, accessibility, AI/answer-engine visibility (GEO/AEO), font/analytics cleanup — implemented across PRs #30, awaiting human review |
+| S5 | [SPRINT-S5-v1_member-directory-and-mantenedores.md](SPRINT-S5-v1_member-directory-and-mantenedores.md) | 📋 Draft | Member/affiliate directory (persons and organizations, many-to-many relationships) plus tenant-configurable catalogs ("Mantenedores"); foundation for a later anniversary-greeting automation phase |
 
 ### Legend
 
