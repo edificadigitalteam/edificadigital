@@ -2,9 +2,9 @@
 
 **Branch:** `claude/cool-babbage-2np7d0`
 
-**Status:** Draft — plan only, no implementation yet. The four product
-decisions below are already confirmed; this document needs a read-through
-before Red/Green/Refactor begins.
+**Status:** Confirmed — plan only, no implementation yet. All four product
+decisions below are settled, decision 3 having been simplified to complete
+dates on 2026-09-17. Ready for Red/Green/Refactor.
 
 ## Context
 
@@ -37,10 +37,14 @@ running: the age of the celebration date and the tenure as a member.
    relationship. A pastor therefore has his own entry date into the tenant;
    the directory does not record since when he holds each particular role.
    That per-role history is a real idea, and explicitly out of scope here.
-3. **Partial dates are supported.** Knowing the day and month of a birthday
-   but not the year is common, and so is knowing only the founding year of
-   a church. Refusing those would leave the fields empty in practice, which
-   defeats the feature. Both dates carry a precision alongside them.
+3. **Complete dates only.** Partial dates were considered and dropped by
+   the product owner on 2026-09-17: storing just a year, or a day and month
+   with no year, is explicitly out. Both fields stay entirely optional — a
+   member with no known dates is normal — but a date that is recorded is
+   recorded in full. This removes the precision columns, the placeholder
+   representation and its normalizing trigger that an earlier revision of
+   this plan carried, and it lets the form use the same native date input
+   the rest of the dashboard already uses.
 4. **The celebration date of a person stays in `public`**, alongside the
    name and email, consistent with decision 6 of the S5 plan. See "Privacy
    note" below — this one needs recording in the ADR, because
@@ -50,10 +54,9 @@ running: the age of the celebration date and the tenure as a member.
 
 ## Goals
 
-- Two optional dates per member, each with its precision, in the database.
-- A member form that collects them with labels matching the member type,
-  and that accepts a partial date without tricks.
-- Elapsed time shown wherever each date is shown, when the year is known.
+- Two optional `date` columns per member.
+- A member form that collects them with labels matching the member type.
+- Elapsed time shown wherever each date is shown.
 - Bilingual parity for all new copy, per the standard S6's predecessor
   established.
 
@@ -96,55 +99,36 @@ where it is:
 
 ## Database design
 
-Four new nullable columns on `public.organization_member`. No new table, no
+Two new nullable columns on `public.organization_member`. No new table, no
 RLS change — the table's existing organization-scoped policies already
 cover every column — and no backfill, since everything is optional and new.
 
 | Column | Notes |
 |---|---|
 | `celebration_date` | `date`, nullable. Founding date or birthday, depending on `member_type` |
-| `celebration_date_precision` | `text`, nullable. `full` \| `month_day` \| `year`. Null exactly when `celebration_date` is null |
 | `membership_since` | `date`, nullable. Since when the member is part of the tenant |
-| `membership_since_precision` | `text`, nullable. Same domain and same null rule |
 
-Constraints:
+No check constraints, and this is worth stating rather than passing over:
+the one rule worth enforcing is "not in the future", and a `check`
+constraint cannot express it, because Postgres requires check expressions
+to be immutable and `current_date` is not. The options are a trigger or
+application validation.
 
-- `check (celebration_date_precision in ('full','month_day','year'))`
-- `check ((celebration_date is null) = (celebration_date_precision is null))`,
-  and the same pair for `membership_since`. A date without its precision is
-  unreadable, and a precision without a date is noise.
-
-### Storing a partial date
-
-The stored value is always a real `date`; the precision column says which
-of its parts are meaningful:
-
-- `full` — the whole date is real.
-- `month_day` — month and day are real, the year is a placeholder.
-- `year` — the year is real, month and day are placeholders.
-
-A `before insert or update` trigger normalizes the placeholder parts, so a
-partial date has exactly one representation and no caller can leave
-meaningful-looking garbage in the unused half: precision `month_day` forces
-the year to a fixed constant, precision `year` forces the date to January 1.
-
-**The alternative considered and rejected:** three nullable integer columns
-per date (`..._year`, `..._month`, `..._day`), where precision is implied
-by which are null. That is more honest — no placeholders at all — but it is
-six columns for two dates, it gives up `date` arithmetic in SQL, and the
-greeting module's eventual "whose month and day are today" query is
-cleaner against a real `date`. The placeholder approach is a reversible
-implementation choice: moving to components later is a mechanical
-migration. Flagging it here rather than asking, since either shape delivers
-the same behavior.
+**This plan uses application validation only.** A future date is a
+data-entry mistake, not a broken invariant: a tenant pre-registering an
+affiliation that takes effect next month is doing something reasonable, and
+a trigger would refuse it. That is the opposite of the reasoning behind the
+S5 category trigger, where a member pointing at another tenant's catalog
+was corrupt data no matter who wrote it. Worth a reviewer disagreeing with
+if they read it differently.
 
 ### Migration path to the deferred table
 
 Should the greeting module later need arbitrary dates per member, the
 deferred `organization_member_date` table gains one row per non-null column
-here (`kind = 'celebration' | 'membership'`, carrying the same precision),
-and these four columns are dropped in the same migration. Nothing else
-in the directory reads them, so the change stays local.
+here (`kind = 'celebration' | 'membership'`), and these two columns are
+dropped in the same migration. Nothing else in the directory reads them, so
+the change stays local.
 
 ## Frontend design
 
@@ -154,30 +138,28 @@ in the directory reads them, so the change stays local.
   when the type changes: **"Fecha de fundación"** for an organization,
   **"Fecha de cumpleaños"** for a person. The affiliation field is
   **"Miembro desde"** for both.
-- Each date is collected as **three separate fields — día, mes, año —**
-  rather than a native date picker. A picker cannot express "day and month
-  but no year", and three labelled fields are the more legible control for
-  people with varied digital literacy, which is the standing requirement
-  for this product. The precision is derived from what was filled in:
-  all three → `full`, day and month → `month_day`, year alone → `year`.
-- Validation states the exact action needed, as everywhere else: a day
-  without a month, or a day and month that do not exist (31 of February),
-  is rejected inline next to the field. Both dates stay fully optional.
-- A future date is rejected for both: neither a founding, a birth, nor an
-  affiliation happens tomorrow.
+- Each date is a native `<input type="date">`, the same control
+  `ProjectsPanel.jsx` already uses for a project's start and end dates.
+  Complete dates only (decision 3) is exactly what makes this possible.
+- Both fields stay optional, with no validation beyond the browser's own
+  date parsing and the future-date check below. An empty field means "not
+  known", which is the common case and must stay effortless.
+- A future date is rejected inline, next to the field, with the action to
+  take spelled out — a founding or a birth in the future is a typo. The
+  affiliation date gets the same treatment for consistency; see the
+  database section for why this lives in the form rather than a trigger.
 
 ### Showing elapsed time
 
-Elapsed time appears next to each date wherever the date appears, and only
-when the year is known — with precision `month_day` there is nothing to
-count from, and the interface says nothing rather than guessing.
+Elapsed time appears next to each date wherever the date appears. With
+complete dates it is always computable, so there is no "unknown" state to
+design around.
 
-- Rendered from a pure, tested function in `members.js`, taking the date,
-  its precision and today's date. No new dependency.
+- Rendered from a pure, tested function in `members.js`, taking the date
+  and today's date. No new dependency.
 - Reads as whole years once there is at least one ("26 años"), and as
-  months below that ("8 meses"). With precision `year`, it is computed
-  from January 1 and marked as approximate, so a figure that could be off
-  by up to a year never presents itself as exact.
+  months below that ("8 meses"). Under a month it says nothing rather than
+  counting days, which would be noise on a founding or affiliation date.
 - Wording differs per date so each reads naturally: the celebration date
   of a person shows an age, of an organization a time since founding, and
   the affiliation date shows tenure.
@@ -212,11 +194,11 @@ patterns resolve, not only the fixed strings.
 
 1. **Plan review** — read this document; the four decisions are already
    settled, so this is a check on the design, not a re-litigation.
-2. **Red** — pgTAP for the four columns, their check constraints, the
-   null-pairing rule, and the normalization trigger (including the
-   rejection cases). Unit tests for the precision-derivation and
-   elapsed-time functions, covering the partial-date and future-date paths
-   and a leap-year birthday.
+2. **Red** — pgTAP for the two columns: present, `date`, nullable, no
+   default, and accepted by an insert that omits them entirely. Unit tests
+   for the elapsed-time function (whole years, the under-a-year month case,
+   the under-a-month silence, a 29 February date, and a date exactly on
+   today's month and day) and for the future-date validation.
 3. **Green** — one migration; `members.js` gains the pure functions.
 4. **Frontend** — the three-field date control, the type-dependent label,
    the list column, the elapsed-time display, and the dictionary entries.
@@ -224,24 +206,28 @@ patterns resolve, not only the fixed strings.
    the deployed project; Supabase advisors after the migration;
    `playwright-cli` at the standard breakpoints with the screenshot the
    list-column decision above depends on.
-6. **Document** — `docs/DATABASE.md` for the new columns and the
-   normalization rule, ADR-004 for the privacy distinction, this plan's
-   status, and `docs/plans/INDEX.md`.
+6. **Document** — `docs/DATABASE.md` for the new columns, including that
+   the future-date rule lives in the form and why; ADR-004 for the privacy
+   distinction; this plan's status; and `docs/plans/INDEX.md`.
 7. **Review** — PR with verification results and screenshots; human
    approval before merge.
 
 ## Risks and open questions
 
-- **The placeholder-year representation** is the main thing to get right in
-  review. It is invisible to anyone reading through the application, but
-  anyone querying the table directly will see a real-looking year on a
-  `month_day` row. The normalization trigger and a column comment are what
-  keep that honest; if reviewers would rather not have placeholders in the
-  data at all, the component-columns alternative above is the swap.
+- **Complete dates will cost some data.** A tenant who knows a pastor's
+  birthday as "12 de marzo" but not the year now leaves the field empty.
+  That is the accepted trade for a simpler model, and it is recoverable:
+  should it bite in practice, precision can be added later without
+  touching what is stored today. Recording it so the trade is a decision
+  on the record rather than a surprise.
 - **Leap-year birthdays.** A 29 February date is valid and must survive
   storage and display. Whether a greeting fires on the 28th or the 1st in
   a non-leap year is the greeting module's problem, not this plan's, but
   the date itself has to be storable — so it gets a test here.
+- **A complete date of birth in `public`** makes the privacy note above
+  load-bearing rather than incidental: what is stored is the full date, not
+  a month and day. The decision stands (decision 4), and writing it into
+  the ADR is part of the work, not a follow-up.
 - **"Miembro desde" for a person who predates the record.** Nothing stops
   a tenant entering 1970. Intentional: the field records history, not the
   row's creation.
@@ -251,12 +237,12 @@ patterns resolve, not only the fixed strings.
 ## Next
 
 With real dates in the directory, the anniversary-greeting plan becomes
-writable: it reads `celebration_date` where precision is not `year`,
+writable: it reads `celebration_date`, matches on month and day,
 decides the channel and whether a human reviews before sending, and brings
 its own scheduler decision (`pg_cron` is still not enabled anywhere in this
 codebase) plus a send log for idempotency.
 
 ---
 
-**Version:** 1.0
+**Version:** 1.1
 **Last updated:** 2026-09-17
