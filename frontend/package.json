@@ -13,6 +13,12 @@
   "dependencies": {
     "@supabase/supabase-js": "2.110.7",
     "@vercel/analytics": "^2.0.1",
+    "@visx/axis": "4.0.0",
+    "@visx/curve": "4.0.0",
+    "@visx/group": "4.0.0",
+    "@visx/responsive": "4.0.0",
+    "@visx/scale": "4.0.0",
+    "@visx/shape": "4.0.0",
     "pdfmake": "0.2.20",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
