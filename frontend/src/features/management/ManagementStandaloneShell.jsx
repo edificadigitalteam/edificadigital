@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import ManagementRuntimeEnhancements from './ManagementRuntimeEnhancements.jsx'
 import './management.css'
 import './management-fixes.css'
@@ -16,6 +17,7 @@ const navigationGroups = [
   { label: 'Recursos y operación', items: [
     ['Aportes y recursos', '/app/management/resources', '/app/management/resources'],
     ['Aliados y donantes', '/app/management/allies', '/app/management/allies'],
+    ['Miembros', '/app/management/members', '/app/management/members'],
     ['Voluntariado', '/app/management/volunteers', '/app/management/volunteers'],
     ['Finanzas', '/app/management/finance', '/app/management/finance'],
   ] },
@@ -25,6 +27,13 @@ const navigationGroups = [
   ] },
 ]
 
+// Tenant-configurable catalogs. They are collapsed by default so the everyday
+// operational entries above them stay the first thing in view.
+const maintainerItems = [
+  ['Categorías de miembros', '/app/management/settings/member-categories'],
+  ['Roles de relación', '/app/management/settings/relationship-roles'],
+]
+
 function Brand() {
   return <a className="management-brand" href="/app"><span><i /><i /><i /></span><b>edifica<span>digital</span></b></a>
 }
@@ -32,6 +41,8 @@ function Brand() {
 export default function ManagementStandaloneShell({ access, children }) {
   const path = window.location.pathname.replace(/\/$/, '') || '/app/management'
   const canAdmin = access.role === 'admin' || access.role === 'super_admin'
+  const onMaintainerPage = path.startsWith('/app/management/settings')
+  const [maintainersOpen, setMaintainersOpen] = useState(onMaintainerPage)
 
   return (
     <div className="management-shell management-unified-shell">
@@ -50,6 +61,30 @@ export default function ManagementStandaloneShell({ access, children }) {
           {canAdmin && <div className="management-nav-group">
             <p className="management-nav-group-label">Administración</p>
             <a className="management-nav-action" href="/app/admin/operators">Usuarios y accesos</a>
+            <button
+              type="button"
+              className={`management-nav-collapse${maintainersOpen ? ' open' : ''}`}
+              aria-expanded={maintainersOpen}
+              aria-controls="management-nav-maintainers"
+              onClick={() => setMaintainersOpen((current) => !current)}
+              title={maintainersOpen ? 'Ocultar los mantenedores' : 'Mostrar los mantenedores'}
+            >
+              <span>Mantenedores</span>
+              <i aria-hidden="true" />
+            </button>
+            <div id="management-nav-maintainers" className="management-nav-collapse-panel" hidden={!maintainersOpen}>
+              {maintainerItems.map(([label, href]) => (
+                <button
+                  className={path.startsWith(href) ? 'active' : ''}
+                  type="button"
+                  onClick={() => window.location.assign(href)}
+                  key={href}
+                  title={`Abrir el mantenedor ${label.toLowerCase()}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>}
         </nav>
         <div className="management-sidebar-footer">

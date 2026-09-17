@@ -301,11 +301,35 @@ introduction):
 | Cumplimiento — Inversión ejecutada | 7 | Modal within the Cumplimiento workspace |
 | Donaciones (detail/edit) | — | Modal |
 | Donación monetaria / en especie (intake) | 20+, 4 sections | Full page (renders inside the dashboard shell) |
+| Categorías de miembros (Mantenedores) | 5, 1 section | Inline |
+| Roles de relación (Mantenedores) | 4, 1 section | Inline |
+| Miembros | 7, 2 sections | Full page (relationships are its second section) |
 
 Do not invent a fourth mechanism, and do not move a module between
 mechanisms without re-running this decision order — a module growing past
 5 fields is a signal to reclassify it, not a reason to stretch the inline
 pattern.
+
+## Collapsible Sidebar Section Standard
+
+A nav group whose entries are configuration rather than everyday work
+collapses. "Mantenedores" in the Gestión Organizacional sidebar
+(`ManagementStandaloneShell.jsx`) is the reference implementation and, so far,
+the only one.
+
+- The toggle is a `button` styled as a nav row of its own, carrying
+  `aria-expanded` and `aria-controls` pointing at the panel it opens, plus a
+  `title` per the Button Tooltip Standard. Its chevron rotates to match the
+  state and holds still under `prefers-reduced-motion`.
+- The panel is hidden with the `hidden` attribute, so keyboard and screen
+  reader users skip it while collapsed instead of tabbing through invisible
+  links.
+- It starts open when the current route is inside it, closed otherwise. The
+  state is component-local; nothing is persisted between visits until a
+  product owner asks for it.
+- Collapse a group only when its entries are configuration a person visits
+  occasionally. Everyday operational entries stay visible — a sidebar where
+  everything folds away is harder to scan, not simpler.
 
 ## Indicator Visualization Standard
 
