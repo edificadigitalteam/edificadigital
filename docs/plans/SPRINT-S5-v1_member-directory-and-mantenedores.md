@@ -1,4 +1,4 @@
-# Sprint S5 — Member Directory (Miembros / Afiliados) and Tenant-Configurable Catalogs (Mantenedores)
+# Sprint S5 — Member Directory (Miembros) and Tenant-Configurable Catalogs (Mantenedores)
 
 **Branch:** `feat/member-directory-and-mantenedores`
 
@@ -51,7 +51,7 @@ Investigation of the current schema (`docs/DATABASE.md`, migrations) found:
 
 ## Product decisions confirmed in conversation
 
-1. **"Afiliados" is a distinct domain from `organization_unit`.** It
+1. **"Miembros" is a distinct domain from `organization_unit`.** It
    models people and organizations *affiliated with* a tenant (members of
    a convention, a congregation, etc.), not the tenant's own internal
    departments.
@@ -73,7 +73,7 @@ Investigation of the current schema (`docs/DATABASE.md`, migrations) found:
    a registered member**, and vice versa. The relationship is optional,
    never required for either side to exist.
 6. **No privacy/`private` schema treatment needed** — unlike
-   `private.beneficiary` (ADR-004), affiliate records (including
+   `private.beneficiary` (ADR-004), member records (including
    individuals — pastors, leaders) stay in `public`, same exposure level
    as `actor`.
 7. **Mantenedores gets its own collapsible sidebar section**, placed near
@@ -81,27 +81,25 @@ Investigation of the current schema (`docs/DATABASE.md`, migrations) found:
    ORGANIZACIÓN" area of `DashboardApp.jsx`). Collapsible sections don't
    exist in the sidebar today — this is new interaction, not a reuse of
    an existing pattern, and is in scope for this plan.
-8. **"Afiliados" is the internal/neutral term** (table names, translation
-   keys, code). **The UI-facing module label is configurable per
-   tenant** (e.g., a convention might label it "Iglesias afiliadas," a
-   single congregation might label it "Miembros de la congregación") —
-   chosen over a single fixed label for every tenant.
-9. **Confirmed in a follow-up conversation**: this module is its own
-   top-level tenant-content nav entry (not nested inside "Mi
-   organización" or any other section) — this was already the plan's
-   design, now explicitly reaffirmed as a deliberate decision rather than
-   a default. That same conversation surfaced a naming collision this
-   plan hadn't accounted for: the app already ships a module called
-   **"Aliados y donantes"** (`frontend/src/features/donors/`, the
-   `actor`-based donor/supplier directory used in donation intake) —
-   unrelated to this feature, but "Aliados" and "Afiliados" sitting next
-   to each other in the same sidebar risks real confusion for users with
-   varied digital literacy (a core accessibility concern for this
-   product, not a cosmetic one). Resolution: the module's **default**
-   UI-facing label changes from "Afiliados" to **"Miembros"** (still
-   overridable per tenant per decision 8) — "Afiliados" stays only as the
-   internal/code-level term (tables, translation keys), never the default
-   user-facing word.
+8. **"Miembros" is the term at every level — internal (table names,
+   translation keys, code) and UI-facing.** An earlier draft of this plan
+   used "Afiliados" as the internal/code term with "Miembros" only as the
+   default visible label; the product owner has since decided to drop
+   "Afiliados" entirely and use "Miembros" everywhere, with no trace of
+   the older term. The reason still holds and is worth keeping on record:
+   the app already ships an unrelated module called **"Aliados y
+   donantes"** (`frontend/src/features/donors/`, the `actor`-based
+   donor/supplier directory used in donation intake), and "Aliados"
+   sitting next to "Afiliados" in the same sidebar risked real confusion
+   for users with varied digital literacy (a core accessibility concern
+   for this product, not a cosmetic one) — "Miembros" avoids that
+   collision outright rather than just relabeling the visible surface.
+9. **The UI-facing module label stays configurable per tenant**
+   (e.g., a convention might label it "Iglesias miembro," a single
+   congregation might label it "Miembros de la congregación") —
+   "Miembros" is only the default, not a fixed label for every tenant.
+   This module is also its own top-level tenant-content nav entry (not
+   nested inside "Mi organización" or any other section).
 
 ## Goals (this plan's scope)
 
@@ -111,7 +109,7 @@ Investigation of the current schema (`docs/DATABASE.md`, migrations) found:
   manages the two catalogs (categories, relationship roles) — list,
   create, edit, deactivate (never hard-delete a catalog value already
   referenced by a member or relationship).
-- Afiliados UI: a module panel (list + create/edit) for members, plus
+- Miembros UI: a module panel (list + create/edit) for members, plus
   relationship management (linking a person-member to an
   organization-member with a role) and the tenant's configurable module
   label.
@@ -240,7 +238,7 @@ do nothing`.
 
 ### Module label configuration
 
-Add `organization.affiliates_module_label` (text, nullable — null falls
+Add `organization.members_module_label` (text, nullable — null falls
 back to a default translated label, **"Miembros"** — see decision 9).
 Simplest possible shape for "configurable per tenant": one free-text
 override field, editable from `OrganizationAdminPanel.jsx` (super_admin)
@@ -254,15 +252,15 @@ Questions).
   interaction to build: an expand/collapse toggle on the section header,
   no existing precedent in this sidebar to copy — keep it simple
   (local component state, no persistence requirement unless the product
-  owner asks). Two entries inside it: "Categorías de afiliados" and
+  owner asks). Two entries inside it: "Categorías de miembros" and
   "Roles de relación," each a small module panel (list + inline
   create/edit — both catalogs are ≤5 fields, 1 section, so **inline** per
   the Create/Edit Record Mechanism Standard).
-- **Afiliados (nav label "Miembros" by default)**: new, standalone
+- **Miembros (nav label "Miembros" by default)**: new, standalone
   top-level tenant-content nav entry — alongside Donaciones,
   Voluntariado, Proyectos, and Aliados y donantes, never nested under any
-  of them and never merged with "Aliados y donantes" (see decision 9).
-  Module label from `organization.affiliates_module_label`, default
+  of them and never merged with "Aliados y donantes" (see decision 8).
+  Module label from `organization.members_module_label`, default
   "Miembros," following the Module Panel Layout Standard (header,
   search/filter with "Limpiar," list with "+ Nuevo/Crear ___"). Fields
   for the member form: `name`,
@@ -302,11 +300,11 @@ Questions).
    attempts).
 3. **Green** — one new timestamped migration implementing the four
    tables, RLS, grants, indexes, the seed trigger, the `cnbv` backfill,
-   and `organization.affiliates_module_label`.
+   and `organization.members_module_label`.
 4. **Frontend** — Mantenedores section (categories + roles panels) and
-   Afiliados module (list, full-page create/edit, relationship
+   Miembros module (list, full-page create/edit, relationship
    management), i18n entries in the relevant translation dictionary,
-   module label read from `organization.affiliates_module_label`.
+   module label read from `organization.members_module_label`.
 5. **Refactor** — once green, revisit shared code between the two
    Mantenedores catalog panels (likely near-identical) for a single
    reusable component rather than duplicating the panel twice.
@@ -326,7 +324,7 @@ Questions).
 ## Risks & Open Questions
 
 - **Module label configuration surface**: is
-  `affiliates_module_label` editable by the organization's own `admin`
+  `members_module_label` editable by the organization's own `admin`
   (self-service, "Mi organización" area) or only by `super_admin` from
   the host "Organizaciones y hosts" screen? Affects which RPC/panel needs
   the new field wired in. Needs product owner confirmation before Green.
@@ -342,7 +340,7 @@ Questions).
   precedent — small risk of it looking inconsistent with the rest of the
   sidebar; worth a design check-in (screenshot) before considering the
   frontend step done, not just a lint/build pass.
-- **No RPC layer for Phase 1** — if Mantenedores or Afiliados later need
+- **No RPC layer for Phase 1** — if Mantenedores or Miembros later need
   cross-schema side effects (e.g., a category deactivation cascading
   somewhere), this may need to grow an RPC the way
   `admin_save_organization_unit_v2` did. Not needed today; noted so a
@@ -362,5 +360,5 @@ version.
 
 ---
 
-**Version:** 1.1
+**Version:** 1.2
 **Last updated:** 2026-09-17
