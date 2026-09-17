@@ -1,112 +1,3 @@
-/* Member directory (Miembros) and its tenant catalogs (Mantenedores).
-   Only the pieces that have no home in operations.css live here. */
-
-.members-label-card {
-  margin-bottom: 1.25rem;
-}
-
-.members-label-summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.members-label-summary div {
-  display: grid;
-  gap: 0.25rem;
-}
-
-.members-label-summary strong {
-  font-size: 1rem;
-}
-
-.members-label-summary span {
-  font-size: 0.875rem;
-  color: #55606f;
-}
-
-.members-label-summary button,
-.members-label-actions button {
-  min-height: 44px;
-  padding: 0 1.1rem;
-  border-radius: 10px;
-  border: 1px solid #d3d9e2;
-  background: #ffffff;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.members-label-form {
-  display: grid;
-  gap: 0.75rem;
-  max-width: 34rem;
-}
-
-.members-label-form label {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.members-label-form label span {
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.members-label-form input {
-  min-height: 44px;
-  padding: 0 0.75rem;
-  border-radius: 10px;
-  border: 1px solid #d3d9e2;
-  font: inherit;
-}
-
-.members-label-hint {
-  margin: 0;
-  font-size: 0.8125rem;
-  color: #55606f;
-}
-
-.members-label-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.member-form-section {
-  margin-bottom: 1.25rem;
-}
-
-.member-form-section-header {
-  display: grid;
-  gap: 0.35rem;
-  margin-bottom: 1rem;
-}
-
-.member-form-section-header div {
-  display: flex;
-  align-items: baseline;
-  gap: 0.6rem;
-}
-
-.member-form-section-header span {
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: #7b4ddb;
-}
-
-.member-form-section-header h2 {
-  margin: 0;
-  font-size: 1.125rem;
-}
-
-.member-form-section-header p {
-  margin: 0;
-  font-size: 0.875rem;
-  color: #55606f;
-}
-
 .member-relationship-form {
   display: grid;
   gap: 0.75rem;
@@ -246,8 +137,8 @@
   content: ' · ';
 }
 
-/* The label is a grid with an 8px gap, so this needs no margin of its own; it
-   also has to shed the label's font-weight to read as helper text. */
+/* Helper text under a date input. The label is a grid with an 8px gap, so this
+   needs no margin; it only has to shed the label's font-weight. */
 .member-date-elapsed {
   display: block;
   font-size: 0.8125rem;

@@ -118,12 +118,12 @@ export default function ManagementOperationalFixes() {
   const labels = language === 'en' ? {
     start: 'Start', planning: 'Planning', operation: 'Resources and operations', control: 'Control and reporting', administration: 'Administration',
     overview: 'Overview', structure: 'Structure', objectives: 'Annual plan', projects: 'Projects', resources: 'Contributions and resources', allies: 'Partners and donors', members: 'Members', volunteers: 'Volunteers', finance: 'Finance', tracking: 'Tracking', reports: 'Reports', users: 'Users and access',
-    maintainers: 'Catalogs', memberCategories: 'Member categories', relationshipRoles: 'Relationship roles',
+    maintainers: 'Catalogs', memberCategories: 'Member categories', relationshipRoles: 'Relationship roles', moduleLabels: 'Module names',
     showMaintainers: 'Show the catalogs', hideMaintainers: 'Hide the catalogs',
   } : {
     start: 'Inicio', planning: 'Planificación', operation: 'Recursos y operación', control: 'Control y rendición', administration: 'Administración',
     overview: 'Resumen', structure: 'Estructura', objectives: 'Plan anual', projects: 'Proyectos', resources: 'Aportes y recursos', allies: 'Aliados y donantes', members: 'Miembros', volunteers: 'Voluntariado', finance: 'Finanzas', tracking: 'Seguimiento', reports: 'Informes', users: 'Usuarios y accesos',
-    maintainers: 'Mantenedores', memberCategories: 'Categorías de miembros', relationshipRoles: 'Roles de relación',
+    maintainers: 'Mantenedores', memberCategories: 'Categorías de miembros', relationshipRoles: 'Roles de relación', moduleLabels: 'Nombres de los módulos',
     showMaintainers: 'Mostrar los mantenedores', hideMaintainers: 'Ocultar los mantenedores',
   }
   const groups = [
@@ -158,6 +158,7 @@ export default function ManagementOperationalFixes() {
           <div id="management-legacy-nav-maintainers" className="management-nav-collapse-panel" hidden={!maintainersOpen}>
             <a className={`management-nav-action${isActive('/app/management/settings/member-categories') ? ' active' : ''}`} href="/app/management/settings/member-categories">{labels.memberCategories}</a>
             <a className={`management-nav-action${isActive('/app/management/settings/relationship-roles') ? ' active' : ''}`} href="/app/management/settings/relationship-roles">{labels.relationshipRoles}</a>
+            <a className={`management-nav-action${isActive('/app/management/settings/module-labels') ? ' active' : ''}`} href="/app/management/settings/module-labels">{labels.moduleLabels}</a>
           </div>
         </div>}
       </div>,

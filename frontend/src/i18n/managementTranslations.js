@@ -354,6 +354,18 @@ export const managementTranslations = {
   'Cerrar este formulario sin guardar': 'Close this form without saving',
 
   // The two member dates (Sprint S6).
+  'Guardar': 'Save',
+  'Nombres de los módulos': 'Module names',
+  'Cambia cómo se llama cada módulo dentro de tu organización. El nombre que elijas reemplaza al predeterminado en el menú y en las pantallas del módulo.': 'Change what each module is called inside your organization. The name you choose replaces the default one in the menu and in the module screens.',
+  'módulos configurables': 'configurable modules',
+  'Módulo': 'Module',
+  'Nombre en tu organización': 'Name in your organization',
+  'Nombre predeterminado': 'Default name',
+  'Nombre del módulo en tu organización': 'Module name in your organization',
+  'Directorio de organizaciones y personas afiliadas a tu organización.': 'Directory of the organizations and people affiliated with your organization.',
+  'Abrir el mantenedor de nombres de los módulos': 'Open the module names catalog',
+  'Cargando módulos…': 'Loading modules…',
+  'El nombre del módulo admite hasta 60 caracteres.': 'A module name takes up to 60 characters.',
   'Fechas': 'Dates',
   'Fecha de fundación': 'Founding date',
   'Fecha de cumpleaños': 'Birthday',

@@ -304,11 +304,34 @@ introduction):
 | Categorías de miembros (Mantenedores) | 5, 1 section | Inline |
 | Roles de relación (Mantenedores) | 4, 1 section | Inline |
 | Miembros | 7, 2 sections | Full page (relationships are its second section) |
+| Nombres de los módulos (Mantenedores) | 1 field | Inline, edited in the row |
 
 Do not invent a fourth mechanism, and do not move a module between
 mechanisms without re-running this decision order — a module growing past
 5 fields is a signal to reclassify it, not a reason to stretch the inline
 pattern.
+
+## Module Naming Standard
+
+A module that enters the app is a module whose name the tenant can change.
+The default label is what Edifica calls it; the tenant may call it something
+else, and a convention calling its member directory "Iglesias miembro" is the
+case this exists for.
+
+- A module registers itself in
+  `frontend/src/features/settings/moduleLabels.js` with its key, its default
+  label, a one-line description, and the column plus RPC that store the
+  override. Adding a module means adding an entry there — the maintainer
+  screen needs no other change.
+- The override is written through a `security definer` RPC, because
+  `public.organization` accepts `super_admin` updates only and the tenant's
+  own `admin` owns this field.
+- **Renaming lives in Mantenedores, never inside the module it renames.** It
+  is configuration a tenant sets once, not part of the daily work of the
+  module, and it is the same action for every module. A rename card sitting
+  at the top of a module's own screen is the shape this standard replaced.
+- An empty override restores the default; the maintainer says so, and shows
+  "Nombre predeterminado" beside a module that has no override.
 
 ## Bilingual Parity Standard (dashboard panels)
 
