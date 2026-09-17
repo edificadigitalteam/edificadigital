@@ -2,9 +2,10 @@
 
 **Branch:** `claude/magical-newton-awoytv`
 
-**Status:** ✍️ In Progress — step 1 of the delivery order below is
-implemented (the detail-drawer history charts). The remaining steps
-(card meters, the stored override, the PDF path) are pending.
+**Status:** ✍️ In Progress — steps 1 and 2 of the delivery order below are
+implemented (the detail-drawer history charts, then the card meters). The
+remaining steps (the stored `preferred_chart` override and its migration,
+and the PDF path) are pending.
 
 ## Requested outcome
 
@@ -356,6 +357,49 @@ chart compared against the screen.
 The product owner asked for the detail-drawer history charts first, since
 they are the most visible change, so steps 3 and 4 of the original outline
 are swapped: the drawer ships before the card meters.
+
+## Implementation notes — step 2 (card meters)
+
+Delivered: `cardForm` (which mark a card carries), `meterGeometry` (the arc
+and bar arithmetic, kept pure so the pdfmake export can reuse it), and the
+`Gauge`, `ProgressMeter` and `Sparkline` components, wired into the
+indicator card in place of the previous inline `.indicator-progress` bar.
+Tests T8, T8b and T9 are green (32 assertions in total for the module).
+
+Three decisions worth recording:
+
+1. **A card mark that would only repeat the numbers beside it is not
+   drawn.** The card already prints target, achieved and pending, so
+   single-result and text indicators get no mark at all rather than a
+   decorative one.
+2. **The card meters use no charting library.** A gauge is two circles and
+   a sparkline is one polyline; a tracking board can hold many cards, so
+   these are plain SVG. visx stays in the drawer, where the axes and scales
+   actually earn it.
+3. **Accessibility differs by whether the mark adds information.** The
+   gauge ring and the meter track are `aria-hidden`, because their exact
+   figure is printed beside them as text; the sparkline carries its own
+   `aria-label` (first value and date → last value and date), because the
+   card states no trend anywhere else.
+
+The exceeded-target meter fills in the third categorical slot rather than a
+status color, and says "La meta se superó." in words — the state is never
+carried by the color alone.
+
+`.indicator-progress` stays in the stylesheets: `OrganizationalManagementApp.jsx`
+still renders that bar on the overview board. Only the Tracking card moved.
+
+Browser verification ran in Chromium at 320, 375 and 1280 CSS pixels in both
+languages against one fixture per card form (gauge, meter under and over
+target, sparkline, status, and the single-result case): no page errors, no
+horizontal overflow, the gauge ring and meter track hidden from assistive
+technology with their figures as real text, the sparkline labelled, no
+focusable marks on the card, and no mark at all on the single-result card.
+
+Main bundle after both steps: 869.84 kB / 220.60 kB gzip against the 869.55
+kB / 220.47 kB baseline. The chart entry point is 3.34 kB gzip, loaded when
+the Tracking page renders; visx (22.10 kB gzip) loads only when a drawer
+opens.
 
 ## Implementation notes — step 1 (detail-drawer history charts)
 

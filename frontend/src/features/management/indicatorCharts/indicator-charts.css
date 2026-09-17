@@ -48,3 +48,24 @@
 @media (prefers-reduced-motion: reduce) {
   .indicator-chart *, .indicator-chart *::before, .indicator-chart *::after { transition: none !important; animation: none !important; }
 }
+
+/* Card variant: the compact meter beside the figures the card already prints. */
+.indicator-chart-card { display: block; }
+.indicator-chart-gauge { display: flex; align-items: center; gap: 12px; }
+.indicator-chart-gauge svg { width: 62px; height: 62px; flex: none; }
+.indicator-chart-gauge p { display: grid; gap: 1px; margin: 0; }
+.indicator-chart-gauge strong { font-size: 1.15rem; font-weight: 800; color: var(--mg-text, #211927); }
+.indicator-chart-gauge span { font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--mg-muted, #756d79); }
+
+.indicator-chart-meter { display: grid; gap: 6px; }
+.indicator-chart-meter-track { height: 7px; border-radius: 999px; background: #eee8f3; overflow: hidden; }
+.indicator-chart-meter-track > span { display: block; height: 100%; border-radius: 999px; background: #8257c5; }
+.indicator-chart-meter.exceeded .indicator-chart-meter-track > span { background: #2f9e8f; }
+.indicator-chart-meter p { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 0; }
+.indicator-chart-meter b { font-size: .76rem; font-weight: 800; color: var(--mg-text, #211927); }
+.indicator-chart-meter span { font-size: .74rem; color: var(--mg-muted, #756d79); }
+
+.indicator-chart-sparkline { width: 100%; max-width: 160px; height: 40px; display: block; }
+.indicator-chart-card .indicator-chart-status { gap: 8px; }
+.indicator-chart-card .indicator-chart-status svg { width: 20px; height: 20px; }
+.indicator-chart-card .indicator-chart-status strong { font-size: .86rem; }

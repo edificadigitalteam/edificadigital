@@ -93,3 +93,12 @@ export function resolveChart(indicator, rows) {
   const count = usableRows(indicator, rows).length
   return { ...describe(preferred, 'override', indicator, count, automatic.options), overridden: true }
 }
+
+// What the card shows. The card already prints the target, the achieved value
+// and what is pending, so forms that would only repeat those numbers get no
+// mark at all.
+const CARD_FORMS = { gauge: 'gauge', progress: 'progress', trend: 'sparkline', columns: 'sparkline', status: 'status' }
+
+export function cardForm(form) {
+  return CARD_FORMS[form] || 'none'
+}

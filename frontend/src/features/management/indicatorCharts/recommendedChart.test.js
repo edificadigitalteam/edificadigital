@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { CHART_FORMS, allowedOverrides, automaticChart, resolveChart } from './recommendedChart.js'
+import { CHART_FORMS, allowedOverrides, automaticChart, cardForm, resolveChart } from './recommendedChart.js'
 
 const metricTypes = ['count', 'currency', 'percentage', 'ratio', 'boolean', 'text']
 const aggregationMethods = ['sum', 'average', 'latest', 'max', 'unique_people', 'calculated', 'non_aggregable']
@@ -113,4 +113,20 @@ test('T3c only forms the data supports are offered as overrides', () => {
   assert.ok(rich.includes('trend'))
   assert.ok(rich.includes('gauge'))
   for (const form of rich) assert.ok(CHART_FORMS.includes(form))
+})
+
+test('T8 the card carries the headline meter, never a duplicate of the numbers beside it', () => {
+  assert.equal(cardForm('gauge'), 'gauge')
+  assert.equal(cardForm('progress'), 'progress')
+  assert.equal(cardForm('trend'), 'sparkline')
+  assert.equal(cardForm('columns'), 'sparkline')
+  assert.equal(cardForm('status'), 'status')
+  assert.equal(cardForm('stat'), 'none')
+  assert.equal(cardForm('timeline'), 'none')
+  assert.equal(cardForm('empty'), 'none')
+  assert.equal(cardForm('nonsense'), 'none')
+})
+
+test('T8b every form the heuristic can return has a card treatment', () => {
+  for (const form of CHART_FORMS) assert.ok(['gauge', 'progress', 'sparkline', 'status', 'none'].includes(cardForm(form)), form)
 })

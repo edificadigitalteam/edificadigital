@@ -3,10 +3,13 @@ import { Suspense, lazy } from 'react'
 import ChartDataTable from './ChartDataTable.jsx'
 import { buildSeries } from './chartSeries.js'
 import { chartCopy } from './chartCopy.js'
-import { resolveChart } from './recommendedChart.js'
+import { cardForm, resolveChart } from './recommendedChart.js'
 import { metricDisplay } from './indicatorFormat.js'
 import EmptyState from './forms/EmptyState.jsx'
 import EntryTimeline from './forms/EntryTimeline.jsx'
+import Gauge from './forms/Gauge.jsx'
+import ProgressMeter from './forms/ProgressMeter.jsx'
+import Sparkline from './forms/Sparkline.jsx'
 import StatValue from './forms/StatValue.jsx'
 import StatusPill from './forms/StatusPill.jsx'
 import './indicator-charts.css'
@@ -18,7 +21,9 @@ const PeriodColumns = lazy(() => import('./forms/PeriodColumns.jsx'))
 
 const headingKey = { trend: 'trend', columns: 'columns', timeline: 'timeline', stat: 'stat', status: 'status' }
 
-export default function IndicatorChart({ indicator, rows, language = 'es' }) {
+// `variant="card"` is the compact meter beside the numbers the card already
+// prints; `variant="detail"` is the full history chart in the drawer.
+export default function IndicatorChart({ indicator, rows, language = 'es', variant = 'detail', completion = 0 }) {
   const t = chartCopy[language] || chartCopy.es
   const series = buildSeries(indicator, rows)
   const chart = resolveChart(indicator, rows)
@@ -30,6 +35,16 @@ export default function IndicatorChart({ indicator, rows, language = 'es' }) {
     lastPoint ? (lastPoint.text || metricDisplay(lastPoint.value, indicator, language)) : '—',
     series.target == null ? null : metricDisplay(series.target, indicator, language),
   )
+
+  if (variant === 'card') {
+    const mark = {
+      gauge: <Gauge completion={completion} language={language} />,
+      progress: <ProgressMeter completion={completion} language={language} />,
+      sparkline: <Sparkline indicator={indicator} series={series} language={language} />,
+      status: <StatusPill series={series} language={language} />,
+    }[cardForm(chart.form)]
+    return mark ? <div className="indicator-chart-card">{mark}</div> : null
+  }
 
   const plot = {
     trend: <Suspense fallback={<p className="indicator-chart-loading">…</p>}><TrendLine indicator={indicator} series={series} language={language} options={chart.options} /></Suspense>,
