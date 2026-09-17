@@ -5,7 +5,12 @@ import {
   DEFAULT_MEMBERS_MODULE_LABEL,
   catalogLabel,
   categoryFitsMemberType,
+  celebrationDateLabel,
+  celebrationShortLabel,
+  elapsedCaption,
+  elapsedLabel,
   filterMembers,
+  formatMemberDate,
   friendlyMemberError,
   resolveMembersModuleLabel,
   validateMember,
@@ -19,9 +24,37 @@ const statusLabels = { active: 'Activo', inactive: 'Inactivo' }
 const emptyForm = {
   id: '', member_type: 'organization', member_category_id: '', name: '',
   email: '', phone: '', notes: '', status: 'active',
+  celebration_date: '', membership_since: '',
 }
 
 const emptyRelationship = { related_member_id: '', relationship_role_id: '' }
+
+// Both dates share one column. Each line names its own date, because the
+// column header cannot say "Fundación" for one row and "Cumpleaños" for the
+// next, and the elapsed figure rides beside the date it belongs to.
+function MemberDateLine({ label, value }) {
+  const elapsed = elapsedLabel(value)
+  return (
+    <span className="member-date-line">
+      {label}: <b data-no-translate>{formatMemberDate(value)}</b>
+      {elapsed ? <i data-no-translate>{elapsed}</i> : null}
+    </span>
+  )
+}
+
+function renderMemberDates(member) {
+  if (!member.celebration_date && !member.membership_since) return '—'
+  return (
+    <div className="member-date-cell">
+      {member.celebration_date
+        ? <MemberDateLine label={celebrationShortLabel(member.member_type)} value={member.celebration_date} />
+        : null}
+      {member.membership_since
+        ? <MemberDateLine label="Miembro desde" value={member.membership_since} />
+        : null}
+    </div>
+  )
+}
 
 export default function MembersPanel({ access }) {
   const { notify } = useToast()
@@ -94,6 +127,8 @@ export default function MembersPanel({ access }) {
     () => relationships.filter((entry) => entry.member_id === form.id),
     [relationships, form.id],
   )
+  const celebrationElapsed = useMemo(() => elapsedLabel(form.celebration_date), [form.celebration_date])
+  const membershipElapsed = useMemo(() => elapsedLabel(form.membership_since), [form.membership_since])
   const relationshipCount = useCallback(
     (memberId) => relationships.filter((entry) => entry.member_id === memberId || entry.related_member_id === memberId).length,
     [relationships],
@@ -111,6 +146,7 @@ export default function MembersPanel({ access }) {
       id: member.id, member_type: member.member_type, member_category_id: member.member_category_id ?? '',
       name: member.name, email: member.email ?? '', phone: member.phone ?? '',
       notes: member.notes ?? '', status: member.status,
+      celebration_date: member.celebration_date ?? '', membership_since: member.membership_since ?? '',
     })
     setRelationshipDraft({ ...emptyRelationship })
     setFieldError(''); setError(''); setFormOpen(true)
@@ -140,6 +176,8 @@ export default function MembersPanel({ access }) {
       phone: form.phone.trim() || null,
       notes: form.notes.trim() || null,
       status: form.status,
+      celebration_date: form.celebration_date || null,
+      membership_since: form.membership_since || null,
       updated_by: access.userId || null,
     }
     if (!form.id) payload.created_by = access.userId || null
@@ -275,6 +313,16 @@ export default function MembersPanel({ access }) {
                 <label><span>Correo</span><input type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} /></label>
                 <label><span>Teléfono</span><input value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} /></label>
                 <label>
+                  <span>{celebrationDateLabel(form.member_type)}</span>
+                  <input type="date" value={form.celebration_date} onChange={(event) => setForm((current) => ({ ...current, celebration_date: event.target.value }))} />
+                  {celebrationElapsed && <small className="member-date-elapsed">{elapsedCaption('celebration', form.member_type)}: <span data-no-translate>{celebrationElapsed}</span></small>}
+                </label>
+                <label>
+                  <span>Miembro desde</span>
+                  <input type="date" value={form.membership_since} onChange={(event) => setForm((current) => ({ ...current, membership_since: event.target.value }))} />
+                  {membershipElapsed && <small className="member-date-elapsed">{elapsedCaption('membership', form.member_type)}: <span data-no-translate>{membershipElapsed}</span></small>}
+                </label>
+                <label>
                   <span>Estado</span>
                   <select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}>
                     {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -387,7 +435,7 @@ export default function MembersPanel({ access }) {
               <div className="edifica-table-wrap">
                 <table className="operations-table members-table">
                   <thead>
-                    <tr><th>Miembro</th><th>Categoría</th><th>Contacto</th><th>Relaciones</th><th>Estado</th><th>Acciones</th></tr>
+                    <tr><th>Miembro</th><th>Categoría</th><th>Contacto</th><th>Fechas</th><th>Relaciones</th><th>Estado</th><th>Acciones</th></tr>
                   </thead>
                   <tbody>
                     {filtered.map((member) => (
@@ -395,6 +443,7 @@ export default function MembersPanel({ access }) {
                         <td><strong data-no-translate>{member.name}</strong><span>{memberTypeLabels[member.member_type] ?? member.member_type}</span></td>
                         <td>{catalogLabel(categoryById.get(member.member_category_id)) || '—'}</td>
                         <td data-no-translate><span>{member.email || '—'}</span><span>{member.phone || '—'}</span></td>
+                        <td>{renderMemberDates(member)}</td>
                         <td>{relationshipCount(member.id)}</td>
                         <td><span className={`edifica-access-state ${member.status === 'active' ? 'active' : 'inactive'}`}>{statusLabels[member.status] ?? member.status}</span></td>
                         <td>
