@@ -1,15 +1,3 @@
--- Synced from the applied migration history of the `edifydb` Supabase project
--- (rrqyihsjftlloizsccvi): version 20260917031741, name
--- `add_digen_and_management_report_oversight`. It had been applied to the
--- database with no counterpart in this repository. Everything below is that
--- recorded statement verbatim (md5 7c910a8d795022c8d774e27e94f0a97b) and must
--- stay immutable.
---
--- Replay note: the opening block seeds the DIGEN unit for the organization
--- whose code is `cnbv` and raises `CNBV organization not found` when that
--- organization is absent, so replaying this file against an empty local
--- database fails until that organization exists.
-
 do $$
 declare
   org_id uuid;
@@ -155,8 +143,6 @@ revoke all on function public.management_report_access_overview(uuid) from publi
 revoke all on function public.management_report_access_overview(uuid) from anon;
 grant execute on function public.management_report_access_overview(uuid) to authenticated;
 
--- Reporting visibility now follows organizational responsibility:
--- own unit, DIAF/report reviewers, DIGEN, or organization administrators.
 drop policy if exists unit_management_report_select on public.unit_management_report;
 create policy unit_management_report_select
 on public.unit_management_report
