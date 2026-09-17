@@ -10,6 +10,8 @@ import ManagementObjectivesPage from './features/management/ManagementObjectives
 import ManagementTrackingPage from './features/management/ManagementTrackingPage.jsx'
 import ManagementIndicatorFormPage from './features/management/ManagementIndicatorFormPage.jsx'
 import ManagementReportsV2Page from './features/management/ManagementReportsV2Page.jsx'
+import ManagementReportCreatePage from './features/management/ManagementReportCreatePage.jsx'
+import ManagementReportCreateShortcut from './features/management/ManagementReportCreateShortcut.jsx'
 import ManagementFinancePage from './features/management/ManagementFinancePage.jsx'
 import ManagementFinanceRequestsPage from './features/management/ManagementFinanceRequestsPage.jsx'
 import ManagementResourcesPage from './features/management/ManagementResourcesPage.jsx'
@@ -42,6 +44,7 @@ const isManagementIndicatorNew = pathname === '/app/management/tracking/new' || 
 const isManagementTracking = pathname.startsWith('/app/management/tracking')
 const isManagementFinanceRequests = pathname.startsWith('/app/management/finance/requests')
 const isManagementFinance = pathname.startsWith('/app/management/finance')
+const isManagementReportNew = pathname === '/app/management/reports/new' || pathname === '/app/management/reports/new/'
 const isManagementReports = pathname.startsWith('/app/management/reports')
 const isActivationPage = pathname === '/activar'
 
@@ -95,6 +98,7 @@ function RootApplication() {
   else if (isManagementTracking) content = <ManagementTrackingPage />
   else if (isManagementFinanceRequests) content = <ManagementFinanceRequestsPage />
   else if (isManagementFinance) content = <ManagementFinancePage />
+  else if (isManagementReportNew) content = <ManagementReportCreatePage />
   else if (isManagementReports) content = <ManagementReportsV2Page />
   else if (isManagement) content = <OrganizationalManagementApp />
   else if (isDashboard) content = <DashboardApp />
@@ -107,6 +111,7 @@ function RootApplication() {
       <GlobalLanguageController />
       <GuidedUXControllerV2 />
       {isManagement && <ManagementOperationalFixes />}
+      {isManagementReports && <ManagementReportCreateShortcut />}
       {content}
     </>
   )

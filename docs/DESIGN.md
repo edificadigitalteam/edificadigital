@@ -307,6 +307,44 @@ mechanisms without re-running this decision order — a module growing past
 5 fields is a signal to reclassify it, not a reason to stretch the inline
 pattern.
 
+## Indicator Visualization Standard
+
+Charts in the indicator module are chosen by the data, never by preference,
+and never by asking the person creating the indicator. `recommendedChart`
+(`frontend/src/features/management/indicatorCharts/`) resolves the form from
+`metric_type`, `aggregation_method` and whether a target exists. Full
+decision record and the form table:
+`docs/plans/SPRINT-S5-v1_indicator-visualization-system.md`.
+
+Two surfaces, one model:
+
+- **Card** — a compact meter beside the figures the card already prints: a
+  radial gauge for a percentage with a target, a progress meter for a summed
+  count or amount with a target, a sparkline for a trend, a status pill for
+  yes/no. A form that would only repeat the numbers next to it draws
+  nothing.
+- **Detail drawer** — the history: a trend line, per-period columns, or an
+  entry timeline for text indicators.
+
+Rules that hold on both:
+
+- The consolidated number stays visible next to the chart. A chart never
+  carries a value alone.
+- Three points minimum before anything is drawn as a trend; two results are
+  columns. Draft results never enter a chart, and the number excluded is
+  stated in words.
+- One axis. A second measure gets its own chart, never a second scale.
+- Every chart in the drawer ships a data table under "Ver datos". On the
+  card, a mark that repeats visible text is `aria-hidden`; a mark carrying
+  information the card lacks (the sparkline) carries its own `aria-label`.
+- Chart colors come from `chartTheme.js`, a validated palette held apart
+  from the brand tokens: the raw brand hues fail the lightness-band and
+  contrast checks for chart use. Slots are assigned in fixed order and never
+  cycled; a fourth series folds into the neutral slot.
+- Axis labels are thinned out on narrow widths, never shrunk.
+- The charting library is reached only through `IndicatorChart`, which the
+  Tracking page loads lazily, so it never reaches the public bundles.
+
 ## Dark Mode (Future)
 
 Not required for MVP, but design for light mode should be dark-mode compatible:
