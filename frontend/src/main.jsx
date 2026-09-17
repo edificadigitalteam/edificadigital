@@ -17,6 +17,8 @@ import ManagementFinanceRequestsPage from './features/management/ManagementFinan
 import ManagementResourcesPage from './features/management/ManagementResourcesPage.jsx'
 import ManagementResourceFormPage from './features/management/ManagementResourceFormPage.jsx'
 import ManagementDirectoryPage from './features/management/ManagementDirectoryPage.jsx'
+import ManagementMembersPage from './features/management/ManagementMembersPage.jsx'
+import ManagementMemberCatalogPage from './features/management/ManagementMemberCatalogPage.jsx'
 import ManagementProjectWorkspacePage from './features/management/ManagementProjectWorkspacePage.jsx'
 import ManagementOperationalFixes from './features/management/ManagementOperationalFixes.jsx'
 import GuidedUXControllerV2 from './features/guidance/GuidedUXControllerV2.jsx'
@@ -38,6 +40,9 @@ const isManagementMonetary = pathname.startsWith('/app/management/resources/mone
 const isManagementInKind = pathname.startsWith('/app/management/resources/in-kind')
 const isManagementAllies = pathname.startsWith('/app/management/allies')
 const isManagementVolunteers = pathname.startsWith('/app/management/volunteers')
+const isManagementMembers = pathname.startsWith('/app/management/members')
+const isManagementMemberCategories = pathname.startsWith('/app/management/settings/member-categories')
+const isManagementRelationshipRoles = pathname.startsWith('/app/management/settings/relationship-roles')
 const isManagementStructure = pathname === '/app/management/structure' || pathname === '/app/management/structure/'
 const isManagementObjectives = pathname.startsWith('/app/management/objectives')
 const isManagementIndicatorNew = pathname === '/app/management/tracking/new' || pathname === '/app/management/tracking/new/'
@@ -92,6 +97,9 @@ function RootApplication() {
   else if (isManagementResources) content = <ManagementResourcesPage />
   else if (isManagementAllies) content = <ManagementDirectoryPage kind="allies" />
   else if (isManagementVolunteers) content = <ManagementDirectoryPage kind="volunteers" />
+  else if (isManagementMembers) content = <ManagementMembersPage />
+  else if (isManagementMemberCategories) content = <ManagementMemberCatalogPage catalog="categories" />
+  else if (isManagementRelationshipRoles) content = <ManagementMemberCatalogPage catalog="roles" />
   else if (isManagementStructure) content = <ManagementStructurePage />
   else if (isManagementObjectives) content = <ManagementObjectivesPage />
   else if (isManagementIndicatorNew) content = <ManagementIndicatorFormPage />

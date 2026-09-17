@@ -1,0 +1,219 @@
+/* Member directory (Miembros) and its tenant catalogs (Mantenedores).
+   Only the pieces that have no home in operations.css live here. */
+
+.members-label-card {
+  margin-bottom: 1.25rem;
+}
+
+.members-label-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.members-label-summary div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.members-label-summary strong {
+  font-size: 1rem;
+}
+
+.members-label-summary span {
+  font-size: 0.875rem;
+  color: #55606f;
+}
+
+.members-label-summary button,
+.members-label-actions button {
+  min-height: 44px;
+  padding: 0 1.1rem;
+  border-radius: 10px;
+  border: 1px solid #d3d9e2;
+  background: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.members-label-form {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 34rem;
+}
+
+.members-label-form label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.members-label-form label span {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.members-label-form input {
+  min-height: 44px;
+  padding: 0 0.75rem;
+  border-radius: 10px;
+  border: 1px solid #d3d9e2;
+  font: inherit;
+}
+
+.members-label-hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #55606f;
+}
+
+.members-label-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.member-form-section {
+  margin-bottom: 1.25rem;
+}
+
+.member-form-section-header {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.member-form-section-header div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.member-form-section-header span {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #7b4ddb;
+}
+
+.member-form-section-header h2 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.member-form-section-header p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #55606f;
+}
+
+.member-relationship-form {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  align-items: end;
+  margin-bottom: 1rem;
+}
+
+.member-relationship-form label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.member-relationship-form label span {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.member-relationship-form select {
+  min-height: 44px;
+  padding: 0 0.6rem;
+  border-radius: 10px;
+  border: 1px solid #d3d9e2;
+  font: inherit;
+}
+
+.member-relationship-form button {
+  min-height: 44px;
+  padding: 0 1.1rem;
+  border-radius: 10px;
+  border: 1px solid #d3d9e2;
+  background: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.member-relationship-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.member-relationship-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e4e8ee;
+  border-radius: 12px;
+  background: #fbfcfe;
+}
+
+.member-relationship-list li div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.member-relationship-list li span {
+  font-size: 0.875rem;
+  color: #55606f;
+}
+
+.member-relationship-list li button {
+  min-height: 44px;
+  padding: 0 1rem;
+  border-radius: 10px;
+  border: 1px solid #d3d9e2;
+  background: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.member-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.member-row-actions button {
+  min-height: 44px;
+  padding: 0 0.9rem;
+  border-radius: 10px;
+  border: 1px solid #d3d9e2;
+  background: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.member-catalog-table td span,
+.members-table td span {
+  display: block;
+  font-size: 0.8125rem;
+  color: #55606f;
+}
+
+.member-form-actions {
+  margin-top: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .members-page *,
+  .member-catalog-page * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

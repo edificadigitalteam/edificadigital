@@ -2,8 +2,8 @@
 
 **Branch:** `feat/member-directory-and-mantenedores`
 
-**Status:** Draft — plan only, no implementation yet. Pending product owner
-confirmation before Red/Green/Refactor begins.
+**Status:** In progress — plan confirmed by the product owner on 2026-09-17;
+Red/Green/Refactor under way on `claude/cool-babbage-2np7d0`.
 
 ## Context
 
@@ -76,11 +76,13 @@ Investigation of the current schema (`docs/DATABASE.md`, migrations) found:
    `private.beneficiary` (ADR-004), member records (including
    individuals — pastors, leaders) stay in `public`, same exposure level
    as `actor`.
-7. **Mantenedores gets its own collapsible sidebar section**, placed near
-   today's "Usuarios y accesos" (i.e., inside the tenant "MI
-   ORGANIZACIÓN" area of `DashboardApp.jsx`). Collapsible sections don't
-   exist in the sidebar today — this is new interaction, not a reuse of
-   an existing pattern, and is in scope for this plan.
+7. **Mantenedores gets its own collapsible sidebar section**, placed next
+   to today's "Usuarios y accesos". Confirmed on 2026-09-17: that
+   neighbour now lives in the **Gestión Organizacional** shell
+   (`ManagementStandaloneShell.jsx`, "Administración" group), not in
+   `DashboardApp.jsx` — see "Navigation reality check" below. Collapsible
+   sections don't exist in that sidebar today — this is new interaction,
+   not a reuse of an existing pattern, and is in scope for this plan.
 8. **"Miembros" is the term at every level — internal (table names,
    translation keys, code) and UI-facing.** An earlier draft of this plan
    used "Afiliados" as the internal/code term with "Miembros" only as the
@@ -100,6 +102,37 @@ Investigation of the current schema (`docs/DATABASE.md`, migrations) found:
    "Miembros" is only the default, not a fixed label for every tenant.
    This module is also its own top-level tenant-content nav entry (not
    nested inside "Mi organización" or any other section).
+10. **The organization's own `admin` edits that label** (self-service),
+   confirmed on 2026-09-17. `public.organization` only accepts
+   `super_admin` updates today, so the label is written through a
+   dedicated `security definer` RPC guarded by
+   `private.can_manage_organization`, which touches that one column and
+   nothing else — widening the table's update policy would let a tenant
+   admin change `code`, `subscription_status`, and the rest of the
+   billing surface.
+
+## Navigation reality check (2026-09-17)
+
+This plan's first draft placed the new entries in the `DashboardApp.jsx`
+sidebar, alongside "Donaciones, Voluntariado, Proyectos, Aliados y
+donantes." That sidebar has since been reorganized: `DashboardApp.jsx`
+now carries only EDIFICA / OPERACIÓN ("Gestión organizacional") / MI
+ORGANIZACIÓN ("Usuarios y accesos", "Plan y facturación"), and all tenant
+operational content lives under `/app/management/*` inside
+`ManagementStandaloneShell.jsx`, whose nav is already grouped
+("Planificación", "Recursos y operación", "Control y rendición",
+"Administración").
+
+Confirmed placement:
+
+- **Miembros** → `/app/management/members`, a nav entry in the
+  "Recursos y operación" group, next to "Aliados y donantes" and
+  "Voluntariado" — still a top-level tenant-content entry, never nested
+  inside another module and never merged with "Aliados y donantes."
+- **Mantenedores** → a new **collapsible** nav group in the same sidebar,
+  next to "Usuarios y accesos" in the "Administración" area, holding
+  "Categorías de miembros" (`/app/management/settings/member-categories`)
+  and "Roles de relación" (`/app/management/settings/relationship-roles`).
 
 ## Goals (this plan's scope)
 
@@ -241,14 +274,17 @@ do nothing`.
 Add `organization.members_module_label` (text, nullable — null falls
 back to a default translated label, **"Miembros"** — see decision 9).
 Simplest possible shape for "configurable per tenant": one free-text
-override field, editable from `OrganizationAdminPanel.jsx` (super_admin)
-and/or the organization's own settings (needs confirmation — see Open
-Questions).
+override field. Per decision 10 it is edited by the organization's own
+`admin` through
+`admin_set_members_module_label(target_organization_id, label)`, a
+`security definer` RPC guarded by `private.can_manage_organization`. A
+blank submission clears the override and restores the default label.
 
 ## Frontend design
 
-- **Mantenedores**: new collapsible sidebar section in `DashboardApp.jsx`,
-  positioned with "MI ORGANIZACIÓN" (near "Usuarios y accesos"). New
+- **Mantenedores**: new collapsible sidebar group in
+  `ManagementStandaloneShell.jsx`, positioned next to "Usuarios y
+  accesos" in the "Administración" area. New
   interaction to build: an expand/collapse toggle on the section header,
   no existing precedent in this sidebar to copy — keep it simple
   (local component state, no persistence requirement unless the product
@@ -257,9 +293,10 @@ Questions).
   create/edit — both catalogs are ≤5 fields, 1 section, so **inline** per
   the Create/Edit Record Mechanism Standard).
 - **Miembros (nav label "Miembros" by default)**: new, standalone
-  top-level tenant-content nav entry — alongside Donaciones,
-  Voluntariado, Proyectos, and Aliados y donantes, never nested under any
-  of them and never merged with "Aliados y donantes" (see decision 8).
+  top-level tenant-content nav entry at `/app/management/members`, in the
+  "Recursos y operación" group alongside "Aportes y recursos", "Aliados y
+  donantes" and "Voluntariado" — never nested under any of them and never
+  merged with "Aliados y donantes" (see decision 8).
   Module label from `organization.members_module_label`, default
   "Miembros," following the Module Panel Layout Standard (header,
   search/filter with "Limpiar," list with "+ Nuevo/Crear ___"). Fields
@@ -323,11 +360,9 @@ Questions).
 
 ## Risks & Open Questions
 
-- **Module label configuration surface**: is
-  `members_module_label` editable by the organization's own `admin`
-  (self-service, "Mi organización" area) or only by `super_admin` from
-  the host "Organizaciones y hosts" screen? Affects which RPC/panel needs
-  the new field wired in. Needs product owner confirmation before Green.
+- ~~**Module label configuration surface**~~ — **resolved 2026-09-17**:
+  the organization's own `admin` edits it, self-service, through
+  `admin_set_members_module_label`. See decision 10.
 - **Backward validation of `applies_to`**: enforce category/`member_type`
   match with a DB check constraint (needs a trigger, since it requires a
   lookup into `organization_member_category`) or leave it to application
@@ -360,5 +395,5 @@ version.
 
 ---
 
-**Version:** 1.2
+**Version:** 1.3
 **Last updated:** 2026-09-17

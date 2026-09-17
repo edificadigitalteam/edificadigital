@@ -14,6 +14,7 @@ export default function ManagementOperationalFixes() {
   const [mobileTarget, setMobileTarget] = useState(null)
   const [navTarget, setNavTarget] = useState(null)
   const [financeNoticeTarget, setFinanceNoticeTarget] = useState(null)
+  const [maintainersOpen, setMaintainersOpen] = useState(window.location.pathname.startsWith('/app/management/settings'))
   const isManagement = window.location.pathname.startsWith('/app/management') || window.location.pathname.startsWith('/app/church')
   const canAdmin = access.role === 'admin' || access.role === 'super_admin'
 
@@ -116,15 +117,19 @@ export default function ManagementOperationalFixes() {
   const path = window.location.pathname.replace(/\/$/, '') || '/app/management'
   const labels = language === 'en' ? {
     start: 'Start', planning: 'Planning', operation: 'Resources and operations', control: 'Control and reporting', administration: 'Administration',
-    overview: 'Overview', structure: 'Structure', objectives: 'Annual plan', projects: 'Projects', resources: 'Contributions and resources', allies: 'Partners and donors', volunteers: 'Volunteers', finance: 'Finance', tracking: 'Tracking', reports: 'Reports', users: 'Users and access',
+    overview: 'Overview', structure: 'Structure', objectives: 'Annual plan', projects: 'Projects', resources: 'Contributions and resources', allies: 'Partners and donors', members: 'Members', volunteers: 'Volunteers', finance: 'Finance', tracking: 'Tracking', reports: 'Reports', users: 'Users and access',
+    maintainers: 'Catalogs', memberCategories: 'Member categories', relationshipRoles: 'Relationship roles',
+    showMaintainers: 'Show the catalogs', hideMaintainers: 'Hide the catalogs',
   } : {
     start: 'Inicio', planning: 'Planificación', operation: 'Recursos y operación', control: 'Control y rendición', administration: 'Administración',
-    overview: 'Resumen', structure: 'Estructura', objectives: 'Plan anual', projects: 'Proyectos', resources: 'Aportes y recursos', allies: 'Aliados y donantes', volunteers: 'Voluntariado', finance: 'Finanzas', tracking: 'Seguimiento', reports: 'Informes', users: 'Usuarios y accesos',
+    overview: 'Resumen', structure: 'Estructura', objectives: 'Plan anual', projects: 'Proyectos', resources: 'Aportes y recursos', allies: 'Aliados y donantes', members: 'Miembros', volunteers: 'Voluntariado', finance: 'Finanzas', tracking: 'Seguimiento', reports: 'Informes', users: 'Usuarios y accesos',
+    maintainers: 'Mantenedores', memberCategories: 'Categorías de miembros', relationshipRoles: 'Roles de relación',
+    showMaintainers: 'Mostrar los mantenedores', hideMaintainers: 'Ocultar los mantenedores',
   }
   const groups = [
     [labels.start, [[labels.overview, '/app/management']]],
     [labels.planning, [[labels.structure, '/app/management/structure'], [labels.objectives, '/app/management/objectives'], [labels.projects, '/app/management/projects']]],
-    [labels.operation, [[labels.resources, '/app/management/resources'], [labels.allies, '/app/management/allies'], [labels.volunteers, '/app/management/volunteers'], [labels.finance, '/app/management/finance']]],
+    [labels.operation, [[labels.resources, '/app/management/resources'], [labels.allies, '/app/management/allies'], [labels.members, '/app/management/members'], [labels.volunteers, '/app/management/volunteers'], [labels.finance, '/app/management/finance']]],
     [labels.control, [[labels.tracking, '/app/management/tracking'], [labels.reports, '/app/management/reports']]],
   ]
   const isActive = (href) => href === '/app/management' ? path === href : path.startsWith(href)
@@ -136,7 +141,25 @@ export default function ManagementOperationalFixes() {
           <p className="management-nav-group-label">{groupLabel}</p>
           {items.map(([label, href]) => <a className={`management-nav-action${isActive(href) ? ' active' : ''}`} href={href} key={href}>{label}</a>)}
         </div>)}
-        {canAdmin && <div className="management-nav-group"><p className="management-nav-group-label">{labels.administration}</p><a className="management-nav-action" href="/app/admin/operators">{labels.users}</a></div>}
+        {canAdmin && <div className="management-nav-group">
+          <p className="management-nav-group-label">{labels.administration}</p>
+          <a className="management-nav-action" href="/app/admin/operators">{labels.users}</a>
+          <button
+            type="button"
+            className={`management-nav-collapse${maintainersOpen ? ' open' : ''}`}
+            aria-expanded={maintainersOpen}
+            aria-controls="management-legacy-nav-maintainers"
+            onClick={() => setMaintainersOpen((current) => !current)}
+            title={maintainersOpen ? labels.hideMaintainers : labels.showMaintainers}
+          >
+            <span>{labels.maintainers}</span>
+            <i aria-hidden="true" />
+          </button>
+          <div id="management-legacy-nav-maintainers" className="management-nav-collapse-panel" hidden={!maintainersOpen}>
+            <a className={`management-nav-action${isActive('/app/management/settings/member-categories') ? ' active' : ''}`} href="/app/management/settings/member-categories">{labels.memberCategories}</a>
+            <a className={`management-nav-action${isActive('/app/management/settings/relationship-roles') ? ' active' : ''}`} href="/app/management/settings/relationship-roles">{labels.relationshipRoles}</a>
+          </div>
+        </div>}
       </div>,
       navTarget,
     )}

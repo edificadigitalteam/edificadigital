@@ -158,3 +158,43 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Collapsible catalog section (Mantenedores). The toggle reads as a nav row of
+   its own, with a chevron that turns to match the open state. */
+.management-sidebar .management-nav-group button.management-nav-collapse {
+  justify-content: space-between;
+  gap: 10px;
+  color: #b9a9c6;
+  font-weight: 800;
+}
+.management-sidebar .management-nav-group button.management-nav-collapse.open {
+  color: #fff;
+}
+.management-nav-collapse > i {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 120ms ease;
+}
+.management-nav-collapse.open > i {
+  transform: rotate(45deg);
+}
+.management-nav-collapse-panel {
+  display: grid;
+  gap: 3px;
+  padding-left: 11px;
+  border-left: 1px solid rgba(255,255,255,.1);
+  margin-left: 13px;
+}
+.management-nav-collapse-panel[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .management-nav-collapse > i {
+    transition: none;
+  }
+}
