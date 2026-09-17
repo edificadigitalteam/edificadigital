@@ -1,4 +1,4 @@
-# Sprint S5 — Member Directory (Afiliados) and Tenant-Configurable Catalogs (Mantenedores)
+# Sprint S5 — Member Directory (Miembros / Afiliados) and Tenant-Configurable Catalogs (Mantenedores)
 
 **Branch:** `feat/member-directory-and-mantenedores`
 
@@ -86,6 +86,22 @@ Investigation of the current schema (`docs/DATABASE.md`, migrations) found:
    tenant** (e.g., a convention might label it "Iglesias afiliadas," a
    single congregation might label it "Miembros de la congregación") —
    chosen over a single fixed label for every tenant.
+9. **Confirmed in a follow-up conversation**: this module is its own
+   top-level tenant-content nav entry (not nested inside "Mi
+   organización" or any other section) — this was already the plan's
+   design, now explicitly reaffirmed as a deliberate decision rather than
+   a default. That same conversation surfaced a naming collision this
+   plan hadn't accounted for: the app already ships a module called
+   **"Aliados y donantes"** (`frontend/src/features/donors/`, the
+   `actor`-based donor/supplier directory used in donation intake) —
+   unrelated to this feature, but "Aliados" and "Afiliados" sitting next
+   to each other in the same sidebar risks real confusion for users with
+   varied digital literacy (a core accessibility concern for this
+   product, not a cosmetic one). Resolution: the module's **default**
+   UI-facing label changes from "Afiliados" to **"Miembros"** (still
+   overridable per tenant per decision 8) — "Afiliados" stays only as the
+   internal/code-level term (tables, translation keys), never the default
+   user-facing word.
 
 ## Goals (this plan's scope)
 
@@ -225,10 +241,11 @@ do nothing`.
 ### Module label configuration
 
 Add `organization.affiliates_module_label` (text, nullable — null falls
-back to a default translated label, e.g. "Afiliados"). Simplest possible
-shape for "configurable per tenant": one free-text override field,
-editable from `OrganizationAdminPanel.jsx` (super_admin) and/or the
-organization's own settings (needs confirmation — see Open Questions).
+back to a default translated label, **"Miembros"** — see decision 9).
+Simplest possible shape for "configurable per tenant": one free-text
+override field, editable from `OrganizationAdminPanel.jsx` (super_admin)
+and/or the organization's own settings (needs confirmation — see Open
+Questions).
 
 ## Frontend design
 
@@ -241,10 +258,14 @@ organization's own settings (needs confirmation — see Open Questions).
   "Roles de relación," each a small module panel (list + inline
   create/edit — both catalogs are ≤5 fields, 1 section, so **inline** per
   the Create/Edit Record Mechanism Standard).
-- **Afiliados**: new tenant-content nav entry (module label from
-  `organization.affiliates_module_label`, default "Afiliados"), following
-  the Module Panel Layout Standard (header, search/filter with "Limpiar,"
-  list with "+ Nuevo/Crear ___"). Fields for the member form: `name`,
+- **Afiliados (nav label "Miembros" by default)**: new, standalone
+  top-level tenant-content nav entry — alongside Donaciones,
+  Voluntariado, Proyectos, and Aliados y donantes, never nested under any
+  of them and never merged with "Aliados y donantes" (see decision 9).
+  Module label from `organization.affiliates_module_label`, default
+  "Miembros," following the Module Panel Layout Standard (header,
+  search/filter with "Limpiar," list with "+ Nuevo/Crear ___"). Fields
+  for the member form: `name`,
   `member_type`, `member_category`, `email`, `phone`, `status` — 6
   fields, and the record also needs relationship management (linking to
   organization-members) as a second concern — per the mechanism standard
@@ -341,5 +362,5 @@ version.
 
 ---
 
-**Version:** 1.0
-**Last updated:** 2026-09-09
+**Version:** 1.1
+**Last updated:** 2026-09-17
