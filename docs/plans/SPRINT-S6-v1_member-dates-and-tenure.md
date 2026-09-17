@@ -2,9 +2,13 @@
 
 **Branch:** `claude/cool-babbage-2np7d0`
 
-**Status:** Confirmed — plan only, no implementation yet. All four product
-decisions below are settled, decision 3 having been simplified to complete
-dates on 2026-09-17. Ready for Red/Green/Refactor.
+**Status:** Implemented — migration applied to `edifydb` on 2026-09-17
+(`20260917185229`), 13/13 pgTAP assertions passing, advisors identical to the
+previous baseline. The privacy distinction is recorded as a scope-boundary
+section in `docs/adr/ADR-004-protected-beneficiary-identity.md`. The one item
+still outstanding is the screenshot gate on the single list column (see
+"Where it goes on the screen"), which needs a browser this environment cannot
+reach.
 
 ## Context
 
