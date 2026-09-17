@@ -116,10 +116,10 @@ export default function ManagementOperationalFixes() {
   const path = window.location.pathname.replace(/\/$/, '') || '/app/management'
   const labels = language === 'en' ? {
     start: 'Start', planning: 'Planning', operation: 'Resources and operations', control: 'Control and reporting', administration: 'Administration',
-    overview: 'Overview', structure: 'Structure', objectives: 'Objectives', projects: 'Projects', resources: 'Contributions and resources', allies: 'Partners and donors', volunteers: 'Volunteers', finance: 'Finance', tracking: 'Tracking', reports: 'Reports', users: 'Users and access',
+    overview: 'Overview', structure: 'Structure', objectives: 'Annual plan', projects: 'Projects', resources: 'Contributions and resources', allies: 'Partners and donors', volunteers: 'Volunteers', finance: 'Finance', tracking: 'Tracking', reports: 'Reports', users: 'Users and access',
   } : {
     start: 'Inicio', planning: 'Planificación', operation: 'Recursos y operación', control: 'Control y rendición', administration: 'Administración',
-    overview: 'Resumen', structure: 'Estructura', objectives: 'Objetivos', projects: 'Proyectos', resources: 'Aportes y recursos', allies: 'Aliados y donantes', volunteers: 'Voluntariado', finance: 'Finanzas', tracking: 'Seguimiento', reports: 'Informes', users: 'Usuarios y accesos',
+    overview: 'Resumen', structure: 'Estructura', objectives: 'Plan anual', projects: 'Proyectos', resources: 'Aportes y recursos', allies: 'Aliados y donantes', volunteers: 'Voluntariado', finance: 'Finanzas', tracking: 'Seguimiento', reports: 'Informes', users: 'Usuarios y accesos',
   }
   const groups = [
     [labels.start, [[labels.overview, '/app/management']]],
