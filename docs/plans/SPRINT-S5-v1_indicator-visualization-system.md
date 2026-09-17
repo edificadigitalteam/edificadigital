@@ -2,10 +2,10 @@
 
 **Branch:** `claude/magical-newton-awoytv`
 
-**Status:** ✍️ In Progress — steps 1 and 2 of the delivery order below are
-implemented (the detail-drawer history charts, then the card meters). The
-remaining steps (the stored `preferred_chart` override and its migration,
-and the PDF path) are pending.
+**Status:** ✍️ In Progress — steps 1, 2 and 3 are implemented (the
+detail-drawer history charts, the card meters, and the stored
+`preferred_chart` override with its migration, applied to `edifydb`). The
+PDF path (step 5) is the remaining work.
 
 ## Requested outcome
 
@@ -357,6 +357,51 @@ chart compared against the screen.
 The product owner asked for the detail-drawer history charts first, since
 they are the most visible change, so steps 3 and 4 of the original outline
 are swapped: the drawer ships before the card meters.
+
+## Implementation notes — step 3 (the stored override)
+
+Delivered: the migration `20260917034500_indicator_preferred_chart.sql`,
+the pgTAP file `supabase/tests/013_indicator_preferred_chart_test.sql`, the
+`ChartFormSelector` component, and the save path in
+`ManagementTrackingPage.jsx` with its toast feedback.
+
+The migration was applied to the live `edifydb` project
+(`rrqyihsjftlloizsccvi`) with the product owner's explicit authorization in
+conversation, since this environment has no Docker daemon and the local
+stack could not be used. Verified afterwards against the live schema:
+`preferred_chart` is `text`, nullable, no default; the check constraint is
+present with all seven forms; all 6 existing indicators are null, so no
+indicator changed behavior. The security and performance advisors report
+no finding attributable to this change — every warning they return
+(`SECURITY DEFINER` functions reachable by `authenticated`, leaked-password
+protection, unindexed foreign keys, unused indexes, three RLS initplan
+policies) predates it.
+
+Three things worth recording:
+
+1. **The accept/reject scenario did not run against the live database.**
+   The Supabase connection available here executes SQL read-only, so the
+   insert-and-roll-back scenario in the safe database procedure could not be
+   performed; the constraint definition was verified by reading
+   `pg_get_constraintdef` instead. The pgTAP file carries the accept and
+   reject cases for whoever runs the suite against a local stack.
+2. **The selector moved inside the lazy chart entry point.** Importing it
+   eagerly from the page pulled `chartCopy` and `recommendedChart` into the
+   main bundle (+2.5 kB gzip). `IndicatorChart` now renders it when an
+   `onPreferredChartChange` handler is passed, and the page's own toast copy
+   lives in the page's `copy` object.
+3. **The drawer previews the board.** Choosing "Medidor circular" or "Barra
+   de avance" changes the card, not the drawer (the drawer always shows
+   history), so the choice produced no visible change where it was made.
+   The selector is now followed by "Así aparece en el tablero:" and the
+   actual card mark.
+
+Browser verification in Chromium: the selector offers only the forms an
+indicator's data supports (a text indicator offers just the timeline, an
+indicator with no results offers nothing and renders no control), the
+select meets the 44px target, choosing a form re-renders both the drawer
+and the board preview, and returning to Automático restores the
+heuristic's own choice.
 
 ## Implementation notes — step 2 (card meters)
 

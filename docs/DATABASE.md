@@ -33,6 +33,8 @@ All database identifiers and stored enum-like values use English `snake_case`. S
 | — | `20260727040500_fix_admin_list_organizations_grants.sql` | — | Corrective: the `drop function`/`create function` in the previous migration silently wiped `admin_list_organizations`'s grants, briefly re-exposing it to `anon`; reinstates `revoke ... from public, anon` / `grant ... to authenticated` |
 | — | `20260902234500_optional_unit_leader_access.sql` | — | Updates `admin_save_organization_unit_v2` so a leader requires only a display name; email remains optional unless `leader.create_access` is true, and operator provisioning, invitation, and primary membership occur only when access is requested |
 
+| — | `20260917034500_indicator_preferred_chart.sql` | `20260917034500` (`indicator_preferred_chart`) | `management_indicator.preferred_chart` added: an optional visualization override, nullable with no default, guarded by a check over the seven chart forms. Null means the chart is chosen from `metric_type`, `aggregation_method` and the presence of a target, so every pre-existing indicator keeps its current behavior. No RLS change (the table's organization-scoped policies already cover it) and no index (the column is never filtered or joined on). Verified on `edifydb`: column nullable with no default, constraint present, 6 existing indicators all null; security and performance advisors report no new findings |
+
 DDL changes must be added as new migration files and applied through Supabase migration history. Existing applied migrations remain immutable.
 
 ## Operational model

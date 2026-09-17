@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase.js'
 import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import { formatDate, metricDisplay } from './indicatorCharts/indicatorFormat.js'
+import { useToast } from '../notifications/ToastProvider.jsx'
 import './management.css'
 import './management-fixes.css'
 
@@ -34,6 +35,7 @@ const copy = {
     measure: '¿Qué quieres medir? *', measureExample: 'Ej.: Personas capacitadas, iglesias participantes, ingresos anuales, presupuesto ejecutado.', metricType: '¿Qué clase de resultado vas a registrar?', aggregation: 'Cuando cargues varios resultados, ¿cómo debe quedar el total?', aggregationHelp: 'Usa “Sumar” cuando cada carga representa una parte adicional del total. Usa “Último resultado” cuando cada carga ya representa el acumulado completo hasta esa fecha.', unitLabel: '¿En qué unidad lo vas a contar?', unitExample: 'Ej.: personas, iglesias, kits, publicaciones, litros.', target: 'Meta del indicador', targetExample: 'Se registra una sola vez. Ej.: 300 personas, 85 %, 150.000 USD.', currency: 'Moneda', frequency: '¿Cada cuánto esperas actualizar este indicador?', objective: 'Objetivo institucional relacionado (opcional)', noObjective: 'Sin objetivo relacionado', project: 'Proyecto relacionado (opcional)', noProject: 'Sin proyecto relacionado', description: '¿Qué significa este indicador?', source: '¿De dónde saldrá este dato?', cancel: 'Cancelar', saveIndicator: 'Guardar indicador', saveChanges: 'Guardar cambios', saving: 'Guardando…',
     resultEyebrow: 'RESULTADO DEL PERÍODO', editResultEyebrow: 'EDITAR RESULTADO', resultIntro: 'La meta ya está guardada. Aquí solo cargas el resultado real alcanzado; Edifica hará la comparación automáticamente.', editResultIntro: 'Corrige únicamente el dato que necesites. Edifica conservará la fecha de creación y registrará la actualización.', targetReference: 'META REGISTRADA', responsible: 'Responsable de la carga *', responsibleHelp: 'Nombre de la persona que responde por este dato. Quedará visible en el historial del indicador.', startDate: 'Inicio del período reportado (opcional)', endDate: 'Fecha o cierre del resultado', resultValue: 'Resultado logrado', amountValue: 'Monto logrado', percentageValue: 'Porcentaje logrado (%)', ratioValue: 'Valor logrado', textValue: '¿Qué resultado o información deseas reportar?', resultHelp: 'Escribe únicamente el dato real alcanzado.', yesNoValue: '¿Se cumplió?', saveAsDraft: 'Guardar como borrador', draftHelp: 'Actívalo solo si todavía no debe entrar en los cálculos.', notes: '¿Qué ocurrió durante este período?', notesExample: 'Agrega contexto, incidencias o información útil para el informe.', saveResult: 'Guardar resultado', updateResult: 'Guardar corrección',
     board: 'TABLERO DE SEGUIMIENTO', indicators: 'indicadores', noIndicators: 'Todavía no hay indicadores para esta área y período.', targetLabel: 'Meta', achieved: 'Logrado', pending: 'Pendiente', execution: 'Ejecución', results: 'resultados cargados', history: 'Historial de resultados', date: 'Fecha', value: 'Resultado', status: 'Estado', person: 'Responsable', observations: 'Observaciones', registered: 'Registrado', modified: 'Modificado', draft: 'Borrador', submitted: 'Incluido', verified: 'Verificado', noHistory: 'Todavía no hay resultados registrados.',
+    displaySaved: 'Se actualizó cómo se ve este indicador.', displayDenied: 'No tienes acceso para cambiar este indicador. Confirma tu correo o contacta al administrador.',
     indicatorSaved: 'Indicador guardado.', indicatorUpdated: 'Indicador actualizado.', resultSaved: 'Resultado registrado.', resultUpdated: 'Resultado actualizado.', requiredResult: 'Debes registrar el resultado alcanzado antes de guardar.', requiredResponsible: 'Debes indicar quién es responsable de esta carga.', indicatorArchived: 'Indicador archivado. Su historial se conserva.', indicatorDeleted: 'Indicador eliminado.', archiveConfirm: 'Este indicador dejará de aparecer en el seguimiento activo, pero conservará todos sus resultados e historial. ¿Deseas archivarlo?', deleteConfirm: 'Este indicador no tiene resultados. ¿Deseas eliminarlo definitivamente?', hasHistoryDelete: 'Este indicador ya tiene resultados. Para proteger la trazabilidad debes archivarlo en lugar de eliminarlo.', loading: 'Cargando indicadores…',
   },
   en: {
@@ -45,6 +47,7 @@ const copy = {
     measure: 'What do you want to measure? *', measureExample: 'Example: People trained, participating churches, annual income, budget executed.', metricType: 'What kind of result will you record?', aggregation: 'When several results are entered, how should the total be obtained?', aggregationHelp: 'Use Add when each entry is an additional part of the total. Use Latest when each entry already represents the full accumulated amount to date.', unitLabel: 'What unit will you use?', unitExample: 'Example: people, churches, kits, posts, liters.', target: 'Indicator target', targetExample: 'Set it once. Example: 300 people, 85%, USD 150,000.', currency: 'Currency', frequency: 'How often do you expect to update this indicator?', objective: 'Related institutional objective (optional)', noObjective: 'No related objective', project: 'Related project (optional)', noProject: 'No related project', description: 'What does this indicator mean?', source: 'Where will this data come from?', cancel: 'Cancel', saveIndicator: 'Save indicator', saveChanges: 'Save changes', saving: 'Saving…',
     resultEyebrow: 'PERIOD RESULT', editResultEyebrow: 'EDIT RESULT', resultIntro: 'The target is already stored. Enter only the actual result achieved; Edifica will compare it automatically.', editResultIntro: 'Correct only what needs changing. Edifica preserves the creation date and records the update.', targetReference: 'SAVED TARGET', responsible: 'Person responsible for this entry *', responsibleHelp: 'Name of the person accountable for this data. It will remain visible in the indicator history.', startDate: 'Start of reported period (optional)', endDate: 'Result date or period end', resultValue: 'Result achieved', amountValue: 'Amount achieved', percentageValue: 'Percentage achieved (%)', ratioValue: 'Value achieved', textValue: 'What result or information do you want to report?', resultHelp: 'Enter only the actual value achieved.', yesNoValue: 'Was it achieved?', saveAsDraft: 'Save as draft', draftHelp: 'Use it only if this result should not enter calculations yet.', notes: 'What happened during this period?', notesExample: 'Add context, incidents, or information useful for the report.', saveResult: 'Save result', updateResult: 'Save correction',
     board: 'TRACKING BOARD', indicators: 'indicators', noIndicators: 'There are no indicators for this area and period yet.', targetLabel: 'Target', achieved: 'Achieved', pending: 'Remaining', execution: 'Execution', results: 'results recorded', history: 'Result history', date: 'Date', value: 'Result', status: 'Status', person: 'Responsible', observations: 'Notes', registered: 'Recorded', modified: 'Modified', draft: 'Draft', submitted: 'Included', verified: 'Verified', noHistory: 'No results have been recorded yet.',
+    displaySaved: 'Updated how this indicator is displayed.', displayDenied: 'You do not have access to change this indicator. Confirm your email or contact the administrator.',
     indicatorSaved: 'Indicator saved.', indicatorUpdated: 'Indicator updated.', resultSaved: 'Result recorded.', resultUpdated: 'Result updated.', requiredResult: 'Enter the achieved result before saving.', requiredResponsible: 'Enter the person responsible for this entry.', indicatorArchived: 'Indicator archived. Its history is preserved.', indicatorDeleted: 'Indicator deleted.', archiveConfirm: 'This indicator will leave active tracking but all history will be preserved. Archive it?', deleteConfirm: 'This indicator has no results. Delete it permanently?', hasHistoryDelete: 'This indicator already has results. Archive it instead to preserve traceability.', loading: 'Loading indicators…',
   },
 }
@@ -86,6 +89,7 @@ function Flash({ error, message }) { return <>{error && <p className="management
 
 export default function ManagementTrackingPage() {
   const access = useOperatorAccess()
+  const { notify } = useToast()
   const [language, setLanguage] = useState(readLanguage)
   const t = copy[language]
   const [organizations, setOrganizations] = useState([])
@@ -103,6 +107,7 @@ export default function ManagementTrackingPage() {
   const [progressForm, setProgressForm] = useState(emptyProgress)
   const [indicatorOpen, setIndicatorOpen] = useState(false)
   const [progressOpen, setProgressOpen] = useState(false)
+  const [savingChartForm, setSavingChartForm] = useState(false)
   const [expandedIndicatorId, setExpandedIndicatorId] = useState('')
   const detailTriggerRef = useRef(null)
   const detailDrawerRef = useRef(null)
@@ -234,6 +239,24 @@ export default function ManagementTrackingPage() {
     setSaving(false)
   }
 
+  const savePreferredChart = async (indicator, preferredChart) => {
+    if (!supabase || savingChartForm) return
+    setSavingChartForm(true)
+    const { error: requestError } = await supabase
+      .from('management_indicator')
+      .update({ preferred_chart: preferredChart, updated_by: access.userId || null })
+      .eq('id', indicator.id)
+    if (requestError) {
+      const friendlyMessage = requestError.code === '42501' ? t.displayDenied : requestError.message
+      setError(friendlyMessage)
+      notify({ type: 'error', message: friendlyMessage })
+    } else {
+      setIndicators((current) => current.map((item) => item.id === indicator.id ? { ...item, preferred_chart: preferredChart } : item))
+      notify({ type: 'success', message: t.displaySaved })
+    }
+    setSavingChartForm(false)
+  }
+
   const archiveIndicator = async (indicator) => {
     if (!window.confirm(t.archiveConfirm)) return
     const { error: requestError } = await supabase.from('management_indicator').update({ active: false, updated_by: access.userId || null }).eq('id', indicator.id)
@@ -321,7 +344,7 @@ export default function ManagementTrackingPage() {
       <aside id="indicator-detail-drawer" className="indicator-detail-drawer" role="dialog" aria-modal="true" aria-labelledby="indicator-detail-title" ref={detailDrawerRef} onKeyDown={handleDetailKeyDown}>
         <header className="indicator-detail-header"><div><span>{t.indicator}</span><h2 id="indicator-detail-title">{detailIndicator.name}</h2><p>{selectedUnit ? `${selectedUnit.code} · ${selectedUnit.name}` : t.unitFilter} · {selectedPeriod?.name || t.periodFilter}</p></div><button type="button" onClick={closeIndicatorDetail}>{language === 'en' ? 'Close' : 'Cerrar'}</button></header>
         <div className="indicator-detail-summary"><div><span>{t.targetLabel}</span><strong>{detailIndicator.target_value == null ? (detailIndicator.target_text || '—') : metricDisplay(detailIndicator.target_value, detailIndicator, language)}</strong></div><div><span>{t.achieved}</span><strong>{aggregateIndicator(detailIndicator, progress).text || metricDisplay(aggregateIndicator(detailIndicator, progress).value, detailIndicator, language)}</strong></div><div><span>{t.results}</span><strong>{detailRows.length}</strong></div></div>
-        <Suspense fallback={null}><IndicatorChart indicator={detailIndicator} rows={progress} language={language} /></Suspense>
+        <Suspense fallback={null}><IndicatorChart indicator={detailIndicator} rows={progress} language={language} completion={aggregateIndicator(detailIndicator, progress).completion} savingPreferredChart={savingChartForm} onPreferredChartChange={canManageSelected ? (form) => savePreferredChart(detailIndicator, form) : undefined} /></Suspense>
         <section className="indicator-history"><div className="indicator-history-heading"><strong>{t.history}</strong><span>{detailRows.length}</span></div>{!detailRows.length ? <p>{t.noHistory}</p> : <div className="indicator-history-list">{detailRows.map((row) => <article key={row.id}><div className="history-main"><span>{formatDate(row.reporting_period_end || row.reporting_period_start, language)}</span><strong>{rowDisplay(row, detailIndicator, language)}</strong><b className={`history-status ${row.status}`}>{row.status === 'draft' ? t.draft : row.status === 'verified' ? t.verified : t.submitted}</b></div><div className="history-accountability"><span><b>{t.person}:</b> {row.responsible_name || '—'}</span><span><b>{t.registered}:</b> {formatDateTime(row.created_at, language)}</span>{row.updated_at && row.updated_at !== row.created_at && <span><b>{t.modified}:</b> {formatDateTime(row.updated_at, language)}</span>}</div>{row.notes && <p><b>{t.observations}:</b> {row.notes}</p>}{canManageSelected && <button type="button" onClick={() => { closeIndicatorDetail(); editProgress(row) }}>{t.editResult}</button>}</article>)}</div>}</section>
       </aside>
     </div>}

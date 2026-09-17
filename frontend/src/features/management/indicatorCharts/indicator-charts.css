@@ -69,3 +69,12 @@
 .indicator-chart-card .indicator-chart-status { gap: 8px; }
 .indicator-chart-card .indicator-chart-status svg { width: 20px; height: 20px; }
 .indicator-chart-card .indicator-chart-status strong { font-size: .86rem; }
+
+/* "Cómo se ve este indicador" — the optional override, drawer only. */
+.indicator-chart-form-selector { display: grid; gap: 5px; margin-top: 12px; }
+.indicator-chart-form-selector > span { font-size: .78rem; font-weight: 700; color: var(--mg-text, #211927); }
+.indicator-chart-form-selector select { min-height: 44px; padding: 8px 10px; border: 1px solid var(--mg-line, #ddd6e4); border-radius: 10px; background: #fff; font: inherit; font-size: .84rem; color: var(--mg-text, #211927); }
+.indicator-chart-form-selector select:disabled { opacity: .6; cursor: progress; }
+.indicator-chart-form-selector small { font-size: .74rem; line-height: 1.4; color: var(--mg-muted, #756d79); }
+.indicator-chart-preview { display: grid; gap: 7px; padding: 12px; border: 1px solid var(--mg-line, #ddd6e4); border-radius: 12px; background: #faf7fd; }
+.indicator-chart-preview > span { font-size: .74rem; font-weight: 700; color: var(--mg-muted, #756d79); }

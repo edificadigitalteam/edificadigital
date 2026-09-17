@@ -26,6 +26,11 @@ export const chartCopy = {
     submitted: 'Incluido',
     verified: 'Verificado',
     summary: (name, value, target) => target ? `${name}. Último resultado ${value}, meta ${target}.` : `${name}. Último resultado ${value}.`,
+    displayAs: 'Cómo se ve este indicador',
+    boardPreview: 'Así aparece en el tablero:',
+    displayAsHelp: 'Edifica elige la forma según los datos registrados. Puedes fijar otra si prefieres.',
+    automatic: (form) => form ? `Automático (recomendado): ${form.toLowerCase()}` : 'Automático (recomendado)',
+    formNames: { gauge: 'Medidor circular', progress: 'Barra de avance', trend: 'Línea de evolución', columns: 'Columnas por período', stat: 'Solo el número', timeline: 'Línea de tiempo', status: 'Estado de cumplimiento' },
   },
   en: {
     heading: 'BEHAVIOR',
@@ -54,5 +59,10 @@ export const chartCopy = {
     submitted: 'Included',
     verified: 'Verified',
     summary: (name, value, target) => target ? `${name}. Latest result ${value}, target ${target}.` : `${name}. Latest result ${value}.`,
+    displayAs: 'How this indicator is displayed',
+    boardPreview: 'This is how it appears on the board:',
+    displayAsHelp: 'Edifica picks the form from the recorded data. You can set a different one.',
+    automatic: (form) => form ? `Automatic (recommended): ${form.toLowerCase()}` : 'Automatic (recommended)',
+    formNames: { gauge: 'Radial gauge', progress: 'Progress meter', trend: 'Trend line', columns: 'Columns per period', stat: 'Number only', timeline: 'Timeline', status: 'Completion state' },
   },
 }
