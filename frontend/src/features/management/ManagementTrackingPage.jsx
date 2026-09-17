@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
 import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
+import { formatDate, metricDisplay } from './indicatorCharts/indicatorFormat.js'
 import './management.css'
 import './management-fixes.css'
+
+// The chart subsystem stays out of the main bundle; only the tracking drawer needs it.
+const IndicatorChart = lazy(() => import('./indicatorCharts/IndicatorChart.jsx'))
 
 const metricTypes = {
   es: { count: 'Una cantidad', currency: 'Dinero', percentage: 'Un porcentaje', ratio: 'Una relación / tasa', boolean: 'Cumplimiento simple (Sí / No)', text: 'Una respuesta o descripción' },
@@ -49,8 +53,6 @@ const emptyIndicator = { id: '', name: '', description: '', objective_id: '', pr
 const emptyProgress = { id: '', indicator_id: '', unit_id: '', reporting_period_start: '', reporting_period_end: '', numeric_value: '', text_value: '', responsible_name: '', notes: '', status: 'submitted', created_at: '' }
 
 function readLanguage() { try { return document.documentElement.lang === 'en' || window.localStorage.getItem('edifica-language') === 'en' ? 'en' : 'es' } catch { return 'es' } }
-function formatNumber(value, language) { return new Intl.NumberFormat(language === 'en' ? 'en-US' : 'es-VE', { maximumFractionDigits: 2 }).format(Number(value || 0)) }
-function formatDate(value, language) { if (!value) return '—'; return new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'es-VE', { dateStyle: 'medium' }).format(new Date(`${value}T00:00:00`)) }
 function formatDateTime(value, language) { if (!value) return '—'; return new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'es-VE', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) }
 function latestProgress(rows) {
   return [...rows].sort((a, b) => {
@@ -73,13 +75,6 @@ function aggregateIndicator(indicator, progressRows) {
   else value = rows.reduce((sum, row) => sum + Number(row.numeric_value || 0), 0)
   const target = Number(indicator.target_value || 0)
   return { value, text: '', completion: target > 0 ? Math.round((value / target) * 1000) / 10 : 0 }
-}
-function metricDisplay(value, indicator, language) {
-  if (value === null || value === undefined || Number.isNaN(Number(value))) return '—'
-  if (indicator.metric_type === 'currency') return new Intl.NumberFormat(language === 'en' ? 'en-US' : 'es-VE', { style: 'currency', currency: indicator.currency || 'USD', maximumFractionDigits: 2 }).format(Number(value))
-  if (indicator.metric_type === 'percentage') return `${formatNumber(value, language)}%`
-  if (indicator.metric_type === 'boolean') return Number(value) ? (language === 'en' ? 'Yes' : 'Sí') : 'No'
-  return `${formatNumber(value, language)}${indicator.unit_label ? ` ${indicator.unit_label}` : ''}`
 }
 function rowDisplay(row, indicator, language) {
   if (indicator.metric_type === 'text') return row.text_value || '—'
@@ -326,6 +321,7 @@ export default function ManagementTrackingPage() {
       <aside id="indicator-detail-drawer" className="indicator-detail-drawer" role="dialog" aria-modal="true" aria-labelledby="indicator-detail-title" ref={detailDrawerRef} onKeyDown={handleDetailKeyDown}>
         <header className="indicator-detail-header"><div><span>{t.indicator}</span><h2 id="indicator-detail-title">{detailIndicator.name}</h2><p>{selectedUnit ? `${selectedUnit.code} · ${selectedUnit.name}` : t.unitFilter} · {selectedPeriod?.name || t.periodFilter}</p></div><button type="button" onClick={closeIndicatorDetail}>{language === 'en' ? 'Close' : 'Cerrar'}</button></header>
         <div className="indicator-detail-summary"><div><span>{t.targetLabel}</span><strong>{detailIndicator.target_value == null ? (detailIndicator.target_text || '—') : metricDisplay(detailIndicator.target_value, detailIndicator, language)}</strong></div><div><span>{t.achieved}</span><strong>{aggregateIndicator(detailIndicator, progress).text || metricDisplay(aggregateIndicator(detailIndicator, progress).value, detailIndicator, language)}</strong></div><div><span>{t.results}</span><strong>{detailRows.length}</strong></div></div>
+        <Suspense fallback={null}><IndicatorChart indicator={detailIndicator} rows={progress} language={language} /></Suspense>
         <section className="indicator-history"><div className="indicator-history-heading"><strong>{t.history}</strong><span>{detailRows.length}</span></div>{!detailRows.length ? <p>{t.noHistory}</p> : <div className="indicator-history-list">{detailRows.map((row) => <article key={row.id}><div className="history-main"><span>{formatDate(row.reporting_period_end || row.reporting_period_start, language)}</span><strong>{rowDisplay(row, detailIndicator, language)}</strong><b className={`history-status ${row.status}`}>{row.status === 'draft' ? t.draft : row.status === 'verified' ? t.verified : t.submitted}</b></div><div className="history-accountability"><span><b>{t.person}:</b> {row.responsible_name || '—'}</span><span><b>{t.registered}:</b> {formatDateTime(row.created_at, language)}</span>{row.updated_at && row.updated_at !== row.created_at && <span><b>{t.modified}:</b> {formatDateTime(row.updated_at, language)}</span>}</div>{row.notes && <p><b>{t.observations}:</b> {row.notes}</p>}{canManageSelected && <button type="button" onClick={() => { closeIndicatorDetail(); editProgress(row) }}>{t.editResult}</button>}</article>)}</div>}</section>
       </aside>
     </div>}

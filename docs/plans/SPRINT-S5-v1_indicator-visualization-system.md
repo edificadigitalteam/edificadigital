@@ -2,9 +2,9 @@
 
 **Branch:** `claude/magical-newton-awoytv`
 
-**Status:** 📋 Draft — plan approved by the product owner in conversation
-(library choice: visx; automatic chart selection with an optional stored
-override). Implementation pending.
+**Status:** ✍️ In Progress — step 1 of the delivery order below is
+implemented (the detail-drawer history charts). The remaining steps
+(card meters, the stored override, the PDF path) are pending.
 
 ## Requested outcome
 
@@ -74,7 +74,6 @@ range `react@^18.0.0 || ^19.0.0`, so React 19.2 is supported):
 | `@visx/axis` | bottom/left axes on the detail charts |
 | `@visx/group` | transform grouping |
 | `@visx/curve` | monotone curve for trend lines |
-| `@visx/tooltip` | tooltip positioning primitives |
 | `@visx/responsive` | `ParentSize` for fluid card widths |
 
 Why visx over the alternatives:
@@ -353,3 +352,60 @@ chart compared against the screen.
    drawer, plus the override selector.
 5. `indicatorChartSvg` + PDF/report embedding (T8).
 6. Docs: `DATABASE.md`, `DESIGN.md`, this plan's status, `INDEX.md`.
+
+The product owner asked for the detail-drawer history charts first, since
+they are the most visible change, so steps 3 and 4 of the original outline
+are swapped: the drawer ships before the card meters.
+
+## Implementation notes — step 1 (detail-drawer history charts)
+
+Delivered: `recommendedChart`, `chartSeries`, `chartTheme`,
+`indicatorFormat`, `IndicatorChart` and the `trend`, `columns`, `timeline`,
+`stat`, `status` and `empty` forms, wired into the Tracking detail drawer
+(`ManagementTrackingPage.jsx`) between the summary and the result history.
+Tests T1–T7 are green (27 assertions).
+
+Five deviations from the outline above, all discovered while implementing:
+
+1. **Chart copy lives in `indicatorCharts/chartCopy.js`, not
+   `managementTranslations.js`.** That file is a
+   Spanish→English string-replacement dictionary driven by
+   `GlobalLanguageController`, not a keyed catalog. `ManagementTrackingPage`
+   keeps its own `{ es, en }` `copy` object, and the charts follow that same
+   pattern.
+2. **`formatNumber`, `formatDate` and `metricDisplay` moved out of
+   `ManagementTrackingPage.jsx`** into `indicatorCharts/indicatorFormat.js`,
+   so the page and the charts format identically. Behavior is unchanged; the
+   page imports what it still uses.
+3. **The lazy boundary sits at the page, not only inside
+   `IndicatorChart`.** Importing the entry point eagerly added 3.4 kB gzip to
+   the main chunk, which every public route loads. With the page-level
+   `lazy()` the main chunk is 869.90 kB / 220.61 kB gzip against a 869.55 kB
+   / 220.47 kB baseline — 0.14 kB gzip — and visx lands in its own 22.25 kB
+   gzip chunk that only the drawer fetches.
+4. **`@visx/tooltip` was dropped.** The tooltip is local component state
+   positioned with the chart's own scale; the package added a dependency
+   without carrying any of that work.
+5. **`ParentSize` needs an explicit height.** Its wrapper defaults to
+   `height: 100%; overflow: hidden`, which collapses to zero against an
+   auto-height parent and clips the whole plot — the chart was in the DOM,
+   correctly sized, and painted nothing. Both forms pass
+   `parentSizeStyles={{ width: '100%', height: CHART_HEIGHT }}`. Anything
+   that must render outside that box (the cumulative legend) is rendered
+   outside `ParentSize`.
+
+Browser verification ran against fixture indicators (one per metric type,
+including the single-result, two-result and no-result cases) in Chromium at
+320, 375, 768 and 1280 CSS pixels in both languages: no page errors, no
+horizontal overflow, keyboard focus on a mark opens its tooltip and
+`Escape` dismisses it, marks carry their own accessible name, the chart
+region carries the summary label, and "Ver datos" opens the full data
+table. Three defects were found and fixed this way: the reference-line
+label clipped against the right edge, the cumulative legend was clipped by
+`ParentSize`, and axis labels collided at 320px (ticks are now thinned by
+available width rather than shrunk).
+
+The Supabase round trip in **Verification** above has not run: this
+container has no Docker daemon, so `supabase start` is unavailable. It is
+owed before the `preferred_chart` migration in step 2, which is the first
+step that touches the database.
