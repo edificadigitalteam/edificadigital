@@ -32,6 +32,7 @@ const navigationGroups = [
 const maintainerItems = [
   ['Categorías de miembros', '/app/management/settings/member-categories', 'Abrir el mantenedor de categorías de miembros'],
   ['Roles de relación', '/app/management/settings/relationship-roles', 'Abrir el mantenedor de roles de relación'],
+  ['Nombres de los módulos', '/app/management/settings/module-labels', 'Abrir el mantenedor de nombres de los módulos'],
 ]
 
 function Brand() {

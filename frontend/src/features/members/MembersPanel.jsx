@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
 import { useToast } from '../notifications/ToastProvider.jsx'
 import {
-  DEFAULT_MEMBERS_MODULE_LABEL,
   catalogLabel,
   categoryFitsMemberType,
   celebrationDateLabel,
@@ -73,8 +72,6 @@ export default function MembersPanel({ access }) {
   const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
-  const [labelDraft, setLabelDraft] = useState('')
-  const [labelOpen, setLabelOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -99,7 +96,6 @@ export default function MembersPanel({ access }) {
       setCategories(responses[2].data ?? [])
       setRoles(responses[3].data ?? [])
       setRelationships(responses[4].data ?? [])
-      setLabelDraft(responses[0].data?.members_module_label ?? '')
     }
     setLoading(false)
   }, [organizationId])
@@ -227,19 +223,6 @@ export default function MembersPanel({ access }) {
     await load()
   }
 
-  const saveLabel = async (event) => {
-    event.preventDefault()
-    if (!supabase || !canManage) return
-    const { error: requestError } = await supabase.rpc('admin_set_members_module_label', {
-      target_organization_id: organizationId,
-      new_label: labelDraft,
-    })
-    if (requestError) { notify({ type: 'error', message: friendlyMemberError(requestError) }); return }
-    notify({ type: 'success', message: 'Nombre del módulo actualizado.' })
-    setLabelOpen(false)
-    await load()
-  }
-
   return (
     <div className="operations-page members-page">
       <header className="edifica-dashboard-header">
@@ -255,29 +238,6 @@ export default function MembersPanel({ access }) {
         <p className="operations-empty-note">Tu usuario necesita una organización asignada para usar el directorio de miembros.</p>
       )}
 
-      {canManage && !formOpen && organizationId && (
-        <section className="operations-card members-label-card">
-          {labelOpen ? (
-            <form className="members-label-form" onSubmit={saveLabel}>
-              <label>
-                <span>Nombre de este módulo en tu organización</span>
-                <input value={labelDraft} onChange={(event) => setLabelDraft(event.target.value)} placeholder={DEFAULT_MEMBERS_MODULE_LABEL} maxLength={60} />
-              </label>
-              <p className="members-label-hint">Déjalo vacío para volver al nombre predeterminado.</p>
-              <div className="members-label-actions">
-                <button type="button" onClick={() => { setLabelDraft(organization?.members_module_label ?? ''); setLabelOpen(false) }} title="Cerrar sin guardar el nombre del módulo">Cancelar</button>
-                <button className="edifica-primary-button" type="submit" title="Guardar el nombre de este módulo para toda la organización">Guardar nombre</button>
-              </div>
-            </form>
-          ) : (
-            <div className="members-label-summary">
-              <div><strong>Nombre del módulo: <span data-no-translate>{moduleLabel}</span></strong><span>Cambia cómo se llama este módulo dentro de tu organización.</span></div>
-              <button type="button" onClick={() => setLabelOpen(true)} title="Cambiar el nombre de este módulo en tu organización">Cambiar nombre</button>
-            </div>
-          )}
-        </section>
-      )}
-
       {formOpen && canManage && (
         <div className="module-form-portal">
           <div className="module-form-breadcrumb">
@@ -287,8 +247,8 @@ export default function MembersPanel({ access }) {
           </div>
 
           <form onSubmit={save} key={form.id || 'new-member'}>
-            <section className="operations-card member-form-section">
-              <header className="member-form-section-header">
+            <section className="operations-card module-form-section">
+              <header>
                 <div><span>01</span><h2>Datos del miembro</h2></div>
                 <p>Indica si el miembro es una persona o una organización y elige su categoría.</p>
               </header>
@@ -322,20 +282,22 @@ export default function MembersPanel({ access }) {
                   <input type="date" value={form.membership_since} onChange={(event) => setForm((current) => ({ ...current, membership_since: event.target.value }))} />
                   {membershipElapsed && <small className="member-date-elapsed">{elapsedCaption('membership', form.member_type)}: <span data-no-translate>{membershipElapsed}</span></small>}
                 </label>
-                <label>
-                  <span>Estado</span>
-                  <select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}>
-                    {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                  </select>
-                </label>
+                {form.id ? (
+                  <label>
+                    <span>Estado</span>
+                    <select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}>
+                      {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                    </select>
+                  </label>
+                ) : null}
                 <label className="wide"><span>Observaciones</span><textarea value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} /></label>
                 {fieldError && <p className="operations-feedback error wide">{fieldError}</p>}
               </div>
             </section>
 
             {form.member_type === 'person' && (
-              <section className="operations-card member-form-section">
-                <header className="member-form-section-header">
+              <section className="operations-card module-form-section">
+                <header>
                   <div><span>02</span><h2>Relaciones con organizaciones</h2></div>
                   <p>Una persona puede ejercer varios roles a la vez, cada uno en una organización distinta.</p>
                 </header>

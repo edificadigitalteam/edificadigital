@@ -3,7 +3,10 @@
    Keep anything common to more than one module here instead of duplicating
    it per-module CSS file. */
 
-.module-search-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 18px; }
+/* flex-end, not center: each label is a column of caption + input, so centring
+   aligns the button against the middle of that pair and leaves it sitting above
+   the inputs. Aligning to the end puts it on the same baseline as the fields. */
+.module-search-bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; padding: 18px; }
 .module-search-bar label { display: flex; flex-direction: column; gap: 6px; flex: 1 1 220px; min-width: 180px; }
 .module-search-bar label > span { font-size: .8rem; font-weight: 700; color: var(--ed-muted); }
 .module-search-bar input,
@@ -28,8 +31,30 @@
 .module-form-breadcrumb button,
 .module-form-breadcrumb a { border: 0; padding: 0; background: transparent; color: var(--ed-purple); text-decoration: underline; cursor: pointer; }
 
+/* Numbered section inside a full-page create/edit form. The header is a band
+   of its own, padded to the same gutter as the form body below it — without
+   that padding it reads flush against the card edge while the fields are
+   inset, which is the misalignment this class exists to prevent. Mirrors the
+   Proyectos implementation so both screens read the same. */
+.module-form-section { overflow: hidden; margin-bottom: 18px; }
+.module-form-section > header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; padding: 17px 24px; border-bottom: 1px solid var(--ed-line); background: #fcfbfd; }
+.module-form-section > header > div { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.module-form-section > header > div > span { flex: none; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: var(--ed-purple-soft); color: var(--ed-purple); font-size: .72rem; font-weight: 900; }
+.module-form-section > header h2 { margin: 0; color: var(--ed-purple-dark); font-size: 1.05rem; }
+.module-form-section > header p { margin: 0; min-width: 0; color: var(--ed-muted); font-size: .78rem; }
+/* Content that is not a .operations-form needs the same gutter as one. */
+.module-form-section > :not(header):not(.operations-form) { padding: 20px 24px; }
+
+/* Inline rename form inside a maintainer table cell. */
+.module-label-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.module-label-form input { flex: 1 1 180px; min-width: 150px; min-height: 42px; padding: 9px 12px; border: 1px solid var(--ed-line); border-radius: 10px; background: #fff; color: var(--ed-ink); font: inherit; outline: none; }
+.module-label-form input:focus { border-color: var(--ed-purple); box-shadow: 0 0 0 3px rgba(91, 46, 145, .1); }
+.module-label-hint { margin: 6px 0 0; color: var(--ed-muted); font-size: .78rem; }
+
 @media (max-width: 800px) {
   .module-search-bar { flex-direction: column; align-items: stretch; }
   .module-search-bar > button { align-self: flex-start; }
   .module-list-heading { flex-direction: column; align-items: flex-start; }
+  /* The description stops competing with the title for the same row. */
+  .module-form-section > header { flex-direction: column; align-items: flex-start; gap: 8px; }
 }

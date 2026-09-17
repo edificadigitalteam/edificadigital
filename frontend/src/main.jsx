@@ -19,6 +19,7 @@ import ManagementResourceFormPage from './features/management/ManagementResource
 import ManagementDirectoryPage from './features/management/ManagementDirectoryPage.jsx'
 import ManagementMembersPage from './features/management/ManagementMembersPage.jsx'
 import ManagementMemberCatalogPage from './features/management/ManagementMemberCatalogPage.jsx'
+import ManagementModuleLabelsPage from './features/management/ManagementModuleLabelsPage.jsx'
 import ManagementProjectWorkspacePage from './features/management/ManagementProjectWorkspacePage.jsx'
 import ManagementOperationalFixes from './features/management/ManagementOperationalFixes.jsx'
 import GuidedUXControllerV2 from './features/guidance/GuidedUXControllerV2.jsx'
@@ -43,6 +44,7 @@ const isManagementVolunteers = pathname.startsWith('/app/management/volunteers')
 const isManagementMembers = pathname.startsWith('/app/management/members')
 const isManagementMemberCategories = pathname.startsWith('/app/management/settings/member-categories')
 const isManagementRelationshipRoles = pathname.startsWith('/app/management/settings/relationship-roles')
+const isManagementModuleLabels = pathname.startsWith('/app/management/settings/module-labels')
 const isManagementStructure = pathname === '/app/management/structure' || pathname === '/app/management/structure/'
 const isManagementObjectives = pathname.startsWith('/app/management/objectives')
 const isManagementIndicatorNew = pathname === '/app/management/tracking/new' || pathname === '/app/management/tracking/new/'
@@ -100,6 +102,7 @@ function RootApplication() {
   else if (isManagementMembers) content = <ManagementMembersPage />
   else if (isManagementMemberCategories) content = <ManagementMemberCatalogPage catalog="categories" />
   else if (isManagementRelationshipRoles) content = <ManagementMemberCatalogPage catalog="roles" />
+  else if (isManagementModuleLabels) content = <ManagementModuleLabelsPage />
   else if (isManagementStructure) content = <ManagementStructurePage />
   else if (isManagementObjectives) content = <ManagementObjectivesPage />
   else if (isManagementIndicatorNew) content = <ManagementIndicatorFormPage />

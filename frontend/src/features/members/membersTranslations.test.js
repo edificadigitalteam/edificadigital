@@ -32,11 +32,14 @@ function translate(value) {
 }
 
 const panelSources = [
-  'MembersPanel.jsx',
-  'MemberCatalogPanel.jsx',
-  'memberCatalogs.js',
-  'members.js',
-].map((name) => readFileSync(new URL(`./${name}`, import.meta.url), 'utf8'))
+  './MembersPanel.jsx',
+  './MemberCatalogPanel.jsx',
+  './memberCatalogs.js',
+  './members.js',
+  // Renaming a module is a Mantenedores screen, so its copy is covered here too.
+  '../settings/ModuleLabelsPanel.jsx',
+  '../settings/moduleLabels.js',
+].map((name) => readFileSync(new URL(name, import.meta.url), 'utf8'))
 
 // Literals that read like copy but are arguments: 'NFD' is the Unicode
 // normalization form slugifyCatalogCode asks for.
@@ -81,6 +84,7 @@ test('every Spanish string in the Miembros and Mantenedores panels has an Englis
   assert.ok(strings.has('Relaciones con organizaciones'), 'JSX text was not collected')
   assert.ok(strings.has('Persona'), 'label-map values were not collected')
   assert.ok(strings.has('Escribe el nombre del miembro.'), 'validation copy was not collected')
+  assert.ok(strings.has('Nombres de los módulos'), 'the module-names maintainer copy was not collected')
 
   const missing = [...strings].filter((text) => translate(text) === null)
   assert.deepEqual(missing, [], `these panel strings have no English translation: ${missing.join(' | ')}`)

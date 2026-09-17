@@ -27,12 +27,20 @@
 .operations-feedback.success { background: #fff8e6; color: #674c00; }
 .operations-feedback.error { background: #fff1f0; color: #8f2f2f; }
 .operations-table { width: 100%; border-collapse: collapse; }
+/* top, not middle: a first column that stacks a name over a code is two lines
+   tall while its neighbours are one, and centring each cell independently
+   leaves their first lines on different baselines. */
 .operations-table th,
-.operations-table td { padding: 15px 22px; border-bottom: 1px solid var(--ed-line); text-align: left; vertical-align: middle; }
+.operations-table td { padding: 15px 22px; border-bottom: 1px solid var(--ed-line); text-align: left; vertical-align: top; }
 .operations-table th { color: var(--ed-muted); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; }
 .operations-table td { color: var(--ed-muted); font-size: .9rem; }
-.operations-table td:first-child { display: grid; gap: 3px; }
-.operations-table td:first-child strong { color: var(--ed-ink); }
+/* The stacking is done by the name alone, not by making the cell a grid:
+   `display: grid` on a <td> takes it out of the table formatting context, so
+   the column stops sharing row height with its neighbours and its separators
+   drift out of line with theirs. A block-level name is enough to push whatever
+   follows onto the next line, and it leaves that sibling's own display alone —
+   .donor-type-chip stays an inline-flex pill instead of stretching the cell. */
+.operations-table td:first-child strong { display: block; margin-bottom: 3px; color: var(--ed-ink); }
 .operations-table td:first-child span { font-size: .78rem; }
 .operations-table button { border: 0; padding: 7px 10px; border-radius: 8px; background: var(--ed-purple-soft); color: var(--ed-purple); font-weight: 800; cursor: pointer; }
 .operations-table button:disabled { opacity: .45; cursor: default; }

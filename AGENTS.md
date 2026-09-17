@@ -61,6 +61,13 @@ owner confirmation before implementing:
    "Mi organización" (tenant admin-only), or the shared tenant-content
    section (admin + operator)?
 
+4. **What is its default name, and is it registered as renameable?** A
+   module that enters the app is a module whose name the tenant can
+   change (product owner, 2026-09-17). The module ships a default label
+   and an entry in `frontend/src/features/settings/moduleLabels.js`, so
+   it appears in the "Nombres de los módulos" maintainer like every other
+   module. A module whose name is hard-coded in the nav is incomplete.
+
 Do not add a nav entry or route without these questions answered —
 retrofitting the scope after the fact is exactly the gap this section
 exists to prevent (see the TODO item this plan resolved).
