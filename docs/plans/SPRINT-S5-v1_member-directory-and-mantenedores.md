@@ -386,6 +386,12 @@ blank submission clears the override and restores the default label.
 
 ## Next
 
+**Update 2026-09-17:** the two dates the greeting phase needs are being
+added as columns on `organization_member` rather than through the deferred
+table — see `SPRINT-S6-v1_member-dates-and-tenure.md`, which also records
+the migration path to `organization_member_date` if that table is ever
+needed.
+
 Once this directory ships with real data (at least the `cnbv` backfill,
 ideally a live tenant using it), the natural follow-up is the anniversary
 greeting automation plan: `organization_member_date`, the

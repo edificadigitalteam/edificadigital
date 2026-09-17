@@ -123,3 +123,21 @@ test('interface copy translates while the tenant\'s own catalog values stay unto
   assert.match(catalog, /<td data-no-translate><strong>\{entry\.name_es\}/)
   assert.match(catalog, /<td data-no-translate>\{entry\.name_en\}<\/td>/)
 })
+
+test('the elapsed-time figures resolve through patterns, not one entry per number', () => {
+  // elapsedLabel() builds these, so only the singular forms are literals in
+  // the source; every other count has to come from a pattern.
+  assert.equal(translate('1 año'), '1 year')
+  assert.equal(translate('1 mes'), '1 month')
+  assert.equal(translate('28 años'), '28 years')
+  assert.equal(translate('8 meses'), '8 months')
+  assert.equal(translate('2 años'), '2 years')
+
+  // And the captions and short labels beside them.
+  assert.equal(translate('Edad'), 'Age')
+  assert.equal(translate('Antigüedad'), 'Tenure')
+  assert.equal(translate('Tiempo desde la fundación'), 'Time since founding')
+  assert.equal(translate('Miembro desde'), 'Member since')
+  assert.equal(translate('Fundación'), 'Founded')
+  assert.equal(translate('Cumpleaños'), 'Birthday')
+})

@@ -40,7 +40,83 @@ export function categoryFitsMemberType(category, memberType) {
   return category.applies_to === 'both' || category.applies_to === memberType
 }
 
-export function validateMember(member, categories = []) {
+// ---------------------------------------------------------------------------
+// The two optional member dates (Sprint S6)
+// ---------------------------------------------------------------------------
+
+// Both dates are complete or absent, so a stored value is always a real
+// calendar date. Parsing at midday keeps the value on its own day whatever the
+// viewer's timezone, the same guard the rest of the dashboard uses, and the
+// round-trip check rejects a rolled-over date like 2026-02-30, which the Date
+// constructor would otherwise silently turn into 2 March.
+export function parseMemberDate(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value ?? '').slice(0, 10))
+  if (!match) return null
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const parsed = new Date(year, month - 1, day, 12)
+  if (parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day) return null
+  return parsed
+}
+
+export function isFutureMemberDate(value, today = new Date()) {
+  const parsed = parseMemberDate(value)
+  if (!parsed) return false
+  const reference = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12)
+  return parsed.getTime() > reference.getTime()
+}
+
+// Whole elapsed months, then years, counted the way a person does: the
+// anniversary has to have arrived. A 29 February date reaches one year on
+// 1 March of a common year, not on the 28th.
+export function elapsedSince(value, today = new Date()) {
+  const from = parseMemberDate(value)
+  if (!from) return null
+  const to = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12)
+  if (from.getTime() > to.getTime()) return null
+  let months = (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth())
+  if (to.getDate() < from.getDate()) months -= 1
+  return { years: Math.floor(months / 12), months: months % 12, totalMonths: months }
+}
+
+// Reads as whole years once there is at least one, months below that, and says
+// nothing under a month: counting days would be noise on a founding or
+// affiliation date.
+export function elapsedLabel(value, today = new Date()) {
+  const elapsed = elapsedSince(value, today)
+  if (!elapsed) return ''
+  if (elapsed.years >= 1) return elapsed.years === 1 ? '1 año' : `${elapsed.years} años`
+  if (elapsed.totalMonths >= 1) return elapsed.totalMonths === 1 ? '1 mes' : `${elapsed.totalMonths} meses`
+  return ''
+}
+
+// One column, one meaning; only the label changes with the member type.
+export function celebrationDateLabel(memberType) {
+  return memberType === 'person' ? 'Fecha de cumpleaños' : 'Fecha de fundación'
+}
+
+export function celebrationShortLabel(memberType) {
+  return memberType === 'person' ? 'Cumpleaños' : 'Fundación'
+}
+
+// What the elapsed figure beside each date is called, so each reads naturally
+// instead of sharing one vague word.
+export function elapsedCaption(kind, memberType) {
+  if (kind === 'membership') return 'Antigüedad'
+  return memberType === 'person' ? 'Edad' : 'Tiempo desde la fundación'
+}
+
+// Dates render in Spanish throughout the management module, matching
+// ProjectsPanel; the panels mark them data-no-translate so the runtime
+// translator leaves the month abbreviation alone.
+export function formatMemberDate(value) {
+  const parsed = parseMemberDate(value)
+  if (!parsed) return ''
+  return new Intl.DateTimeFormat('es-VE', { dateStyle: 'medium' }).format(parsed)
+}
+
+export function validateMember(member, categories = [], today = new Date()) {
   if (!String(member?.name || '').trim()) return 'Escribe el nombre del miembro.'
   if (!['person', 'organization'].includes(member?.member_type)) return 'Indica si el miembro es una persona o una organización.'
   const email = String(member?.email || '').trim()
@@ -51,6 +127,22 @@ export function validateMember(member, categories = []) {
     if (!categoryFitsMemberType(category, member.member_type)) {
       return 'Esta categoría aplica a otro tipo de miembro. Elige una categoría compatible.'
     }
+  }
+  if (member?.celebration_date && !parseMemberDate(member.celebration_date)) {
+    return member.member_type === 'person'
+      ? 'Revisa la fecha de cumpleaños: escribe una fecha real o deja el campo vacío.'
+      : 'Revisa la fecha de fundación: escribe una fecha real o deja el campo vacío.'
+  }
+  if (isFutureMemberDate(member?.celebration_date, today)) {
+    return member.member_type === 'person'
+      ? 'La fecha de cumpleaños no puede ser futura. Corrígela o deja el campo vacío.'
+      : 'La fecha de fundación no puede ser futura. Corrígela o deja el campo vacío.'
+  }
+  if (member?.membership_since && !parseMemberDate(member.membership_since)) {
+    return 'Revisa la fecha de "Miembro desde": escribe una fecha real o deja el campo vacío.'
+  }
+  if (isFutureMemberDate(member?.membership_since, today)) {
+    return 'La fecha de "Miembro desde" no puede ser futura. Corrígela o deja el campo vacío.'
   }
   return ''
 }

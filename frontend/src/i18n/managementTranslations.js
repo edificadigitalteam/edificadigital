@@ -352,6 +352,25 @@ export const managementTranslations = {
   'Observaciones': 'Notes',
   'Todos': 'All',
   'Cerrar este formulario sin guardar': 'Close this form without saving',
+
+  // The two member dates (Sprint S6).
+  'Fechas': 'Dates',
+  'Fecha de fundación': 'Founding date',
+  'Fecha de cumpleaños': 'Birthday',
+  'Fundación': 'Founded',
+  'Cumpleaños': 'Birthday',
+  'Miembro desde': 'Member since',
+  'Edad': 'Age',
+  'Tiempo desde la fundación': 'Time since founding',
+  'Antigüedad': 'Tenure',
+  '1 año': '1 year',
+  '1 mes': '1 month',
+  'Revisa la fecha de cumpleaños: escribe una fecha real o deja el campo vacío.': 'Check the birthday: write a real date or leave the field empty.',
+  'Revisa la fecha de fundación: escribe una fecha real o deja el campo vacío.': 'Check the founding date: write a real date or leave the field empty.',
+  'La fecha de cumpleaños no puede ser futura. Corrígela o deja el campo vacío.': 'The birthday cannot be in the future. Correct it or leave the field empty.',
+  'La fecha de fundación no puede ser futura. Corrígela o deja el campo vacío.': 'The founding date cannot be in the future. Correct it or leave the field empty.',
+  'Revisa la fecha de "Miembro desde": escribe una fecha real o deja el campo vacío.': 'Check the "Member since" date: write a real date or leave the field empty.',
+  'La fecha de "Miembro desde" no puede ser futura. Corrígela o deja el campo vacío.': 'The "Member since" date cannot be in the future. Correct it or leave the field empty.',
 }
 
 export const managementTranslationPatterns = [
@@ -366,4 +385,7 @@ export const managementTranslationPatterns = [
   [/^(\d+) unidades dependientes$/, '$1 dependent units'],
   [/^(\d+) unidad$/, '$1 unit'],
   [/^Dentro de (.+)$/, 'Within $1'],
+  // Elapsed time beside a member date, produced by elapsedLabel().
+  [/^(\d+) años$/, '$1 years'],
+  [/^(\d+) meses$/, '$1 months'],
 ]

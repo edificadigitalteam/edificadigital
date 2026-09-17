@@ -43,6 +43,7 @@ All project plans are stored in `/docs/plans/` with a consistent naming conventi
 | S1-LANDING | [SPRINT-S1-v1_landing-page-best-practices.md](SPRINT-S1-v1_landing-page-best-practices.md) | 🧪 In Review | Public landing page: SEO, Open Graph, accessibility, AI/answer-engine visibility (GEO/AEO), font/analytics cleanup — implemented across PRs #30, awaiting human review |
 | S5-CHARTS | [SPRINT-S5-v1_indicator-visualization-system.md](SPRINT-S5-v1_indicator-visualization-system.md) | ✍️ In Progress | Indicator visualization system: visx charts chosen automatically per indicator, with an optional stored override |
 | S5-MEMBERS | [SPRINT-S5-v1_member-directory-and-mantenedores.md](SPRINT-S5-v1_member-directory-and-mantenedores.md) | ✅ Implemented | Member directory "Miembros" (persons and organizations, many-to-many relationships) plus tenant-configurable catalogs ("Mantenedores"); foundation for a later anniversary-greeting automation phase |
+| S6-DATES | [SPRINT-S6-v1_member-dates-and-tenure.md](SPRINT-S6-v1_member-dates-and-tenure.md) | ✅ Implemented | Two optional complete dates on a member — celebration (founding or birthday) and affiliation — with elapsed time shown beside each |
 
 ### Legend
 

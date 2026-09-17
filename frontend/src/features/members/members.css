@@ -217,3 +217,47 @@
     animation: none !important;
   }
 }
+
+/* The two member dates (Sprint S6). Both share one table column, so each line
+   names its own date and the elapsed figure sits beside it. */
+.member-date-cell {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.member-date-line {
+  display: block;
+  font-size: 0.8125rem;
+  color: #55606f;
+  white-space: nowrap;
+}
+
+.member-date-line b {
+  font-weight: 650;
+  color: #1f2733;
+}
+
+.member-date-line i {
+  font-style: normal;
+  color: #55606f;
+}
+
+.member-date-line i::before {
+  content: ' · ';
+}
+
+/* The label is a grid with an 8px gap, so this needs no margin of its own; it
+   also has to shed the label's font-weight to read as helper text. */
+.member-date-elapsed {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #55606f;
+}
+
+/* At the narrow end the cell stops forcing the row wider than the screen. */
+@media (max-width: 560px) {
+  .member-date-line {
+    white-space: normal;
+  }
+}
