@@ -2,8 +2,9 @@
 
 **Branch:** `feat/member-directory-and-mantenedores`
 
-**Status:** In progress — plan confirmed by the product owner on 2026-09-17;
-Red/Green/Refactor under way on `claude/cool-babbage-2np7d0`.
+**Status:** Implemented — migration applied to `edifydb` on 2026-09-17
+(`20260917170637`), 54/54 pgTAP assertions passing, advisors clean of new
+findings. Browser verification of the two new screens is still outstanding.
 
 ## Context
 

@@ -180,8 +180,9 @@ select ok(
   'the existing cnbv tenant was backfilled with the default relationship roles'
 );
 
-insert into public.organization (code, name)
-values ('pgtap-member-seed', 'pgTAP seed organization');
+-- contact_email is required and unique since organization_admin_provisioning.
+insert into public.organization (code, name, contact_email)
+values ('pgtap-member-seed', 'pgTAP seed organization', 'pgtap-member-seed@example.test');
 
 select ok(
   (select count(*) from public.organization_member_category category
@@ -259,7 +260,7 @@ select throws_ok(
   $$
     insert into public.organization_member (organization_id, member_type, member_category_id, name)
     select organization_id, 'person',
-      (select id from public.organization_member_category category
+      (select category.id from public.organization_member_category category
         join public.organization organization on organization.id = category.organization_id
         where organization.code = 'cnbv' and category.applies_to = 'person' limit 1),
       'pgTAP Cross Tenant'
