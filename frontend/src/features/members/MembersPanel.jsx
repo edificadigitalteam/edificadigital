@@ -225,7 +225,7 @@ export default function MembersPanel({ access }) {
                 <span>Nombre de este módulo en tu organización</span>
                 <input value={labelDraft} onChange={(event) => setLabelDraft(event.target.value)} placeholder={DEFAULT_MEMBERS_MODULE_LABEL} maxLength={60} />
               </label>
-              <p className="members-label-hint">Déjalo vacío para volver al nombre predeterminado, {DEFAULT_MEMBERS_MODULE_LABEL}.</p>
+              <p className="members-label-hint">Déjalo vacío para volver al nombre predeterminado.</p>
               <div className="members-label-actions">
                 <button type="button" onClick={() => { setLabelDraft(organization?.members_module_label ?? ''); setLabelOpen(false) }} title="Cerrar sin guardar el nombre del módulo">Cancelar</button>
                 <button className="edifica-primary-button" type="submit" title="Guardar el nombre de este módulo para toda la organización">Guardar nombre</button>
@@ -233,7 +233,7 @@ export default function MembersPanel({ access }) {
             </form>
           ) : (
             <div className="members-label-summary">
-              <div><strong>Nombre del módulo: {moduleLabel}</strong><span>Cambia cómo se llama este módulo dentro de tu organización.</span></div>
+              <div><strong>Nombre del módulo: <span data-no-translate>{moduleLabel}</span></strong><span>Cambia cómo se llama este módulo dentro de tu organización.</span></div>
               <button type="button" onClick={() => setLabelOpen(true)} title="Cambiar el nombre de este módulo en tu organización">Cambiar nombre</button>
             </div>
           )}
@@ -243,7 +243,7 @@ export default function MembersPanel({ access }) {
       {formOpen && canManage && (
         <div className="module-form-portal">
           <div className="module-form-breadcrumb">
-            <button type="button" onClick={cancel} title={`Volver al listado de ${moduleLabel.toLowerCase()}`}>{moduleLabel}</button>
+            <button type="button" onClick={cancel} title="Volver al listado">{moduleLabel}</button>
             <span>/</span>
             <strong>{form.id ? 'Editar' : 'Crear'}</strong>
           </div>
@@ -319,7 +319,7 @@ export default function MembersPanel({ access }) {
                         {formRelationships.map((relationship) => (
                           <li key={relationship.id}>
                             <div>
-                              <strong>{memberById.get(relationship.related_member_id)?.name ?? 'Organización'}</strong>
+                              <strong data-no-translate>{memberById.get(relationship.related_member_id)?.name ?? 'Organización'}</strong>
                               <span>{catalogLabel(roleById.get(relationship.relationship_role_id))}</span>
                             </div>
                             <button type="button" onClick={() => removeRelationship(relationship.id)} title="Eliminar esta relación">Eliminar</button>
@@ -375,7 +375,7 @@ export default function MembersPanel({ access }) {
 
           <section className="operations-card">
             <div className="module-list-heading">
-              <div><p className="edifica-kicker">DIRECTORIO</p><h2>{moduleLabel} registrados</h2></div>
+              <div><p className="edifica-kicker">DIRECTORIO</p><h2>{moduleLabel}</h2></div>
               <div className="module-list-actions">
                 <span>{filtered.length} registros</span>
                 {canManage && <button type="button" onClick={startNew} disabled={!organizationId} title="Crear un nuevo miembro">＋ Nuevo miembro</button>}
@@ -392,14 +392,14 @@ export default function MembersPanel({ access }) {
                   <tbody>
                     {filtered.map((member) => (
                       <tr key={member.id}>
-                        <td><strong>{member.name}</strong><span>{memberTypeLabels[member.member_type] ?? member.member_type}</span></td>
+                        <td><strong data-no-translate>{member.name}</strong><span>{memberTypeLabels[member.member_type] ?? member.member_type}</span></td>
                         <td>{catalogLabel(categoryById.get(member.member_category_id)) || '—'}</td>
-                        <td><span>{member.email || '—'}</span><span>{member.phone || '—'}</span></td>
+                        <td data-no-translate><span>{member.email || '—'}</span><span>{member.phone || '—'}</span></td>
                         <td>{relationshipCount(member.id)}</td>
                         <td><span className={`edifica-access-state ${member.status === 'active' ? 'active' : 'inactive'}`}>{statusLabels[member.status] ?? member.status}</span></td>
                         <td>
                           <div className="member-row-actions">
-                            {canManage && <button type="button" onClick={() => edit(member)} title={`Editar a ${member.name}`}>Editar</button>}
+                            {canManage && <button type="button" onClick={() => edit(member)} title="Editar este miembro">Editar</button>}
                           </div>
                         </td>
                       </tr>

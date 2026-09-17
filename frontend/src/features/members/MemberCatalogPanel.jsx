@@ -16,7 +16,11 @@ const emptyEntry = { id: '', code: '', name_es: '', name_en: '', applies_to: 'bo
 // Both Mantenedores catalogs — member categories and relationship roles — are the
 // same shape: a bilingual name, an order, and an active flag. The category catalog
 // adds the applies_to field, which is the only difference between the two screens.
-export default function MemberCatalogPanel({ access, table, kicker, title, description, itemLabel, createLabel, withAppliesTo = false }) {
+// Every visible phrase arrives fully written instead of being built around an
+// interpolated noun: "Categoría" is feminine and "Rol" masculine, so a shared
+// `${itemLabel} creado` reads wrong for one of them, and a half-sentence is not
+// a translatable unit for the dictionary in src/i18n either.
+export default function MemberCatalogPanel({ access, table, kicker, title, description, copy, withAppliesTo = false }) {
   const { notify } = useToast()
   const organizationId = access.organizationId || ''
   const canManage = access.role === 'admin' || access.role === 'super_admin'
@@ -94,7 +98,7 @@ export default function MemberCatalogPanel({ access, table, kicker, title, descr
       const message = friendlyMemberError(requestError)
       setError(message); notify({ type: 'error', message }); setSaving(false); return
     }
-    const successMessage = form.id ? `${itemLabel} actualizado correctamente.` : `${itemLabel} creado correctamente.`
+    const successMessage = form.id ? copy.updated : copy.created
     notify({ type: 'success', message: successMessage })
     setForm({ ...emptyEntry }); setFormOpen(false); await load(); setSaving(false)
   }
@@ -106,7 +110,7 @@ export default function MemberCatalogPanel({ access, table, kicker, title, descr
       .update({ active: !entry.active, updated_by: access.userId || null })
       .eq('id', entry.id)
     if (requestError) { notify({ type: 'error', message: friendlyMemberError(requestError) }); return }
-    notify({ type: 'success', message: entry.active ? `${itemLabel} desactivado.` : `${itemLabel} activado.` })
+    notify({ type: 'success', message: entry.active ? copy.deactivated : copy.activated })
     await load()
   }
 
@@ -128,7 +132,7 @@ export default function MemberCatalogPanel({ access, table, kicker, title, descr
       {formOpen && canManage && (
         <div className="module-form-portal">
           <div className="module-form-breadcrumb">
-            <button type="button" onClick={cancel} title={`Volver al listado de ${title.toLowerCase()}`}>{title}</button>
+            <button type="button" onClick={cancel} title={copy.backTitle}>{title}</button>
             <span>/</span>
             <strong>{form.id ? 'Editar' : 'Crear'}</strong>
           </div>
@@ -161,7 +165,7 @@ export default function MemberCatalogPanel({ access, table, kicker, title, descr
               {fieldError && <p className="operations-feedback error wide">{fieldError}</p>}
               <div className="compliance-form-actions">
                 <button type="button" onClick={cancel} title="Cerrar este formulario sin guardar">Cancelar</button>
-                <button className="edifica-primary-button" type="submit" disabled={saving} title={form.id ? `Guardar los cambios de este ${itemLabel.toLowerCase()}` : `Crear este ${itemLabel.toLowerCase()}`}>
+                <button className="edifica-primary-button" type="submit" disabled={saving} title={form.id ? copy.saveTitle : copy.createTitle}>
                   {saving ? 'Guardando…' : form.id ? 'Guardar cambios' : 'Crear y guardar'}
                 </button>
               </div>
@@ -192,7 +196,7 @@ export default function MemberCatalogPanel({ access, table, kicker, title, descr
               <div><p className="edifica-kicker">MANTENEDOR</p><h2>{title}</h2></div>
               <div className="module-list-actions">
                 <span>{filtered.length} valores</span>
-                {canManage && <button type="button" onClick={startNew} disabled={!organizationId} title={`Crear un nuevo ${itemLabel.toLowerCase()}`}>＋ {createLabel}</button>}
+                {canManage && <button type="button" onClick={startNew} disabled={!organizationId} title={copy.newTitle}>＋ {copy.newLabel}</button>}
               </div>
             </div>
             {loading ? <p className="edifica-empty">Cargando valores…</p> : filtered.length === 0 ? (
@@ -213,16 +217,16 @@ export default function MemberCatalogPanel({ access, table, kicker, title, descr
                   <tbody>
                     {filtered.map((entry) => (
                       <tr key={entry.id}>
-                        <td><strong>{entry.name_es}</strong><span>{entry.code}</span></td>
-                        <td>{entry.name_en}</td>
+                        <td data-no-translate><strong>{entry.name_es}</strong><span>{entry.code}</span></td>
+                        <td data-no-translate>{entry.name_en}</td>
                         {withAppliesTo && <td>{appliesToLabels[entry.applies_to] ?? entry.applies_to}</td>}
                         <td>{entry.sort_order}</td>
                         <td><span className={`edifica-access-state ${entry.active ? 'active' : 'inactive'}`}>{entry.active ? 'Activo' : 'Inactivo'}</span></td>
                         <td>
                           <div className="member-row-actions">
-                            {canManage && <button type="button" onClick={() => edit(entry)} title={`Editar ${entry.name_es}`}>Editar</button>}
+                            {canManage && <button type="button" onClick={() => edit(entry)} title="Editar este valor">Editar</button>}
                             {canManage && (
-                              <button type="button" onClick={() => toggleActive(entry)} title={entry.active ? `Desactivar ${entry.name_es} sin borrar los registros que lo usan` : `Volver a activar ${entry.name_es}`}>
+                              <button type="button" onClick={() => toggleActive(entry)} title={entry.active ? 'Desactivar este valor sin borrar los registros que lo usan' : 'Volver a activar este valor'}>
                                 {entry.active ? 'Desactivar' : 'Activar'}
                               </button>
                             )}

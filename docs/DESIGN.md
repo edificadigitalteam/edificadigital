@@ -310,6 +310,31 @@ mechanisms without re-running this decision order — a module growing past
 5 fields is a signal to reclassify it, not a reason to stretch the inline
 pattern.
 
+## Bilingual Parity Standard (dashboard panels)
+
+Dashboard panels under `/app` are written in Spanish and reach English through
+the runtime translator in `frontend/src/i18n/GlobalLanguageController.jsx`: it
+walks every text node plus the `placeholder`, `title` and `aria-label`
+attributes and looks each one up in the dictionaries in `frontend/src/i18n/`.
+Parity for a panel therefore means dictionary coverage, not a `t()` call.
+
+What that costs the panel author:
+
+- **Write each visible phrase as one whole string.** The translator matches a
+  text node at a time, so `predeterminado, {LABEL}.` splits into three nodes and
+  no entry can cover it. Keep the sentence literal.
+- **Never build a phrase around an interpolated noun.** `${itemLabel} creado`
+  is ungrammatical for a feminine noun ("Categoría creado") and is not a
+  translatable unit. Give each variant its own fully written phrase — see
+  `frontend/src/features/members/memberCatalogs.js`.
+- **Mark the tenant's own data `data-no-translate`.** Member names, catalog
+  values and contact details are data; without the attribute a member named
+  "Organización" is rewritten to "Organization" on the English view.
+- **Add every new string to the dictionary in the same change**, and cover it
+  with a test. `frontend/src/features/members/membersTranslations.test.js`
+  extracts a panel's copy from its source and asserts each string resolves,
+  which is what keeps parity from drifting as the panel grows.
+
 ## Collapsible Sidebar Section Standard
 
 A nav group whose entries are configuration rather than everyday work

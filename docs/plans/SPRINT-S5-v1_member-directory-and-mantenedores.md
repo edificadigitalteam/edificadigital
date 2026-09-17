@@ -4,7 +4,8 @@
 
 **Status:** Implemented — migration applied to `edifydb` on 2026-09-17
 (`20260917170637`), 54/54 pgTAP assertions passing, advisors clean of new
-findings. Browser verification of the two new screens is still outstanding.
+findings. Bilingual parity for both panels landed as a follow-up (see below).
+Browser verification of the two new screens is still outstanding.
 
 ## Context
 
@@ -396,5 +397,31 @@ version.
 
 ---
 
-**Version:** 1.3
+## Bilingual parity follow-up (2026-09-17)
+
+Shipped after the module merged. The dashboard reaches English through the
+runtime translator in `frontend/src/i18n/GlobalLanguageController.jsx`, so
+parity meant covering both panels in `managementTranslations.js` rather than
+rewriting them around a `t()` helper. Three things had to change in the panels
+first:
+
+- The catalog panel built its messages around an interpolated noun
+  (`${itemLabel} creado correctamente.`), which reads "Categoría creado
+  correctamente." for the feminine noun and is not a translatable unit either.
+  Each catalog now carries its own fully written phrases in
+  `frontend/src/features/members/memberCatalogs.js`.
+- Two phrases were assembled from the tenant-configurable module label
+  (`${moduleLabel} registrados`, `Volver al listado de ${moduleLabel}`). No
+  adjective agrees with every possible label, so both now stand on fixed text.
+- Member names, contact details and catalog values are marked
+  `data-no-translate`, so the walker leaves the tenant's own data alone.
+
+`frontend/src/features/members/membersTranslations.test.js` extracts the copy
+from the panel sources and asserts every string resolves to English, so a new
+phrase added without a dictionary entry fails the suite. The standard is
+recorded under "Bilingual Parity Standard" in `docs/DESIGN.md`.
+
+---
+
+**Version:** 1.4
 **Last updated:** 2026-09-17

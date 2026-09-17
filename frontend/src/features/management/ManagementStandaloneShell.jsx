@@ -30,8 +30,8 @@ const navigationGroups = [
 // Tenant-configurable catalogs. They are collapsed by default so the everyday
 // operational entries above them stay the first thing in view.
 const maintainerItems = [
-  ['Categorías de miembros', '/app/management/settings/member-categories'],
-  ['Roles de relación', '/app/management/settings/relationship-roles'],
+  ['Categorías de miembros', '/app/management/settings/member-categories', 'Abrir el mantenedor de categorías de miembros'],
+  ['Roles de relación', '/app/management/settings/relationship-roles', 'Abrir el mantenedor de roles de relación'],
 ]
 
 function Brand() {
@@ -73,13 +73,13 @@ export default function ManagementStandaloneShell({ access, children }) {
               <i aria-hidden="true" />
             </button>
             <div id="management-nav-maintainers" className="management-nav-collapse-panel" hidden={!maintainersOpen}>
-              {maintainerItems.map(([label, href]) => (
+              {maintainerItems.map(([label, href, itemTitle]) => (
                 <button
                   className={path.startsWith(href) ? 'active' : ''}
                   type="button"
                   onClick={() => window.location.assign(href)}
                   key={href}
-                  title={`Abrir el mantenedor ${label.toLowerCase()}`}
+                  title={itemTitle}
                 >
                   {label}
                 </button>
