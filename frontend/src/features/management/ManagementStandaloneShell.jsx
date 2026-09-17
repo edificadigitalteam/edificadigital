@@ -10,7 +10,7 @@ const navigationGroups = [
   { label: 'Inicio', items: [['Resumen', '/app/management', '/app/management']] },
   { label: 'Planificación', items: [
     ['Estructura', '/app/management/structure', '/app/management/structure'],
-    ['Objetivos', '/app/management/objectives', '/app/management/objectives'],
+    ['Plan anual', '/app/management/objectives', '/app/management/objectives'],
     ['Proyectos', '/app/management/projects', '/app/management/projects'],
   ] },
   { label: 'Recursos y operación', items: [
