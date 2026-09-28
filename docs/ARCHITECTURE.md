@@ -11,7 +11,7 @@ Edifica Digital combines a public bilingual landing page with an authenticated o
 | `/donations/monetary/new` | Register cash, transfers, foreign currency, and other monetary receipts | Bilingual continuous workflow with local draft and private evidence |
 | Receive, Transform, Impact | Record the complete operational cycle | Database foundation deployed; interface integration proceeds by module |
 | Reports and dashboard | Summarize resources, operations, and impact | Reporting model defined; application views proceed by module |
-| `/app/management/calendar` | Build each unit's preliminary annual calendar and let DIGEN supervise the institutional consolidated view | Tenant-scoped module backed by Annual Work Plan activities and RLS-enforced unit privacy |
+| `/app/management/calendar` | Build each unit's preliminary annual calendar and let DIGEN supervise the institutional consolidated view | Tenant-scoped module backed by Annual Work Plan activities, optional objective links, bulk activity entry, and RLS-enforced unit privacy |
 
 The product name shown on the primary page and production domain is `somosedificadigital`.
 
