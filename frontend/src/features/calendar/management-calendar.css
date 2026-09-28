@@ -76,11 +76,10 @@
   .calendar-bulk-shared .management-form-grid{grid-template-columns:1fr;padding:12px 14px 16px}
   .calendar-bulk-shared>p{padding:15px 14px 0}
   .calendar-bulk-rows{gap:10px;padding:14px}
-  .calendar-bulk-row{grid-template-columns:42px minmax(0,1fr);gap:10px;padding:12px}
-  .calendar-bulk-row-number{grid-row:1/5;align-content:start;gap:10px}
-  .calendar-bulk-name,.calendar-bulk-row label,.calendar-bulk-notes{grid-column:2}
-  .calendar-bulk-notes{grid-column:2}
-  .calendar-bulk-row-number>button{min-width:42px;min-height:42px;padding:4px;font-size:.6rem;writing-mode:vertical-rl;transform:rotate(180deg)}
+  .calendar-bulk-row{grid-template-columns:1fr;gap:10px;padding:12px}
+  .calendar-bulk-row-number{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .calendar-bulk-row-number>button{min-height:44px;padding:0 12px}
+  .calendar-bulk-name,.calendar-bulk-row label,.calendar-bulk-notes{grid-column:1}
   .calendar-add-row{width:100%;justify-self:stretch}
   .calendar-bulk-form .management-form-actions{display:grid;grid-template-columns:1fr}
   .calendar-bulk-form .management-form-actions button{width:100%;min-height:46px}
@@ -88,7 +87,6 @@
 
 @media(max-width:420px){
   .calendar-bulk-rows{padding:11px}
-  .calendar-bulk-row{grid-template-columns:36px minmax(0,1fr);padding:10px}
+  .calendar-bulk-row{padding:10px}
   .calendar-bulk-row-number>span{width:30px;height:30px}
-  .calendar-bulk-row-number>button{min-width:36px}
 }
