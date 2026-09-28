@@ -6,6 +6,8 @@ import {
   resolveCalendarModuleLabel,
   visibleCalendarActivities,
   canEditCalendarActivity,
+  canOpenCalendarActivityEntry,
+  buildCalendarActivityPayloads,
 } from './calendar.js'
 
 const activities = [
@@ -52,4 +54,38 @@ test('calendar is registered as a tenant-renamable module', () => {
   assert.equal(module?.column, 'calendar_module_label')
   assert.equal(module?.rpc, 'admin_set_calendar_module_label')
   assert.equal(module?.defaultLabel, 'Calendario')
+})
+
+
+test('calendar entry can open even when a unit has zero objectives', () => {
+  assert.equal(canOpenCalendarActivityEntry({ canCreate: true, saving: false }), true)
+  assert.equal(canOpenCalendarActivityEntry({ canCreate: false, saving: false }), false)
+  assert.equal(canOpenCalendarActivityEntry({ canCreate: true, saving: true }), false)
+})
+
+test('bulk calendar payloads share defaults and allow an optional objective', () => {
+  const payloads = buildCalendarActivityPayloads({
+    organizationId: 'org-1',
+    workPlanId: 'plan-1',
+    userId: 'user-1',
+    defaults: {
+      objective_id: '',
+      indicator_id: '',
+      responsible_name: 'Equipo DIPROM',
+      modality: 'hybrid',
+      status: 'planned',
+    },
+    rows: [
+      { title: 'Actividad A', start_date: '2026-10-10', end_date: '', description: '' },
+      { title: 'Actividad B', start_date: '2026-11-05', end_date: '2026-11-06', description: 'Detalle' },
+      { title: '   ', start_date: '', end_date: '', description: '' },
+    ],
+  })
+
+  assert.equal(payloads.length, 2)
+  assert.equal(payloads[0].objective_id, null)
+  assert.equal(payloads[0].indicator_id, null)
+  assert.equal(payloads[0].responsible_name, 'Equipo DIPROM')
+  assert.equal(payloads[0].modality, 'hybrid')
+  assert.equal(payloads[1].description, 'Detalle')
 })
