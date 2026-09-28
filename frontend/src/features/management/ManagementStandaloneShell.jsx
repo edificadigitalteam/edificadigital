@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { supabase } from '../../lib/supabase.js'
 import ManagementRuntimeEnhancements from './ManagementRuntimeEnhancements.jsx'
 import './management.css'
 import './management-fixes.css'
@@ -7,11 +8,12 @@ import './management-runtime-enhancements.css'
 import './management-grouped-nav.css'
 import './management-report-editor-modern.css'
 
-const navigationGroups = [
+const buildNavigationGroups = (calendarLabel) => [
   { label: 'Inicio', items: [['Resumen', '/app/management', '/app/management']] },
   { label: 'Planificación', items: [
     ['Estructura', '/app/management/structure', '/app/management/structure'],
     ['Plan anual', '/app/management/objectives', '/app/management/objectives'],
+    [calendarLabel, '/app/management/calendar', '/app/management/calendar'],
     ['Proyectos', '/app/management/projects', '/app/management/projects'],
   ] },
   { label: 'Recursos y operación', items: [
@@ -44,6 +46,18 @@ export default function ManagementStandaloneShell({ access, children }) {
   const canAdmin = access.role === 'admin' || access.role === 'super_admin'
   const onMaintainerPage = path.startsWith('/app/management/settings')
   const [maintainersOpen, setMaintainersOpen] = useState(onMaintainerPage)
+  const [calendarLabel, setCalendarLabel] = useState('Calendario')
+
+  useEffect(() => {
+    if (!supabase || !access.organizationId) return undefined
+    let active = true
+    supabase.from('organization').select('calendar_module_label').eq('id', access.organizationId).maybeSingle().then(({ data }) => {
+      if (active) setCalendarLabel(String(data?.calendar_module_label || '').trim() || 'Calendario')
+    })
+    return () => { active = false }
+  }, [access.organizationId])
+
+  const navigationGroups = buildNavigationGroups(calendarLabel)
 
   return (
     <div className="management-shell management-unified-shell">
