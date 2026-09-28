@@ -64,9 +64,12 @@ as $$
   );
 $$;
 
-revoke all on function private.is_digen_member(uuid) from public,anon,authenticated;
-revoke all on function private.can_view_all_unit_calendar(uuid) from public,anon,authenticated;
-revoke all on function private.can_manage_calendar_unit(uuid) from public,anon,authenticated;
+revoke all on function private.is_digen_member(uuid) from public,anon;
+revoke all on function private.can_view_all_unit_calendar(uuid) from public,anon;
+revoke all on function private.can_manage_calendar_unit(uuid) from public,anon;
+grant execute on function private.is_digen_member(uuid) to authenticated;
+grant execute on function private.can_view_all_unit_calendar(uuid) to authenticated;
+grant execute on function private.can_manage_calendar_unit(uuid) to authenticated;
 
 drop policy if exists unit_work_activity_select on public.unit_work_activity;
 create policy unit_work_activity_select
