@@ -12,6 +12,13 @@
 // generalizing this into one table once there is more than one.
 export const renameableModules = [
   {
+    key: 'calendar',
+    column: 'calendar_module_label',
+    rpc: 'admin_set_calendar_module_label',
+    defaultLabel: 'Calendario',
+    description: 'Calendario anual de actividades por Dirección y agencia.',
+  },
+  {
     key: 'members',
     column: 'members_module_label',
     rpc: 'admin_set_members_module_label',
