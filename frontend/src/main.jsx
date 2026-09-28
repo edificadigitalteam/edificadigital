@@ -21,7 +21,7 @@ import ManagementMembersPage from './features/management/ManagementMembersPage.j
 import ManagementMemberCatalogPage from './features/management/ManagementMemberCatalogPage.jsx'
 import ManagementModuleLabelsPage from './features/management/ManagementModuleLabelsPage.jsx'
 import ManagementProjectWorkspacePage from './features/management/ManagementProjectWorkspacePage.jsx'
-import ManagementOperationalFixes from './features/management/ManagementOperationalFixes.jsx'\nimport CalendarPrototypePage from './features/prototypes/CalendarPrototypePage.jsx'
+import ManagementOperationalFixes from './features/management/ManagementOperationalFixes.jsx'
 import GuidedUXControllerV2 from './features/guidance/GuidedUXControllerV2.jsx'
 import ActivateAccountPage from './features/auth/ActivateAccountPage.jsx'
 import AuthLandingRecovery from './features/auth/AuthLandingRecovery.jsx'
@@ -53,7 +53,7 @@ const isManagementFinanceRequests = pathname.startsWith('/app/management/finance
 const isManagementFinance = pathname.startsWith('/app/management/finance')
 const isManagementReportNew = pathname === '/app/management/reports/new' || pathname === '/app/management/reports/new/'
 const isManagementReports = pathname.startsWith('/app/management/reports')
-const isCalendarPrototype = pathname === '/prototype/calendario' || pathname === '/prototype/calendario/'\nconst isActivationPage = pathname === '/activar'
+const isActivationPage = pathname === '/activar'
 
 function legacyTarget() {
   const search = window.location.search || ''
@@ -89,7 +89,7 @@ function PublicLoginGuard() {
 
 function RootApplication() {
   const redirect = legacyTarget()
-  if (isCalendarPrototype) return <CalendarPrototypePage />\n  if (isActivationPage) return <><GlobalLanguageController /><ActivateAccountPage /></>
+  if (isActivationPage) return <><GlobalLanguageController /><ActivateAccountPage /></>
   if (redirect) return <LegacyRedirect target={redirect} />
 
   let content
