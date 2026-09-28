@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { renameableModules } from '../settings/moduleLabels.js'
 import {
   DEFAULT_CALENDAR_MODULE_LABEL,
   resolveCalendarModuleLabel,
@@ -44,4 +45,11 @@ test('DIGEN can edit its own activities but not another unit activity', () => {
   const access = { ownUnitIds: ['digen'], isDigen: true }
   assert.equal(canEditCalendarActivity({ unit_id: 'digen' }, access), true)
   assert.equal(canEditCalendarActivity({ unit_id: 'diprom' }, access), false)
+})
+
+test('calendar is registered as a tenant-renamable module', () => {
+  const module = renameableModules.find((item) => item.key === 'calendar')
+  assert.equal(module?.column, 'calendar_module_label')
+  assert.equal(module?.rpc, 'admin_set_calendar_module_label')
+  assert.equal(module?.defaultLabel, 'Calendario')
 })
