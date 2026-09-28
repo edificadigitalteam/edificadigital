@@ -1,7 +1,7 @@
 begin;
 set local search_path = public, extensions, pg_catalog;
 
-select plan(18);
+select plan(20);
 
 select has_column('public','organization','calendar_module_label','organization stores the calendar module label override');
 select has_column('public','management_period','calendar_joint_review_enabled','management periods can authorize a joint calendar review');
@@ -21,6 +21,15 @@ select has_function('public','calendar_access_overview',array['uuid','uuid'],'th
 select has_function('public','review_calendar_activity',array['uuid','text','text'],'DIGEN reviews an activity through a dedicated RPC');
 select has_function('public','set_calendar_joint_review',array['uuid','boolean'],'DIGEN controls the temporary joint review window');
 select has_function('public','admin_set_calendar_module_label',array['uuid','text'],'tenant admins can rename the calendar module');
+
+select has_index(
+  'public','management_period','management_period_calendar_joint_review_enabled_by_idx',
+  'joint review reviewer foreign key is indexed'
+);
+select has_index(
+  'public','unit_work_activity','unit_work_activity_reviewed_by_idx',
+  'calendar activity reviewer foreign key is indexed'
+);
 
 select ok(
   exists (
