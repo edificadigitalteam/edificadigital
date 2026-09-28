@@ -250,7 +250,7 @@ Inventory lots and movements stay outside this announcement RPC. They require ph
 
 ### Institutional preliminary calendar
 
-The Calendar module reuses the Annual Work Plan domain instead of introducing a second scheduling table. A calendar row is a `unit_work_activity` linked to exactly one `unit_work_plan` and one objective, with an optional indicator.
+The Calendar module reuses the Annual Work Plan domain instead of introducing a second scheduling table. A calendar row is a `unit_work_activity` linked to exactly one `unit_work_plan`; the objective and indicator links are optional so units can schedule operational activities before their Annual Work Plan objectives are fully defined. When an objective is deleted, the calendar activity is preserved and its objective link is cleared.
 
 Calendar access is deliberately narrower than general tenant access:
 
@@ -259,4 +259,5 @@ Calendar access is deliberately narrower than general tenant access:
 - DIGEN may enable `management_period.calendar_joint_review_enabled` for one management period. While enabled, active unit members may read the consolidated calendar for that period; write policies remain unit-scoped.
 - A substantive edit by the owning unit clears a prior DIGEN review and returns the activity to `pending`.
 - The browser never relies on hiding another unit's rows. `unit_work_activity` RLS enforces the same boundary for direct API access.
+- Calendar creation supports bulk entry: shared responsible/modality/status/objective context is applied to multiple activity rows in one insert request.
 - The production “Vaciar calendario” action deletes rows only from the selected work plan, so a unit cannot clear another unit's calendar.
