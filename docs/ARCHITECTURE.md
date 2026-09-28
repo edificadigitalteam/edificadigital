@@ -11,6 +11,7 @@ Edifica Digital combines a public bilingual landing page with an authenticated o
 | `/donations/monetary/new` | Register cash, transfers, foreign currency, and other monetary receipts | Bilingual continuous workflow with local draft and private evidence |
 | Receive, Transform, Impact | Record the complete operational cycle | Database foundation deployed; interface integration proceeds by module |
 | Reports and dashboard | Summarize resources, operations, and impact | Reporting model defined; application views proceed by module |
+| `/app/management/calendar` | Build each unit's preliminary annual calendar and let DIGEN supervise the institutional consolidated view | Tenant-scoped module backed by Annual Work Plan activities and RLS-enforced unit privacy |
 
 The product name shown on the primary page and production domain is `somosedificadigital`.
 
@@ -100,6 +101,12 @@ The budget module requires a dedicated schema and migration. Operational donatio
 - Product and marketing copy uses direct statements. It avoids antitheses, comparisons, personification of non-human subjects, and decorative patterns associated with generic AI-generated pages. The word “no” is replaced with a direct construction when meaning remains precise.
 - The established type, color, spacing, and component language remains the visual source of truth.
 
+## Calendar planning and institutional visibility
+
+The preliminary Calendar is a tenant-only planning surface. It reuses `unit_work_activity`: objectives and optional indicators remain part of the Annual Work Plan, while the calendar provides the month/list operational view.
+
+Ordinary unit members receive a database-enforced view of their own unit calendar. DIGEN receives a consolidated read view plus dedicated review actions, while direct edits stay scoped to DIGEN's own work plan. DIGEN can temporarily enable a period-level consolidated read view for active unit members; the write boundary remains unchanged during that shared review. The module is tenant-renamable and appears under Planificación.
+
 ## Security and data access
 
 - Supabase Auth supplies authenticated sessions. Magic-link sign-in is the current planned entry method.
@@ -150,5 +157,5 @@ See `docs/adr/ADR-001-manual-production-promotion.md` for the production-domain 
 
 ---
 
-**Version:** 2.2
-**Last updated:** 2026-07-26
+**Version:** 2.3
+**Last updated:** 2026-09-28
