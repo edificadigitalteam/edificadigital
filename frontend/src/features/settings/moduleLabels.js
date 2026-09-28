@@ -18,6 +18,13 @@ export const renameableModules = [
     defaultLabel: 'Miembros',
     description: 'Directorio de organizaciones y personas afiliadas a tu organización.',
   },
+  {
+    key: 'calendar',
+    column: 'calendar_module_label',
+    rpc: 'admin_set_calendar_module_label',
+    defaultLabel: 'Calendario',
+    description: 'Calendario preliminar anual de las Direcciones y agencias.',
+  },
 ]
 
 export function resolveModuleLabel(module, organization) {
