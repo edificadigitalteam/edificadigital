@@ -171,3 +171,239 @@ button.unit-disclosure { cursor: pointer; }
   .consolidated-unit, .consolidated-objective, .consolidated-indicators article { break-inside: avoid; }
   @page { size: letter portrait; margin: 10mm; }
 }
+
+
+/* Mobile management navigation drawer */
+.management-mobile-menu-button {
+  display: none;
+  min-width: 44px;
+  min-height: 44px;
+}
+.management-mobile-backdrop { display: none; }
+.management-mobile-drawer { display: none; }
+
+@media (max-width: 920px) {
+  .management-mobile-header {
+    position: sticky;
+    top: 8px;
+    z-index: 40;
+    justify-content: flex-start;
+    gap: 12px;
+    min-height: 64px;
+    padding: 10px 12px;
+    box-shadow: 0 10px 28px rgba(32, 13, 46, .16);
+  }
+  .management-mobile-header .management-brand {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .management-mobile-header-label {
+    flex: 0 0 auto;
+    color: #cdbfda;
+    font-size: .68rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .management-mobile-menu-button {
+    display: flex;
+    flex: 0 0 44px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border: 1px solid rgba(255,255,255,.22) !important;
+    border-radius: 10px;
+    background: rgba(255,255,255,.06) !important;
+    color: #fff;
+    cursor: pointer;
+  }
+  .management-mobile-menu-button span {
+    display: block;
+    width: 19px;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
+  }
+  .management-mobile-menu-button:focus-visible,
+  .management-mobile-close-button:focus-visible,
+  .management-mobile-drawer .management-nav-group button:focus-visible,
+  .management-mobile-drawer .management-nav-action:focus-visible,
+  .management-mobile-modules-link:focus-visible {
+    outline: 2px solid var(--mg-yellow);
+    outline-offset: 2px;
+  }
+  .management-mobile-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 98;
+    display: block;
+    border: 0;
+    padding: 0;
+    background: rgba(20, 9, 29, .58);
+    cursor: pointer;
+  }
+  .management-mobile-drawer {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 99;
+    display: flex;
+    width: min(340px, 90vw);
+    max-width: 100%;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: #241235;
+    color: #fff;
+    box-shadow: 22px 0 48px rgba(15, 6, 22, .34);
+  }
+  .management-mobile-drawer-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    min-height: 68px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+    background: #241235;
+  }
+  .management-mobile-close-button {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    place-items: center;
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 10px;
+    background: rgba(255,255,255,.06);
+    color: #fff;
+    font: inherit;
+    font-size: 1.65rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .management-mobile-context {
+    display: grid;
+    gap: 4px;
+    margin: 14px 14px 4px;
+    padding: 14px;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 12px;
+    background: rgba(255,255,255,.055);
+  }
+  .management-mobile-context > span {
+    color: var(--mg-yellow);
+    font-size: .58rem;
+    font-weight: 950;
+    letter-spacing: .12em;
+  }
+  .management-mobile-context strong {
+    overflow-wrap: anywhere;
+    color: #fff;
+    font-size: .88rem;
+  }
+  .management-mobile-context small {
+    overflow-wrap: anywhere;
+    color: #bcaec8;
+    font-size: .7rem;
+  }
+  .management-mobile-modules-link {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    margin: 6px 14px 2px;
+    padding: 0 12px;
+    border-radius: 9px;
+    color: #dfd3e8;
+    text-decoration: none;
+    font-size: .79rem;
+    font-weight: 750;
+  }
+  .management-mobile-modules-link:active { background: rgba(255,255,255,.08); }
+  .management-mobile-drawer .management-grouped-nav {
+    padding: 10px 14px 18px !important;
+  }
+  .management-mobile-drawer .management-nav-group button,
+  .management-mobile-drawer .management-nav-group a.management-nav-action {
+    display: flex;
+    width: 100%;
+    min-height: 46px;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 8px 13px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: #d8cee1;
+    text-align: left;
+    text-decoration: none;
+    font: inherit;
+    font-size: .88rem;
+    font-weight: 680;
+    line-height: 1.25;
+    cursor: pointer;
+  }
+  .management-mobile-drawer .management-nav-group button.active,
+  .management-mobile-drawer .management-nav-group a.management-nav-action.active {
+    background: #fff;
+    color: var(--mg-purple-dark);
+    box-shadow: inset 4px 0 0 var(--mg-orange);
+    font-weight: 850;
+  }
+  .management-mobile-drawer .management-nav-group button.management-nav-collapse {
+    justify-content: space-between;
+    color: #c3b5ce;
+    font-weight: 800;
+  }
+  .management-mobile-drawer .management-nav-group button.management-nav-collapse.open { color: #fff; }
+  .management-mobile-drawer .management-nav-collapse-panel {
+    display: grid;
+    gap: 3px;
+    margin-left: 13px;
+    padding-left: 11px;
+    border-left: 1px solid rgba(255,255,255,.1);
+  }
+  .management-mobile-drawer .management-nav-collapse-panel[hidden] { display: none; }
+  .management-mobile-drawer .management-nav-collapse > i {
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg);
+  }
+  .management-mobile-drawer .management-nav-collapse.open > i { transform: rotate(45deg); }
+  .management-mobile-drawer-footer {
+    margin-top: auto;
+    padding: 16px 14px 22px;
+    border-top: 1px solid rgba(255,255,255,.1);
+  }
+  .management-mobile-drawer-footer button {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 9px;
+    background: transparent;
+    color: #fff;
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+  }
+}
+
+@media (max-width: 420px) {
+  .management-main { padding-inline: 12px; }
+  .management-mobile-header { margin-inline: -2px; padding-inline: 10px; }
+  .management-mobile-header-label { display: none; }
+  .management-mobile-drawer { width: min(330px, 94vw); }
+}
+
+@media print {
+  .management-mobile-backdrop,
+  .management-mobile-drawer { display: none !important; }
+}
