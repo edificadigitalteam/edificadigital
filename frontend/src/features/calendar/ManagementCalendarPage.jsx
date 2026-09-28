@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase.js'
 import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from '../management/ManagementStandaloneShell.jsx'
-import { DEFAULT_CALENDAR_MODULE_LABEL, resolveCalendarModuleLabel, reviewStatusLabel } from './calendar.js'
+import { DEFAULT_CALENDAR_MODULE_LABEL, buildCalendarActivityPayloads, canOpenCalendarActivityEntry, resolveCalendarModuleLabel, reviewStatusLabel } from './calendar.js'
 import './management-calendar.css'
 
 const MONTHS = {
@@ -22,7 +22,11 @@ const copy = {
   es: {
     eyebrow:'PLANIFICACIÓN INSTITUCIONAL', title:'Calendario anual', intro:'Cada Dirección o agencia administra sus actividades del año seleccionado.',
     preliminary:'PRELIMINAR', preliminaryText:'Calendario preliminar sujeto a validación institucional.', year:'Año', unit:'Dirección / agencia',
-    myCalendar:'Mi calendario', consolidated:'Consolidado institucional', calendar:'Calendario anual', list:'Listado', newActivity:'＋ Nueva actividad',
+    myCalendar:'Mi calendario', consolidated:'Consolidado institucional', calendar:'Calendario anual', list:'Listado', newActivity:'＋ Cargar actividades',
+    bulkTitle:'Cargar actividades', bulkIntro:'Completa una vez los datos compartidos y agrega todas las actividades que necesites.', noObjective:'Sin objetivo vinculado',
+    sharedData:'DATOS COMPARTIDOS', activitiesToLoad:'ACTIVIDADES A CARGAR', addRow:'＋ Agregar otra actividad', removeRow:'Quitar',
+    saveBatch:'Guardar actividades', incompleteRows:'Completa el nombre y la fecha de inicio de cada actividad agregada.',
+    invalidDates:'Revisa las fechas: la fecha de cierre debe ser igual o posterior a la fecha de inicio.', activityName:'Nombre de la actividad', notes:'Notas',
     clear:'Vaciar calendario', clearConfirm:'¿Vaciar todas las actividades de esta unidad para el año seleccionado? Esta acción eliminará únicamente el calendario propio visible.',
     clearDone:'Calendario de la unidad vaciado.', jointOn:'Habilitar vista conjunta', jointOff:'Cerrar vista conjunta',
     jointEnabled:'Vista consolidada habilitada por DIGEN.', privateView:'Tu calendario está visible para tu unidad y para DIGEN.',
@@ -38,7 +42,11 @@ const copy = {
   en: {
     eyebrow:'INSTITUTIONAL PLANNING', title:'Annual calendar', intro:'Each unit or agency manages its activities for the selected year.',
     preliminary:'PRELIMINARY', preliminaryText:'Preliminary calendar subject to institutional validation.', year:'Year', unit:'Unit / agency',
-    myCalendar:'My calendar', consolidated:'Institutional consolidated', calendar:'Annual calendar', list:'List', newActivity:'＋ New activity',
+    myCalendar:'My calendar', consolidated:'Institutional consolidated', calendar:'Annual calendar', list:'List', newActivity:'＋ Load activities',
+    bulkTitle:'Load activities', bulkIntro:'Complete the shared details once and add every activity you need.', noObjective:'No linked objective',
+    sharedData:'SHARED DETAILS', activitiesToLoad:'ACTIVITIES TO LOAD', addRow:'＋ Add another activity', removeRow:'Remove',
+    saveBatch:'Save activities', incompleteRows:'Complete the name and start date for every activity you added.',
+    invalidDates:'Check the dates: the end date must be the same as or later than the start date.', activityName:'Activity name', notes:'Notes',
     clear:'Clear calendar', clearConfirm:'Clear all activities for this unit and selected year? This only deletes the current unit calendar.',
     clearDone:'Unit calendar cleared.', jointOn:'Enable shared view', jointOff:'Close shared view', jointEnabled:'Consolidated view enabled by DIGEN.',
     privateView:'Your calendar is visible to your unit and DIGEN.', digenView:'DIGEN can access the institutional consolidated calendar.',
@@ -53,6 +61,8 @@ const copy = {
 }
 
 const emptyActivity = () => ({ id:'', title:'', description:'', objective_id:'', indicator_id:'', start_date:'', end_date:'', status:'planned', responsible_name:'', modality:'in_person' })
+const emptyBulkDefaults = () => ({ objective_id:'', indicator_id:'', responsible_name:'', modality:'in_person', status:'planned' })
+const emptyBulkRow = () => ({ title:'', start_date:'', end_date:'', description:'' })
 
 function readLanguage(){
   try { return document.documentElement.lang === 'en' || window.localStorage.getItem('edifica-language') === 'en' ? 'en' : 'es' }
@@ -82,6 +92,9 @@ export default function ManagementCalendarPage(){
   const [presentation,setPresentation] = useState('calendar')
   const [form,setForm] = useState(emptyActivity)
   const [formOpen,setFormOpen] = useState(false)
+  const [bulkOpen,setBulkOpen] = useState(false)
+  const [bulkDefaults,setBulkDefaults] = useState(emptyBulkDefaults)
+  const [bulkRows,setBulkRows] = useState(()=>[emptyBulkRow()])
   const [loading,setLoading] = useState(true)
   const [saving,setSaving] = useState(false)
   const [error,setError] = useState('')
@@ -164,31 +177,64 @@ export default function ManagementCalendarPage(){
   }
 
   const openNew = () => {
-    if (!canCreate) return
-    setForm({ ...emptyActivity(), start_date:activePeriod?.start_date || '' })
-    setFormOpen(true); setError(''); setMessage(''); window.scrollTo({top:0,behavior:'smooth'})
+    if (!canOpenCalendarActivityEntry({ canCreate, saving })) return
+    setBulkDefaults(emptyBulkDefaults())
+    setBulkRows([emptyBulkRow()])
+    setBulkOpen(true); setFormOpen(false); setError(''); setMessage(''); window.scrollTo({top:0,behavior:'smooth'})
   }
   const openEdit = (activity) => {
     if (!ownUnitIds.has(activity.unit_id)) return
     setSelectedUnitId(activity.unit_id)
-    setForm({ ...emptyActivity(), ...activity, end_date:activity.end_date || '', indicator_id:activity.indicator_id || '', description:activity.description || '', responsible_name:activity.responsible_name || '' })
-    setFormOpen(true); setError(''); setMessage(''); window.scrollTo({top:0,behavior:'smooth'})
+    setForm({ ...emptyActivity(), ...activity, objective_id:activity.objective_id || '', end_date:activity.end_date || '', indicator_id:activity.indicator_id || '', description:activity.description || '', responsible_name:activity.responsible_name || '' })
+    setFormOpen(true); setBulkOpen(false); setError(''); setMessage(''); window.scrollTo({top:0,behavior:'smooth'})
+  }
+  const updateBulkRow = (index, field, value) => {
+    setBulkRows((rows)=>rows.map((row,rowIndex)=>rowIndex===index ? { ...row, [field]:value } : row))
+  }
+  const addBulkRow = () => setBulkRows((rows)=>[...rows,emptyBulkRow()])
+  const removeBulkRow = (index) => setBulkRows((rows)=>rows.length===1 ? rows : rows.filter((_,rowIndex)=>rowIndex!==index))
+
+  const saveBulkActivities = async (event) => {
+    event.preventDefault()
+    if (!supabase || saving || !canCreate || !ownSelectedPlan) return
+    const filledRows = bulkRows.filter((row)=>row.title.trim() || row.start_date || row.end_date || row.description.trim())
+    if (!filledRows.length || filledRows.some((row)=>!row.title.trim() || !row.start_date)) {
+      setError(t.incompleteRows)
+      return
+    }
+    if (filledRows.some((row)=>row.end_date && row.end_date < row.start_date)) {
+      setError(t.invalidDates)
+      return
+    }
+    const payloads = buildCalendarActivityPayloads({
+      organizationId,
+      workPlanId:ownSelectedPlan.id,
+      userId:access.userId,
+      defaults:bulkDefaults,
+      rows:filledRows,
+    })
+    setSaving(true); setError(''); setMessage('')
+    const { error:requestError } = await supabase.from('unit_work_activity').insert(payloads)
+    if (requestError) setError(requestError.message)
+    else {
+      setBulkOpen(false); setBulkDefaults(emptyBulkDefaults()); setBulkRows([emptyBulkRow()])
+      setMessage(language==='en' ? `${payloads.length} activities saved.` : `${payloads.length} actividades guardadas.`)
+      await reloadActivities()
+    }
+    setSaving(false)
   }
 
   const saveActivity = async (event) => {
     event.preventDefault()
-    if (!supabase || saving || !canCreate || !ownSelectedPlan || !form.objective_id || !form.title.trim() || !form.start_date) return
+    if (!supabase || saving || !canCreate || !ownSelectedPlan || !form.title.trim() || !form.start_date) return
     setSaving(true); setError(''); setMessage('')
+    const objectiveId = form.objective_id || null
     const payload = {
-      organization_id:organizationId, work_plan_id:ownSelectedPlan.id, objective_id:form.objective_id, indicator_id:form.indicator_id || null,
+      organization_id:organizationId, work_plan_id:ownSelectedPlan.id, objective_id:objectiveId, indicator_id:objectiveId ? (form.indicator_id || null) : null,
       title:form.title.trim(), description:form.description.trim() || null, start_date:form.start_date, end_date:form.end_date || null,
       status:form.status, responsible_name:form.responsible_name.trim() || null, modality:form.modality, updated_by:access.userId || null,
-      ...(form.id ? {} : { created_by:access.userId || null }),
     }
-    const request = form.id
-      ? supabase.from('unit_work_activity').update(payload).eq('id',form.id).eq('work_plan_id',ownSelectedPlan.id)
-      : supabase.from('unit_work_activity').insert(payload)
-    const { error:requestError } = await request
+    const { error:requestError } = await supabase.from('unit_work_activity').update(payload).eq('id',form.id).eq('work_plan_id',ownSelectedPlan.id)
     if (requestError) setError(requestError.message)
     else { setFormOpen(false); setForm(emptyActivity()); setMessage(t.saved); await reloadActivities() }
     setSaving(false)
@@ -231,7 +277,7 @@ export default function ManagementCalendarPage(){
         <div className="management-heading-actions calendar-heading-actions">
           {canCreate && <button className="secondary calendar-clear-button" type="button" onClick={clearCalendar} disabled={saving || !enrichedActivities.some((activity)=>activity.unit_id===selectedUnitId)}>{t.clear}</button>}
           {calendarAccess.is_digen && <button className="secondary" type="button" onClick={toggleJointReview} disabled={saving}>{calendarAccess.joint_review_enabled?t.jointOff:t.jointOn}</button>}
-          {canCreate && <button type="button" onClick={openNew} disabled={saving || !planObjectives.length}>{t.newActivity}</button>}
+          {canCreate && <button type="button" onClick={openNew} disabled={!canOpenCalendarActivityEntry({ canCreate, saving })}>{t.newActivity}</button>}
         </div>
       </div>
 
@@ -240,27 +286,53 @@ export default function ManagementCalendarPage(){
       {message && <p className="management-flash success">{message}</p>}
 
       <section className="calendar-context-row">
-        <label><span>{t.year}</span><select value={periodId} onChange={(event)=>{setPeriodId(event.target.value);setScope('mine');setFormOpen(false)}}>{periods.map((period)=><option key={period.id} value={period.id}>{period.name}</option>)}</select></label>
-        <label><span>{t.unit}</span><select value={selectedUnitId} onChange={(event)=>{setSelectedUnitId(event.target.value);setScope('mine');setFormOpen(false)}} disabled={ownUnits.length<=1}>{ownUnits.map((unit)=><option key={unit.id} value={unit.id}>{unit.code} · {unit.name}</option>)}</select></label>
+        <label><span>{t.year}</span><select value={periodId} onChange={(event)=>{setPeriodId(event.target.value);setScope('mine');setFormOpen(false);setBulkOpen(false)}}>{periods.map((period)=><option key={period.id} value={period.id}>{period.name}</option>)}</select></label>
+        <label><span>{t.unit}</span><select value={selectedUnitId} onChange={(event)=>{setSelectedUnitId(event.target.value);setScope('mine');setFormOpen(false);setBulkOpen(false)}} disabled={ownUnits.length<=1}>{ownUnits.map((unit)=><option key={unit.id} value={unit.id}>{unit.code} · {unit.name}</option>)}</select></label>
         <div className="calendar-access-summary"><strong>{calendarAccess.is_digen?t.digenView:calendarAccess.joint_review_enabled?t.jointEnabled:t.privateView}</strong><small>{currentUnit ? currentUnit.code + ' · ' + currentUnit.name : ''}</small></div>
       </section>
 
       {!ownUnits.length && <p className="management-flash error">{t.noUnitAccess}</p>}
 
+      {bulkOpen && <form className="management-form-card calendar-bulk-form" onSubmit={saveBulkActivities}>
+        <div className="management-form-title calendar-bulk-title"><div><small>{currentUnit?.code || t.preliminary} · {activePeriod?.name || ''}</small><h2>{t.bulkTitle}</h2><p>{t.bulkIntro}</p></div><button type="button" onClick={()=>setBulkOpen(false)}>{t.cancel}</button></div>
+        <div className="calendar-bulk-shared">
+          <p>{t.sharedData}</p>
+          <div className="management-form-grid">
+            <label><span>{t.objective}</span><select value={bulkDefaults.objective_id} onChange={(event)=>setBulkDefaults((current)=>({...current,objective_id:event.target.value,indicator_id:''}))}><option value="">{t.noObjective}</option>{planObjectives.map((objective)=><option key={objective.id} value={objective.id}>{objective.code} · {objective.title}</option>)}</select></label>
+            <label><span>{t.indicator}</span><select value={bulkDefaults.indicator_id} disabled={!bulkDefaults.objective_id} onChange={(event)=>setBulkDefaults((current)=>({...current,indicator_id:event.target.value}))}><option value="">—</option>{planIndicators.filter((indicator)=>indicator.objective_id===bulkDefaults.objective_id).map((indicator)=><option key={indicator.id} value={indicator.id}>{indicator.name}</option>)}</select></label>
+            <label><span>{t.responsible}</span><input value={bulkDefaults.responsible_name} onChange={(event)=>setBulkDefaults((current)=>({...current,responsible_name:event.target.value}))} /></label>
+            <label><span>{t.modality}</span><select value={bulkDefaults.modality} onChange={(event)=>setBulkDefaults((current)=>({...current,modality:event.target.value}))}>{Object.entries(MODALITY[language]).map(([value,label])=><option value={value} key={value}>{label}</option>)}</select></label>
+            <label><span>{t.status}</span><select value={bulkDefaults.status} onChange={(event)=>setBulkDefaults((current)=>({...current,status:event.target.value}))}>{Object.entries(STATUS[language]).map(([value,label])=><option value={value} key={value}>{label}</option>)}</select></label>
+          </div>
+        </div>
+        <div className="calendar-bulk-rows">
+          <div className="calendar-bulk-rows-heading"><p>{t.activitiesToLoad}</p><strong>{bulkRows.length}</strong></div>
+          {bulkRows.map((row,index)=><article className="calendar-bulk-row" key={index}>
+            <div className="calendar-bulk-row-number"><span>{index+1}</span>{bulkRows.length>1&&<button type="button" onClick={()=>removeBulkRow(index)}>{t.removeRow}</button>}</div>
+            <label className="calendar-bulk-name"><span>{t.activityName} *</span><input value={row.title} onChange={(event)=>updateBulkRow(index,'title',event.target.value)} placeholder={language==='en'?'Example: Regional meeting':'Ej.: Reunión regional'} /></label>
+            <label><span>{t.dateFrom} *</span><input type="date" value={row.start_date} min={activePeriod?.start_date} max={activePeriod?.end_date} onChange={(event)=>updateBulkRow(index,'start_date',event.target.value)} /></label>
+            <label><span>{t.dateTo}</span><input type="date" value={row.end_date} min={row.start_date||activePeriod?.start_date} max={activePeriod?.end_date} onChange={(event)=>updateBulkRow(index,'end_date',event.target.value)} /></label>
+            <label className="calendar-bulk-notes"><span>{t.notes}</span><input value={row.description} onChange={(event)=>updateBulkRow(index,'description',event.target.value)} /></label>
+          </article>)}
+          <button className="calendar-add-row" type="button" onClick={addBulkRow}>{t.addRow}</button>
+        </div>
+        <div className="management-form-actions"><button type="button" onClick={()=>setBulkOpen(false)}>{t.cancel}</button><button className="primary" disabled={saving}>{saving?t.saving:`${t.saveBatch} (${bulkRows.filter((row)=>row.title.trim()).length || 1})`}</button></div>
+      </form>}
+
       {formOpen && <form className="management-form-card calendar-activity-form" onSubmit={saveActivity}>
         <div className="management-form-title"><div><small>{t.preliminary}</small><h2>{form.id?t.edit:t.newActivity.replace('＋ ','')}</h2></div><button type="button" onClick={()=>setFormOpen(false)}>{t.cancel}</button></div>
-        {!planObjectives.length ? <div className="calendar-objective-required"><p>{t.noObjectives}</p><a href={'/app/management/objectives?period=' + encodeURIComponent(periodId) + '&unit=' + encodeURIComponent(selectedUnitId)}>{t.openPlan}</a></div> : <div className="management-form-grid">
+        <div className="management-form-grid">
           <label className="wide"><span>{t.activity} *</span><input value={form.title} onChange={(event)=>setForm((current)=>({...current,title:event.target.value}))} required /></label>
-          <label><span>{t.objective} *</span><select value={form.objective_id} onChange={(event)=>setForm((current)=>({...current,objective_id:event.target.value,indicator_id:''}))} required><option value="">—</option>{planObjectives.map((objective)=><option key={objective.id} value={objective.id}>{objective.code} · {objective.title}</option>)}</select></label>
-          <label><span>{t.indicator}</span><select value={form.indicator_id} onChange={(event)=>setForm((current)=>({...current,indicator_id:event.target.value}))}><option value="">—</option>{planIndicators.filter((indicator)=>!form.objective_id||indicator.objective_id===form.objective_id).map((indicator)=><option key={indicator.id} value={indicator.id}>{indicator.name}</option>)}</select></label>
+          <label><span>{t.objective}</span><select value={form.objective_id} onChange={(event)=>setForm((current)=>({...current,objective_id:event.target.value,indicator_id:''}))}><option value="">{t.noObjective}</option>{planObjectives.map((objective)=><option key={objective.id} value={objective.id}>{objective.code} · {objective.title}</option>)}</select></label>
+          <label><span>{t.indicator}</span><select value={form.indicator_id} disabled={!form.objective_id} onChange={(event)=>setForm((current)=>({...current,indicator_id:event.target.value}))}><option value="">—</option>{planIndicators.filter((indicator)=>indicator.objective_id===form.objective_id).map((indicator)=><option key={indicator.id} value={indicator.id}>{indicator.name}</option>)}</select></label>
           <label><span>{t.dateFrom} *</span><input type="date" value={form.start_date} min={activePeriod?.start_date} max={activePeriod?.end_date} onChange={(event)=>setForm((current)=>({...current,start_date:event.target.value}))} required /></label>
           <label><span>{t.dateTo}</span><input type="date" value={form.end_date} min={form.start_date||activePeriod?.start_date} max={activePeriod?.end_date} onChange={(event)=>setForm((current)=>({...current,end_date:event.target.value}))} /></label>
           <label><span>{t.responsible}</span><input value={form.responsible_name} onChange={(event)=>setForm((current)=>({...current,responsible_name:event.target.value}))} /></label>
           <label><span>{t.modality}</span><select value={form.modality} onChange={(event)=>setForm((current)=>({...current,modality:event.target.value}))}>{Object.entries(MODALITY[language]).map(([value,label])=><option value={value} key={value}>{label}</option>)}</select></label>
           <label><span>{t.status}</span><select value={form.status} onChange={(event)=>setForm((current)=>({...current,status:event.target.value}))}>{Object.entries(STATUS[language]).map(([value,label])=><option value={value} key={value}>{label}</option>)}</select></label>
           <label className="wide"><span>{t.details}</span><textarea value={form.description} onChange={(event)=>setForm((current)=>({...current,description:event.target.value}))} /></label>
-        </div>}
-        {planObjectives.length>0 && <div className="management-form-actions"><button type="button" onClick={()=>setFormOpen(false)}>{t.cancel}</button><button className="primary" disabled={saving}>{saving?t.saving:t.save}</button></div>}
+        </div>
+        <div className="management-form-actions"><button type="button" onClick={()=>setFormOpen(false)}>{t.cancel}</button><button className="primary" disabled={saving}>{saving?t.saving:t.save}</button></div>
       </form>}
 
       {loading ? <div className="management-loading"><span/><p>{t.loading}</p></div> : <>

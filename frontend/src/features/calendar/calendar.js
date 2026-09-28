@@ -23,3 +23,40 @@ export function reviewStatusLabel(status, language = 'es') {
     : { pending: 'Pendiente', validated: 'Validada', observed: 'Observada' }
   return labels[status] || labels.pending
 }
+
+
+export function canOpenCalendarActivityEntry({ canCreate, saving } = {}) {
+  return Boolean(canCreate && !saving)
+}
+
+export function buildCalendarActivityPayloads({
+  organizationId,
+  workPlanId,
+  userId,
+  defaults = {},
+  rows = [],
+} = {}) {
+  const objectiveId = String(defaults.objective_id ?? '').trim() || null
+  const indicatorId = objectiveId ? (String(defaults.indicator_id ?? '').trim() || null) : null
+  const responsibleName = String(defaults.responsible_name ?? '').trim() || null
+  const modality = defaults.modality || 'in_person'
+  const status = defaults.status || 'planned'
+
+  return (Array.isArray(rows) ? rows : [])
+    .filter((row) => String(row?.title ?? '').trim())
+    .map((row) => ({
+      organization_id: organizationId,
+      work_plan_id: workPlanId,
+      objective_id: objectiveId,
+      indicator_id: indicatorId,
+      title: String(row.title).trim(),
+      description: String(row.description ?? '').trim() || null,
+      start_date: row.start_date,
+      end_date: row.end_date || null,
+      status,
+      responsible_name: responsibleName,
+      modality,
+      updated_by: userId || null,
+      created_by: userId || null,
+    }))
+}
