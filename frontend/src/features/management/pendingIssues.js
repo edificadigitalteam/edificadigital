@@ -41,10 +41,13 @@ export function pendingIssueUrgencyMeta(urgency, language = 'es') {
 
 export function sortPendingIssues(rows = []) {
   return [...rows].sort((a, b) => {
-    const statusDiff = (statusRank[a?.status] ?? 9) - (statusRank[b?.status] ?? 9)
-    if (statusDiff !== 0) return statusDiff
+    const aCompleted = a?.status === 'completed' ? 1 : 0
+    const bCompleted = b?.status === 'completed' ? 1 : 0
+    if (aCompleted !== bCompleted) return aCompleted - bCompleted
     const urgencyDiff = (urgencyRank[a?.urgency] ?? 9) - (urgencyRank[b?.urgency] ?? 9)
     if (urgencyDiff !== 0) return urgencyDiff
+    const statusDiff = (statusRank[a?.status] ?? 9) - (statusRank[b?.status] ?? 9)
+    if (statusDiff !== 0) return statusDiff
     const aDate = a?.due_date || '9999-12-31'
     const bDate = b?.due_date || '9999-12-31'
     if (aDate !== bDate) return aDate.localeCompare(bDate)
@@ -57,7 +60,7 @@ export function pendingIssueSummary(rows = []) {
     if (row?.status === 'pending') summary.pending += 1
     if (row?.status === 'in_progress') summary.inProgress += 1
     if (row?.status === 'completed') summary.completed += 1
-    if (row?.urgency === 'high' || row?.urgency === 'critical') summary.urgent += 1
+    if (row?.status !== 'completed' && (row?.urgency === 'high' || row?.urgency === 'critical')) summary.urgent += 1
     return summary
   }, { pending: 0, inProgress: 0, completed: 0, urgent: 0 })
 }
