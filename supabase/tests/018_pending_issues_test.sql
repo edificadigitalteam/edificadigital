@@ -1,7 +1,7 @@
 begin;
 set local search_path = public, extensions, pg_catalog;
 
-select plan(13);
+select plan(14);
 
 select has_table('public','unit_pending_issue','pending issues are stored per unit');
 select has_column('public','unit_pending_issue','organization_id','pending issue has organization');
@@ -40,6 +40,18 @@ select ok(
 select ok(
   not has_function_privilege('anon','public.pending_issue_access_overview(uuid)','EXECUTE'),
   'pending issue access RPC is unavailable to anon'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='public'
+      and p.proname='pending_issue_access_overview'
+      and p.prosecdef=false
+  ),
+  'pending issue access RPC runs as security invoker'
 );
 
 select ok(
