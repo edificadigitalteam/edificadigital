@@ -25,6 +25,7 @@ const navigationGroups = (calendarLabel = 'Calendario') => [
   ] },
   { label: 'Control y rendición', items: [
     ['Seguimiento', '/app/management/tracking', '/app/management/tracking'],
+    ['Asuntos pendientes', '/app/management/pending-issues', '/app/management/pending-issues'],
     ['Informes', '/app/management/reports', '/app/management/reports'],
   ] },
 ]
