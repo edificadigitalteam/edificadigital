@@ -67,3 +67,8 @@ Lightweight backlog for future work that does not yet have a plan in `docs/plans
     - Packaging/pricing: are modules sold independently, bundled, or as an add-on tier on top of the donation module?
     - Multi-tenancy: does one Supabase project serve multiple churches, and if so, what row-level tenant isolation is required beyond the current single-organization assumption?
   - **Next step.** Do not implement until a product owner confirms scope and priority; when ready, this becomes its own plan in `docs/plans/` (schema, RLS, bilingual UI, and migration impact) following the standard plan → tests → implementation → verification → documentation order.
+
+
+## Reported by product owner (2026-10-01)
+
+- [x] Agregar **Asuntos pendientes** por Dirección/agencia con seguimiento rojo (pendiente), amarillo (en proceso) y verde (realizado), descripción, grado de urgencia y fecha límite opcional. Cada Dirección gestiona únicamente sus propios asuntos; DIGEN dispone de consolidado institucional por período y filtro por Dirección. Implementado en `docs/plans/SPRINT-S8-v1_pending-issues-tracking.md`.
