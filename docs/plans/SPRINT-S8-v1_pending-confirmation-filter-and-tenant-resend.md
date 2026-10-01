@@ -40,4 +40,4 @@ Migración `20261001120000_tenant_admin_resend_activation.sql` (sin cambios de t
 
 ## Status
 
-Implementado en rama; la migración queda pendiente de aplicar en `edifydb` tras la revisión humana.
+Implementado. Migración aplicada en `edifydb` (`rrqyihsjftlloizsccvi`) el 2026-10-01 como versión `20261001160000` (`tenant_admin_resend_activation`), por autorización explícita del product owner. Verificación en vivo: las funciones previas coincidían con las reemplazadas; grants `authenticated` sí / `anon` no; escenario transaccional revertido: `can_resend_invitation = true` para un admin en su organización y `42501` para otra organización y para operadores; sin datos residuales. Advisors de seguridad y rendimiento sin hallazgos nuevos atribuibles a esta migración.
