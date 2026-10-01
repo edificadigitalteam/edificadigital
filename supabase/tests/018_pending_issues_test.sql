@@ -1,7 +1,7 @@
 begin;
 set local search_path = public, extensions, pg_catalog;
 
-select plan(14);
+select plan(16);
 
 select has_table('public','unit_pending_issue','pending issues are stored per unit');
 select has_column('public','unit_pending_issue','organization_id','pending issue has organization');
@@ -52,6 +52,16 @@ select ok(
       and p.prosecdef=false
   ),
   'pending issue access RPC runs as security invoker'
+);
+
+select has_index(
+  'public','unit_pending_issue','unit_pending_issue_management_period_id_idx',
+  'management period foreign key is indexed'
+);
+
+select has_index(
+  'public','unit_pending_issue','unit_pending_issue_unit_id_idx',
+  'unit foreign key is indexed'
 );
 
 select ok(
