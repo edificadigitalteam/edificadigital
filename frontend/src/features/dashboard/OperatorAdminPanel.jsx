@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../lib/supabase.js'
+import { useToast } from '../notifications/ToastProvider.jsx'
+import { accessStatusOptions, filterOperators, isPendingConfirmation } from './operatorAdmin.js'
 import './operations.css'
 import './operator-admin.css'
 
@@ -18,6 +20,13 @@ const roleLabels = {
   super_admin: 'Superadministrador',
 }
 
+function friendlyResendError(requestError) {
+  if (requestError?.code === '42501') return 'Tu rol no permite reenviar la invitación a esta persona.'
+  if (requestError?.code === '22023') return 'Esta persona ya confirmó su correo.'
+  if (requestError?.code === 'P0002') return 'No encontramos este acceso. Actualiza la página e inténtalo de nuevo.'
+  return 'No fue posible reenviar la invitación. Revisa tu conexión e inténtalo de nuevo.'
+}
+
 function formatDate(value) {
   if (!value) return '—'
   return new Intl.DateTimeFormat('es-VE', { dateStyle: 'medium' }).format(new Date(value))
@@ -31,6 +40,8 @@ export default function OperatorAdminPanel({ access }) {
   const [formOpen, setFormOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [organizationFilter, setOrganizationFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const { notify } = useToast()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -38,14 +49,11 @@ export default function OperatorAdminPanel({ access }) {
 
   const isSuperAdmin = access.role === 'super_admin'
   const activeCount = useMemo(() => operators.filter((operator) => operator.active).length, [operators])
-  const filteredOperators = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    return operators
-      .filter((operator) => organizationFilter === 'all' || operator.organization_id === organizationFilter)
-      .filter((operator) => !query || [operator.display_name, operator.email, operator.organization_name]
-        .filter(Boolean)
-        .some((value) => value.toLowerCase().includes(query)))
-  }, [operators, search, organizationFilter])
+  const pendingCount = useMemo(() => operators.filter(isPendingConfirmation).length, [operators])
+  const filteredOperators = useMemo(
+    () => filterOperators(operators, { search, organizationId: organizationFilter, status: statusFilter }),
+    [operators, search, organizationFilter, statusFilter],
+  )
 
   const loadOperators = useCallback(async () => {
     if (!supabase) return
@@ -174,9 +182,14 @@ export default function OperatorAdminPanel({ access }) {
     const { error: requestError } = await supabase.rpc('resend_operator_activation', {
       target_operator_id: operator.id,
     })
-    if (requestError) setError(requestError.message)
-    else {
-      setMessage(`Invitación reenviada a ${operator.email}.`)
+    if (requestError) {
+      const friendlyMessage = friendlyResendError(requestError)
+      setError(friendlyMessage)
+      notify({ type: 'error', message: friendlyMessage })
+    } else {
+      const successMessage = `Enlace de activación reenviado a ${operator.email}. Vence en 7 días.`
+      setMessage(successMessage)
+      notify({ type: 'success', message: successMessage })
       await loadOperators()
     }
     setSaving(false)
@@ -202,7 +215,8 @@ export default function OperatorAdminPanel({ access }) {
       <section className="module-search-bar operations-card">
         <label><span>Buscar</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nombre, correo u organización" /></label>
         {isSuperAdmin && <label><span>Organización</span><select value={organizationFilter} onChange={(event) => setOrganizationFilter(event.target.value)}><option value="all">Todas las organizaciones</option>{organizations.map((organization) => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
-        <button type="button" onClick={() => { setSearch(''); setOrganizationFilter('all') }} title="Limpiar la búsqueda y el filtro de organización">Limpiar</button>
+        <label><span>Estado</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>{accessStatusOptions.map((option) => <option key={option.value} value={option.value}>{option.value === 'pending' ? `${option.label} (${pendingCount})` : option.label}</option>)}</select></label>
+        <button type="button" onClick={() => { setSearch(''); setOrganizationFilter('all'); setStatusFilter('all') }} title="Limpiar la búsqueda y los filtros de organización y estado">Limpiar</button>
       </section>
 
       {message && <p className="edifica-admin-feedback success">{message}</p>}
@@ -224,9 +238,9 @@ export default function OperatorAdminPanel({ access }) {
 
       <section className="edifica-admin-list-card">
         <div className="module-list-heading"><div><p className="edifica-kicker">DIRECTORIO</p><h2>Usuarios del sistema</h2></div><div className="module-list-actions"><span>{filteredOperators.length} personas</span><button type="button" onClick={startNew} title="Habilitar el acceso de una nueva persona">＋ Habilitar persona</button></div></div>
-        {loading ? <p className="edifica-empty">Cargando personas habilitadas…</p> : filteredOperators.length === 0 ? <p className="edifica-empty">Todavía no existen personas habilitadas.</p> : (
+        {loading ? <p className="edifica-empty">Cargando personas habilitadas…</p> : filteredOperators.length === 0 ? <p className="edifica-empty">{operators.length === 0 ? 'Todavía no existen personas habilitadas.' : statusFilter === 'pending' ? 'Todas las personas de esta búsqueda ya confirmaron su correo.' : 'Ninguna persona coincide con la búsqueda y los filtros.'}</p> : (
           <div className="edifica-table-wrap"><table className="edifica-admin-table"><thead><tr><th>Persona</th><th>Organización</th><th>Rol</th><th>Estado</th><th>Actualizado</th><th>Acciones</th></tr></thead><tbody>{filteredOperators.map((operator) => (
-            <tr key={operator.id}><td><strong>{operator.display_name}</strong><span>{operator.email}</span></td><td>{operator.organization_name ?? 'HOST'}</td><td>{roleLabels[operator.role] ?? operator.role}</td><td><span className={`edifica-access-state ${operator.active ? 'active' : 'inactive'}`}>{operator.active ? 'Activo' : 'Suspendido'}</span>{!operator.email_confirmed_at && <span className="edifica-access-state pending">Confirmación pendiente</span>}</td><td>{formatDate(operator.updated_at)}</td><td><div className="edifica-admin-row-actions"><button type="button" onClick={() => editOperator(operator)} disabled={!operator.can_edit || saving} title={`Editar a ${operator.display_name}`}>Editar</button><button type="button" onClick={() => toggleOperator(operator)} disabled={!operator.can_edit || saving} title={operator.active ? `Suspender el acceso de ${operator.display_name}` : `Reactivar el acceso de ${operator.display_name}`}>{operator.active ? 'Suspender' : 'Reactivar'}</button>{operator.can_resend_invitation && <button type="button" onClick={() => resendInvitation(operator)} disabled={saving} title={`Reenviar el correo de invitación a ${operator.email}`}>Reenviar invitación</button>}</div></td></tr>
+            <tr key={operator.id}><td><strong>{operator.display_name}</strong><span>{operator.email}</span></td><td>{operator.organization_name ?? 'HOST'}</td><td>{roleLabels[operator.role] ?? operator.role}</td><td><span className={`edifica-access-state ${operator.active ? 'active' : 'inactive'}`}>{operator.active ? 'Activo' : 'Suspendido'}</span>{!operator.email_confirmed_at && <span className="edifica-access-state pending">Confirmación pendiente</span>}</td><td>{formatDate(operator.updated_at)}</td><td><div className="edifica-admin-row-actions"><button type="button" onClick={() => editOperator(operator)} disabled={!operator.can_edit || saving} title={`Editar a ${operator.display_name}`}>Editar</button><button type="button" onClick={() => toggleOperator(operator)} disabled={!operator.can_edit || saving} title={operator.active ? `Suspender el acceso de ${operator.display_name}` : `Reactivar el acceso de ${operator.display_name}`}>{operator.active ? 'Suspender' : 'Reactivar'}</button>{operator.can_resend_invitation && <button type="button" onClick={() => resendInvitation(operator)} disabled={saving} title={`Reenviar el enlace de activación a ${operator.email}`}>Reenviar enlace</button>}</div></td></tr>
           ))}</tbody></table></div>
         )}
       </section>

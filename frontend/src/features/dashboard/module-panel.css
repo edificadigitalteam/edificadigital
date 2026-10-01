@@ -53,6 +53,7 @@
 
 @media (max-width: 800px) {
   .module-search-bar { flex-direction: column; align-items: stretch; }
+  .module-search-bar label { flex: 0 0 auto; min-width: 0; }
   .module-search-bar > button { align-self: flex-start; }
   .module-list-heading { flex-direction: column; align-items: flex-start; }
   /* The description stops competing with the title for the same row. */
