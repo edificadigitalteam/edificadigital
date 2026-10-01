@@ -9,6 +9,7 @@ import ManagementStructurePage from './features/management/ManagementStructurePa
 import ManagementObjectivesPage from './features/management/ManagementObjectivesPage.jsx'
 import ManagementCalendarPage from './features/calendar/ManagementCalendarPage.jsx'
 import ManagementTrackingPage from './features/management/ManagementTrackingPage.jsx'
+import ManagementPendingIssuesPage from './features/management/ManagementPendingIssuesPage.jsx'
 import ManagementIndicatorFormPage from './features/management/ManagementIndicatorFormPage.jsx'
 import ManagementReportsV2Page from './features/management/ManagementReportsV2Page.jsx'
 import ManagementReportCreatePage from './features/management/ManagementReportCreatePage.jsx'
@@ -51,6 +52,7 @@ const isManagementObjectives = pathname.startsWith('/app/management/objectives')
 const isManagementCalendar = pathname.startsWith('/app/management/calendar')
 const isManagementIndicatorNew = pathname === '/app/management/tracking/new' || pathname === '/app/management/tracking/new/'
 const isManagementTracking = pathname.startsWith('/app/management/tracking')
+const isManagementPendingIssues = pathname.startsWith('/app/management/pending-issues')
 const isManagementFinanceRequests = pathname.startsWith('/app/management/finance/requests')
 const isManagementFinance = pathname.startsWith('/app/management/finance')
 const isManagementReportNew = pathname === '/app/management/reports/new' || pathname === '/app/management/reports/new/'
@@ -109,6 +111,7 @@ function RootApplication() {
   else if (isManagementCalendar) content = <ManagementCalendarPage />
   else if (isManagementObjectives) content = <ManagementObjectivesPage />
   else if (isManagementIndicatorNew) content = <ManagementIndicatorFormPage />
+  else if (isManagementPendingIssues) content = <ManagementPendingIssuesPage />
   else if (isManagementTracking) content = <ManagementTrackingPage />
   else if (isManagementFinanceRequests) content = <ManagementFinanceRequestsPage />
   else if (isManagementFinance) content = <ManagementFinancePage />

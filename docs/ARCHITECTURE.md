@@ -12,6 +12,7 @@ Edifica Digital combines a public bilingual landing page with an authenticated o
 | Receive, Transform, Impact | Record the complete operational cycle | Database foundation deployed; interface integration proceeds by module |
 | Reports and dashboard | Summarize resources, operations, and impact | Reporting model defined; application views proceed by module |
 | `/app/management/calendar` | Build each unit's preliminary annual calendar and let DIGEN supervise the institutional consolidated view | Tenant-scoped module backed by Annual Work Plan activities, optional objective links, bulk activity entry, and RLS-enforced unit privacy |
+| `/app/management/pending-issues` | Track pending matters, urgency, due dates and completion by unit | Unit-scoped RLS; DIGEN receives a read-only institutional consolidated view across units |
 
 The product name shown on the primary page and production domain is `somosedificadigital`.
 
@@ -21,7 +22,7 @@ The product name shown on the primary page and production domain is `somosedific
 flowchart TD
     A["React + Vite on Vercel"] --> B["Supabase client"]
     B --> C["Supabase Auth"]
-    B --> D["Postgres: 18 public + 2 private RLS tables"]
+    B --> D["Postgres: 56 public + 4 private tables with RLS on exposed operational data"]
     B --> E["Private attachment Storage"]
     D --> F["Bilingual operational reports"]
 ```

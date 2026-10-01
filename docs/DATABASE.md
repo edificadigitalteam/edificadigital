@@ -262,3 +262,23 @@ Calendar access is deliberately narrower than general tenant access:
 - The browser never relies on hiding another unit's rows. `unit_work_activity` RLS enforces the same boundary for direct API access.
 - Calendar creation supports bulk entry: shared responsible/modality/status/objective context is applied to multiple activity rows in one insert request.
 - The production “Vaciar calendario” action deletes rows only from the selected work plan, so a unit cannot clear another unit's calendar.
+
+
+### Pending issues by organizational unit
+
+The **Asuntos pendientes** module stores unit-level commitments in `public.unit_pending_issue`. Each row belongs to one tenant organization, one management period, and one `organization_unit`.
+
+Tracking is intentionally separated into two dimensions:
+
+- `status`: `pending`, `in_progress`, or `completed` (red/yellow/green in the interface, always paired with text/icon labels).
+- `urgency`: `low`, `medium`, `high`, or `critical`.
+- `due_date` is optional and supports prioritization without being required for every matter.
+- `completed_at` is maintained automatically when status enters or leaves `completed`.
+
+Access is enforced in PostgreSQL rather than by browser filtering:
+
+- Active unit members with role `director`, `manager`, `operator`, or `reviewer` can select and mutate issues only for units where they hold an explicit membership.
+- Active DIGEN members can additionally read every unit's issues inside their organization for the institutional consolidated view.
+- DIGEN consolidated visibility does not grant write access to other units.
+- Organization administrators without an explicit unit membership do not gain cross-unit issue access through their admin role.
+- `public.pending_issue_access_overview(uuid)` exposes only the caller's own unit ids, DIGEN unit id, and whether consolidated access applies.

@@ -1,0 +1,98 @@
+.management-pending-issues-page{padding-bottom:56px}
+.pending-issues-heading>button{min-height:46px;padding:0 17px;border:0;border-radius:9px;background:var(--mg-orange);color:#fff;font:inherit;font-weight:900;cursor:pointer}
+.pending-issues-heading>button:disabled{opacity:.55;cursor:not-allowed}
+.pending-issues-context{display:grid;grid-template-columns:minmax(180px,240px) minmax(260px,360px) minmax(0,1fr);gap:13px;align-items:end;padding:17px;border:1px solid var(--mg-line);border-radius:15px;background:#fff}
+.pending-issues-context label{display:grid;gap:6px}
+.pending-issues-context label>span,.pending-issues-filters label>span{color:var(--mg-muted);font-size:.72rem;font-weight:850}
+.pending-issues-context select,.pending-issues-filters input,.pending-issues-filters select{width:100%;min-height:44px;padding:9px 11px;border:1px solid var(--mg-line);border-radius:9px;background:#fff;color:var(--mg-text);font:inherit}
+.pending-issues-context select:focus,.pending-issues-filters input:focus,.pending-issues-filters select:focus{outline:0;border-color:var(--mg-purple);box-shadow:0 0 0 3px rgba(91,46,145,.1)}
+.pending-issues-access-copy{display:grid;gap:4px;text-align:right}
+.pending-issues-access-copy strong{color:var(--mg-purple-dark);font-size:.82rem}
+.pending-issues-access-copy small{color:var(--mg-muted)}
+.pending-issues-scope-tabs{display:flex;width:fit-content;gap:5px;padding:4px;border-radius:11px;background:#eee9f2}
+.pending-issues-scope-tabs button{min-height:40px;padding:0 14px;border:0;border-radius:8px;background:transparent;color:#6e5a77;font:inherit;font-size:.76rem;font-weight:850;cursor:pointer}
+.pending-issues-scope-tabs button.active{background:var(--mg-purple);color:#fff}
+.pending-issue-form textarea{min-height:118px}
+.pending-issues-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+.pending-issues-metrics article{min-height:112px;padding:15px 17px;border:1px solid var(--mg-line);border-top:4px solid var(--mg-purple);border-radius:13px;background:#fff;display:grid;align-content:space-between;gap:5px}
+.pending-issues-metrics article.metric-red{border-top-color:#c84646}
+.pending-issues-metrics article.metric-yellow{border-top-color:#e3aa14}
+.pending-issues-metrics article.metric-green{border-top-color:#2f8d5c}
+.pending-issues-metrics article.metric-urgent{border-top-color:var(--mg-orange)}
+.pending-issues-metrics span{color:var(--mg-muted);font-size:.72rem}
+.pending-issues-metrics strong{color:var(--mg-purple-dark);font-size:1.75rem}
+.pending-issues-metrics small{color:var(--mg-muted);font-size:.67rem}
+.pending-issues-filters{display:grid;grid-template-columns:minmax(220px,1.4fr) repeat(3,minmax(150px,.7fr)) auto;gap:11px;align-items:end;padding:15px;border:1px solid var(--mg-line);border-radius:14px;background:#fff}
+.pending-issues-filters label{display:grid;gap:6px;min-width:0}
+.pending-issues-filters>button{min-height:44px;padding:0 14px;border:1px solid var(--mg-purple);border-radius:9px;background:#fff;color:var(--mg-purple);font:inherit;font-weight:850;cursor:pointer}
+.pending-issues-list-card{overflow:hidden;border:1px solid var(--mg-line);border-radius:16px;background:#fff}
+.pending-issues-list-card>header{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:20px 22px;border-bottom:1px solid var(--mg-line);background:#fdfcff}
+.pending-issues-list-card>header small{color:var(--mg-purple);font-size:.66rem;font-weight:950;letter-spacing:.11em}
+.pending-issues-list-card>header h2{margin:5px 0 0;color:var(--mg-purple-dark);font-family:Georgia,serif;font-size:1.55rem;font-weight:500}
+.pending-issues-list-card>header>strong{min-width:38px;height:38px;display:grid;place-items:center;border-radius:999px;background:var(--mg-purple-soft);color:var(--mg-purple);font-size:.84rem}
+.pending-issues-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px}
+.pending-issue-card{min-width:0;display:grid;gap:14px;padding:16px;border:1px solid #e7e0eb;border-left:5px solid var(--mg-purple);border-radius:13px;background:#fff}
+.pending-issue-card.status-red{border-left-color:#c84646}
+.pending-issue-card.status-yellow{border-left-color:#e3aa14}
+.pending-issue-card.status-green{border-left-color:#2f8d5c}
+.pending-issue-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.pending-issue-badges{display:flex;flex-wrap:wrap;gap:7px;min-width:0}
+.pending-status-badge,.pending-urgency-badge,.pending-unit-badge{display:inline-flex;align-items:center;gap:5px;width:fit-content;padding:5px 8px;border-radius:999px;font-size:.67rem;font-weight:900}
+.pending-status-badge.red{background:#fff0ef;color:#9a3232}
+.pending-status-badge.yellow{background:#fff6d9;color:#745500}
+.pending-status-badge.green{background:#eaf6ef;color:#256f49}
+.pending-urgency-badge.low{background:#f2f0f3;color:#675f6b}
+.pending-urgency-badge.medium{background:#eee6f6;color:var(--mg-purple)}
+.pending-urgency-badge.high{background:#fff0df;color:#965411}
+.pending-urgency-badge.critical{background:#fbe5e5;color:#8d2525}
+.pending-unit-badge{flex:none;background:var(--mg-purple);color:#fff}
+.pending-issue-copy{display:grid;gap:7px}
+.pending-issue-copy h3{margin:0;color:var(--mg-purple-dark);font-size:1rem;line-height:1.3;overflow-wrap:anywhere}
+.pending-issue-copy p{margin:0;color:var(--mg-muted);font-size:.78rem;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.pending-issue-meta{display:flex;flex-wrap:wrap;gap:9px}
+.pending-issue-meta>span{min-width:140px;display:grid;gap:3px;padding:9px 10px;border-radius:9px;background:#faf8fc}
+.pending-issue-meta small{color:var(--mg-muted);font-size:.63rem;font-weight:800}
+.pending-issue-meta strong{color:#4b3d50;font-size:.74rem}
+.pending-issue-actions{display:flex;justify-content:flex-end}
+.pending-issue-actions button{min-height:40px;padding:0 12px;border:1px solid var(--mg-purple);border-radius:8px;background:#fff;color:var(--mg-purple);font:inherit;font-size:.75rem;font-weight:850;cursor:pointer}
+.pending-issues-empty{margin:0;padding:28px 22px;color:var(--mg-muted);text-align:center}
+
+@media(max-width:1100px){
+  .pending-issues-context{grid-template-columns:1fr 1fr}
+  .pending-issues-access-copy{grid-column:1/-1;text-align:left}
+  .pending-issues-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pending-issues-filters{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pending-issues-filters>button{justify-self:start}
+}
+
+@media(max-width:720px){
+  .management-pending-issues-page{gap:16px;padding-bottom:36px}
+  .pending-issues-heading{display:grid;gap:16px}
+  .pending-issues-heading>button{width:100%;min-height:46px}
+  .management-pending-issues-page .management-panel-heading h1{font-size:clamp(2rem,11vw,2.55rem);line-height:1}
+  .pending-issues-context{grid-template-columns:1fr;gap:11px;padding:14px}
+  .pending-issues-access-copy{grid-column:auto;text-align:left}
+  .pending-issues-scope-tabs{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .pending-issues-scope-tabs button{min-height:44px;padding:8px 10px;white-space:normal;line-height:1.2}
+  .pending-issues-metrics{grid-template-columns:1fr 1fr;gap:8px}
+  .pending-issues-metrics article{min-height:92px;padding:13px 14px}
+  .pending-issues-filters{grid-template-columns:1fr;gap:10px;padding:13px}
+  .pending-issues-filters>button{width:100%;min-height:44px}
+  .pending-issues-grid{grid-template-columns:1fr;gap:10px;padding:11px}
+  .pending-issue-card{gap:12px;padding:13px}
+  .pending-issue-card-top{align-items:flex-start}
+  .pending-issue-meta{display:grid;grid-template-columns:1fr 1fr}
+  .pending-issue-meta>span{min-width:0}
+  .pending-issue-actions button{width:100%;min-height:44px}
+  .pending-issue-form .management-form-grid{grid-template-columns:1fr}
+  .pending-issue-form .management-form-grid .wide{grid-column:auto}
+  .pending-issue-form .management-form-actions{display:grid;grid-template-columns:1fr}
+  .pending-issue-form .management-form-actions button{width:100%;min-height:44px}
+}
+
+@media(max-width:420px){
+  .pending-issues-metrics{grid-template-columns:1fr}
+  .pending-issue-card-top{display:grid}
+  .pending-unit-badge{justify-self:start}
+  .pending-issue-meta{grid-template-columns:1fr}
+}
