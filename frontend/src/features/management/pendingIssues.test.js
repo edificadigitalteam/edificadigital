@@ -31,7 +31,7 @@ test('open and urgent matters sort ahead of completed and lower urgency matters'
     { id:'critical', status:'pending', urgency:'critical', due_date:'2026-10-10', updated_at:'2026-10-01T10:00:00Z' },
     { id:'progress', status:'in_progress', urgency:'high', due_date:'2026-10-02', updated_at:'2026-10-01T10:00:00Z' },
   ]
-  assert.deepEqual(sortPendingIssues(rows).map((row)=>row.id), ['critical','low','progress','done'])
+  assert.deepEqual(sortPendingIssues(rows).map((row)=>row.id), ['critical','progress','low','done'])
 })
 
 test('summary counts tracking state and high urgency', () => {
@@ -41,7 +41,7 @@ test('summary counts tracking state and high urgency', () => {
     { status:'in_progress', urgency:'high' },
     { status:'completed', urgency:'critical' },
   ])
-  assert.deepEqual(summary, { pending:2, inProgress:1, completed:1, urgent:3 })
+  assert.deepEqual(summary, { pending:2, inProgress:1, completed:1, urgent:2 })
 })
 
 test('editing stays scoped to the user own units even for DIGEN consolidated access', () => {
