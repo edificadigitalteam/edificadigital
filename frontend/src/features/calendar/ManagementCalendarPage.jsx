@@ -4,6 +4,7 @@ import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from '../management/ManagementStandaloneShell.jsx'
 import { DEFAULT_CALENDAR_MODULE_LABEL, buildCalendarActivityPayloads, canOpenCalendarActivityEntry, resolveCalendarModuleLabel, reviewStatusLabel } from './calendar.js'
+import { canReviewUnitActivity, defaultOwnUnitId } from '../management/unitScope.js'
 import './management-calendar.css'
 
 const MONTHS = {
@@ -29,13 +30,13 @@ const copy = {
     invalidDates:'Revisa las fechas: la fecha de cierre debe ser igual o posterior a la fecha de inicio.', activityName:'Nombre de la actividad', notes:'Notas',
     clear:'Vaciar calendario', clearConfirm:'¿Vaciar todas las actividades de esta unidad para el año seleccionado? Esta acción eliminará únicamente el calendario propio visible.',
     clearDone:'Calendario de la unidad vaciado.', jointOn:'Habilitar vista conjunta', jointOff:'Cerrar vista conjunta',
-    jointEnabled:'Vista consolidada habilitada por DIGEN.', privateView:'Tu calendario está visible para tu unidad y para DIGEN.',
-    digenView:'DIGEN tiene acceso al consolidado institucional.', visibleActivities:'Actividades visibles', visibleUnits:'Unidades visibles',
+    jointEnabled:'Vista consolidada habilitada por la unidad general.', privateView:'Tu calendario es visible para tu unidad y para las unidades de las que depende.',
+    digenView:'Ves el calendario de tu unidad y de las unidades que dependen de ella.', visibleActivities:'Actividades visibles', visibleUnits:'Unidades visibles',
     validated:'Validadas', observed:'Observadas', noActivities:'Sin actividades visibles.',
     noObjectives:'Esta unidad necesita al menos un objetivo en su Plan Anual antes de registrar actividades.', openPlan:'Abrir Plan Anual',
     activity:'Actividad', objective:'Objetivo del Plan Anual', indicator:'Indicador relacionado (opcional)', dateFrom:'Fecha de inicio', dateTo:'Fecha de cierre',
     responsible:'Responsable', modality:'Modalidad', status:'Estado', details:'Notas / detalles', save:'Guardar actividad', saving:'Guardando…',
-    cancel:'Cancelar', edit:'Editar', validate:'Validar', observe:'Observar', reviewState:'Estado DIGEN', date:'Fecha', direction:'Dirección',
+    cancel:'Cancelar', edit:'Editar', validate:'Validar', observe:'Observar', reviewState:'Estado de revisión', date:'Fecha', direction:'Dirección',
     objectiveIndicator:'Objetivo / indicador', loading:'Cargando calendario…', saved:'Actividad guardada.', reviewed:'Revisión actualizada.',
     jointChanged:'Visibilidad conjunta actualizada.', noUnitAccess:'Tu usuario todavía no está asignado a una Dirección o agencia con acceso al calendario.',
   },
@@ -48,13 +49,13 @@ const copy = {
     saveBatch:'Save activities', incompleteRows:'Complete the name and start date for every activity you added.',
     invalidDates:'Check the dates: the end date must be the same as or later than the start date.', activityName:'Activity name', notes:'Notes',
     clear:'Clear calendar', clearConfirm:'Clear all activities for this unit and selected year? This only deletes the current unit calendar.',
-    clearDone:'Unit calendar cleared.', jointOn:'Enable shared view', jointOff:'Close shared view', jointEnabled:'Consolidated view enabled by DIGEN.',
-    privateView:'Your calendar is visible to your unit and DIGEN.', digenView:'DIGEN can access the institutional consolidated calendar.',
+    clearDone:'Unit calendar cleared.', jointOn:'Enable shared view', jointOff:'Close shared view', jointEnabled:'Consolidated view enabled by the top unit.',
+    privateView:'Your calendar is visible to your unit and the units above it.', digenView:'You see the calendar of your unit and of the units below it.',
     visibleActivities:'Visible activities', visibleUnits:'Visible units', validated:'Validated', observed:'Observed', noActivities:'No visible activities.',
     noObjectives:'This unit needs at least one Annual Work Plan objective before activities can be created.', openPlan:'Open Annual Work Plan',
     activity:'Activity', objective:'Annual Work Plan objective', indicator:'Related indicator (optional)', dateFrom:'Start date', dateTo:'End date',
     responsible:'Responsible', modality:'Modality', status:'Status', details:'Notes / details', save:'Save activity', saving:'Saving…', cancel:'Cancel',
-    edit:'Edit', validate:'Validate', observe:'Observe', reviewState:'DIGEN status', date:'Date', direction:'Unit',
+    edit:'Edit', validate:'Validate', observe:'Observe', reviewState:'Review status', date:'Date', direction:'Unit',
     objectiveIndicator:'Objective / indicator', loading:'Loading calendar…', saved:'Activity saved.', reviewed:'Review updated.',
     jointChanged:'Shared visibility updated.', noUnitAccess:'Your user is not yet assigned to a unit or agency with calendar access.',
   },
@@ -144,15 +145,11 @@ export default function ManagementCalendarPage(){
 
   const ownUnitIds = useMemo(()=>new Set(calendarAccess.unit_ids ?? []),[calendarAccess.unit_ids])
   const ownUnits = useMemo(()=>units.filter((unit)=>ownUnitIds.has(unit.id)),[units,ownUnitIds])
-  const digenUnit = units.find((unit)=>unit.id===calendarAccess.digen_unit_id || String(unit.code||'').toUpperCase()==='DIGEN')
+  const defaultUnitId = defaultOwnUnitId(units, calendarAccess)
 
   useEffect(()=>{
-    if (calendarAccess.is_digen && digenUnit) {
-      setSelectedUnitId((current)=>ownUnitIds.has(current) ? current : digenUnit.id)
-      return
-    }
-    setSelectedUnitId((current)=>ownUnitIds.has(current) ? current : ownUnits[0]?.id || '')
-  },[calendarAccess.is_digen,digenUnit?.id,ownUnits,ownUnitIds])
+    setSelectedUnitId((current)=>ownUnitIds.has(current) ? current : defaultUnitId)
+  },[defaultUnitId,ownUnitIds])
 
   const activePeriod = periods.find((period)=>period.id===periodId)
   const workPlanById = useMemo(()=>new Map(workPlans.map((plan)=>[plan.id,plan])),[workPlans])
@@ -241,7 +238,7 @@ export default function ManagementCalendarPage(){
   }
 
   const reviewActivity = async (activity,status) => {
-    if (!calendarAccess.is_digen || saving) return
+    if (!canReviewUnitActivity(activity, calendarAccess) || saving) return
     setSaving(true); setError('')
     const { error:requestError } = await supabase.rpc('review_calendar_activity',{ target_activity_id:activity.id, target_status:status, target_note:null })
     if (requestError) setError(requestError.message)
@@ -250,7 +247,7 @@ export default function ManagementCalendarPage(){
   }
 
   const toggleJointReview = async () => {
-    if (!calendarAccess.is_digen || !periodId || saving) return
+    if (!calendarAccess.can_manage_joint_review || !periodId || saving) return
     setSaving(true); setError('')
     const { error:requestError } = await supabase.rpc('set_calendar_joint_review',{ target_period_id:periodId, enabled:!calendarAccess.joint_review_enabled })
     if (requestError) setError(requestError.message)
@@ -276,7 +273,7 @@ export default function ManagementCalendarPage(){
         <div><p>{t.eyebrow}</p><h1 data-no-translate>{moduleLabel || DEFAULT_CALENDAR_MODULE_LABEL}</h1><span>{t.intro}</span></div>
         <div className="management-heading-actions calendar-heading-actions">
           {canCreate && <button className="secondary calendar-clear-button" type="button" onClick={clearCalendar} disabled={saving || !enrichedActivities.some((activity)=>activity.unit_id===selectedUnitId)}>{t.clear}</button>}
-          {calendarAccess.is_digen && <button className="secondary" type="button" onClick={toggleJointReview} disabled={saving}>{calendarAccess.joint_review_enabled?t.jointOff:t.jointOn}</button>}
+          {calendarAccess.can_manage_joint_review && <button className="secondary" type="button" onClick={toggleJointReview} disabled={saving}>{calendarAccess.joint_review_enabled?t.jointOff:t.jointOn}</button>}
           {canCreate && <button type="button" onClick={openNew} disabled={!canOpenCalendarActivityEntry({ canCreate, saving })}>{t.newActivity}</button>}
         </div>
       </div>
@@ -356,7 +353,7 @@ export default function ManagementCalendarPage(){
               <div className="calendar-event-top"><span>{dateLabel(activity.start_date,language)}</span><b>{unit?.code||'—'}</b></div>
               <strong>{activity.title}</strong><small>{objective?.code||''}{indicator ? ' · ' + indicator.name : ''}</small>
               <div className="calendar-event-meta"><span>{MODALITY[language][activity.modality]||activity.modality}</span><span>{STATUS[language][activity.status]||activity.status}</span></div>
-              <div className="calendar-event-footer"><span className={'calendar-review-badge ' + (activity.review_status||'pending')}>{reviewStatusLabel(activity.review_status,language)}</span><div>{editable && <button type="button" onClick={()=>openEdit(activity)}>{t.edit}</button>}{calendarAccess.is_digen && <><button className="validate" type="button" onClick={()=>reviewActivity(activity,'validated')}>{t.validate}</button><button className="observe" type="button" onClick={()=>reviewActivity(activity,'observed')}>{t.observe}</button></>}</div></div>
+              <div className="calendar-event-footer"><span className={'calendar-review-badge ' + (activity.review_status||'pending')}>{reviewStatusLabel(activity.review_status,language)}</span><div>{editable && <button type="button" onClick={()=>openEdit(activity)}>{t.edit}</button>}{canReviewUnitActivity(activity, calendarAccess) && <><button className="validate" type="button" onClick={()=>reviewActivity(activity,'validated')}>{t.validate}</button><button className="observe" type="button" onClick={()=>reviewActivity(activity,'observed')}>{t.observe}</button></>}</div></div>
             </div>
           }) : <p>{t.noActivities}</p>}</div></article>
         })}</section> : <section className="calendar-list-card">

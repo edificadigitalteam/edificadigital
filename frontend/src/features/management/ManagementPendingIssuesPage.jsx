@@ -10,6 +10,7 @@ import {
   pendingIssueUrgencyMeta,
   sortPendingIssues,
 } from './pendingIssues.js'
+import { visibleUnits, defaultOwnUnitId } from './unitScope.js'
 import './management-pending-issues.css'
 
 const copy = {
@@ -21,7 +22,7 @@ const copy = {
     unit: 'Dirección / agencia',
     myUnit: 'Mi Dirección',
     consolidated: 'Consolidado institucional',
-    consolidatedHelp: 'DIGEN visualiza los asuntos de todas las Direcciones.',
+    consolidatedHelp: 'Ves los asuntos de tu unidad y de las unidades que dependen de ella.',
     ownHelp: 'Cada Dirección administra únicamente sus propios asuntos.',
     newIssue: '＋ Nuevo asunto',
     editIssue: 'Editar asunto',
@@ -64,7 +65,7 @@ const copy = {
     unit: 'Unit / agency',
     myUnit: 'My unit',
     consolidated: 'Institutional consolidated',
-    consolidatedHelp: 'DIGEN can view pending issues from every unit.',
+    consolidatedHelp: 'You see the pending issues of your unit and of the units below it.',
     ownHelp: 'Each unit manages only its own pending issues.',
     newIssue: '＋ New issue',
     editIssue: 'Edit issue',
@@ -203,15 +204,12 @@ export default function ManagementPendingIssuesPage() {
 
   const ownUnitIds = useMemo(() => new Set(moduleAccess.unit_ids ?? []), [moduleAccess.unit_ids])
   const ownUnits = useMemo(() => units.filter((unit) => ownUnitIds.has(unit.id)), [units, ownUnitIds])
-  const digenUnit = units.find((unit) => unit.id === moduleAccess.digen_unit_id || String(unit.code || '').toUpperCase() === 'DIGEN')
+  const defaultUnitId = defaultOwnUnitId(units, moduleAccess)
+  const consolidatedUnits = useMemo(() => visibleUnits(units, moduleAccess), [units, moduleAccess])
 
   useEffect(() => {
-    if (moduleAccess.is_digen && digenUnit) {
-      setSelectedUnitId((current) => ownUnitIds.has(current) ? current : digenUnit.id)
-      return
-    }
-    setSelectedUnitId((current) => ownUnitIds.has(current) ? current : ownUnits[0]?.id || '')
-  }, [moduleAccess.is_digen, digenUnit?.id, ownUnits, ownUnitIds])
+    setSelectedUnitId((current) => ownUnitIds.has(current) ? current : defaultUnitId)
+  }, [defaultUnitId, ownUnitIds])
 
   const currentUnit = units.find((unit) => unit.id === selectedUnitId)
   const canCreate = Boolean(periodId && selectedUnitId && ownUnitIds.has(selectedUnitId))
@@ -451,7 +449,7 @@ export default function ManagementPendingIssuesPage() {
                   <span>{t.unit}</span>
                   <select value={consolidatedUnitId} onChange={(event) => setConsolidatedUnitId(event.target.value)}>
                     <option value="">{t.allUnits}</option>
-                    {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.code} · {unit.name}</option>)}
+                    {consolidatedUnits.map((unit) => <option key={unit.id} value={unit.id}>{unit.code} · {unit.name}</option>)}
                   </select>
                 </label>
               )}
