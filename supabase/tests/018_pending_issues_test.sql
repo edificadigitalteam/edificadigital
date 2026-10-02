@@ -20,9 +20,9 @@ select ok(
     where schemaname='public'
       and tablename='unit_pending_issue'
       and policyname='unit_pending_issue_select'
-      and qual ilike '%current_operator_is_digen%'
+      and qual ilike '%current_visible_unit_ids%'
   ),
-  'DIGEN can read the institutional consolidated pending issues'
+  'pending issues are read through the unit hierarchy (own unit and the units below it)'
 );
 
 select ok(

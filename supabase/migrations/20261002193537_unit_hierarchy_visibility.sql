@@ -530,59 +530,50 @@ begin
 end;
 $$;
 
--- Row-level visibility. Writes keep their existing own-unit policies.
+-- Row-level visibility (existing SELECT policies are altered in place).
+-- Writes keep their existing own-unit policies.
 
-drop policy if exists management_indicator_select on public.management_indicator;
-create policy management_indicator_select on public.management_indicator
-for select to authenticated
+alter policy management_indicator_select on public.management_indicator
 using (
   private.can_access_organization(organization_id)
   and (
     private.can_manage_organization(organization_id)
     or private.can_review_management_reports(organization_id)
-    or unit_id = any((select private.current_visible_unit_ids()))
+    or unit_id = any((select private.current_visible_unit_ids())::uuid[])
   )
 );
 
-drop policy if exists indicator_progress_select on public.indicator_progress;
-create policy indicator_progress_select on public.indicator_progress
-for select to authenticated
+alter policy indicator_progress_select on public.indicator_progress
 using (
   private.can_access_organization(organization_id)
   and (
     private.can_manage_organization(organization_id)
     or private.can_review_management_reports(organization_id)
-    or unit_id = any((select private.current_visible_unit_ids()))
+    or unit_id = any((select private.current_visible_unit_ids())::uuid[])
   )
 );
 
-drop policy if exists unit_work_plan_select on public.unit_work_plan;
-create policy unit_work_plan_select on public.unit_work_plan
-for select to authenticated
+alter policy unit_work_plan_select on public.unit_work_plan
 using (
   private.can_access_organization(organization_id)
   and (
     private.can_manage_organization(organization_id)
     or private.can_review_management_reports(organization_id)
-    or unit_id = any((select private.current_visible_unit_ids()))
+    or unit_id = any((select private.current_visible_unit_ids())::uuid[])
   )
 );
 
-drop policy if exists objective_unit_assignment_select on public.objective_unit_assignment;
-create policy objective_unit_assignment_select on public.objective_unit_assignment
-for select to authenticated
+alter policy objective_unit_assignment_select on public.objective_unit_assignment
 using (
   private.can_access_organization(organization_id)
   and (
     private.can_manage_organization(organization_id)
     or private.can_review_management_reports(organization_id)
-    or unit_id = any((select private.current_visible_unit_ids()))
+    or unit_id = any((select private.current_visible_unit_ids())::uuid[])
   )
 );
 
-drop policy if exists institutional_objective_select on public.institutional_objective;
-create policy institutional_objective_select on public.institutional_objective
-for select to authenticated
+alter policy institutional_objective_select on public.institutional_objective
 using (
   private.can_access_organization(organization_id)
   and (
@@ -593,43 +584,37 @@ using (
       select 1
       from public.unit_work_plan plan
       where plan.id = institutional_objective.work_plan_id
-        and plan.unit_id = any((select private.current_visible_unit_ids()))
+        and plan.unit_id = any((select private.current_visible_unit_ids())::uuid[])
     )
   )
 );
 
-drop policy if exists unit_management_report_select on public.unit_management_report;
-create policy unit_management_report_select on public.unit_management_report
-for select to authenticated
+alter policy unit_management_report_select on public.unit_management_report
 using (
   private.can_access_organization(organization_id)
   and (
     private.can_manage_organization(organization_id)
     or private.can_review_management_reports(organization_id)
-    or unit_id = any((select private.current_visible_unit_ids()))
+    or unit_id = any((select private.current_visible_unit_ids())::uuid[])
   )
 );
 
-drop policy if exists unit_management_report_item_select on public.unit_management_report_item;
-create policy unit_management_report_item_select on public.unit_management_report_item
-for select to authenticated
+alter policy unit_management_report_item_select on public.unit_management_report_item
 using (
   private.can_access_organization(organization_id)
   and (
     private.can_manage_organization(organization_id)
     or private.can_review_management_reports(organization_id)
-    or unit_id = any((select private.current_visible_unit_ids()))
+    or unit_id = any((select private.current_visible_unit_ids())::uuid[])
   )
 );
 
-drop policy if exists unit_pending_issue_select on public.unit_pending_issue;
-create policy unit_pending_issue_select on public.unit_pending_issue
-for select to authenticated
+alter policy unit_pending_issue_select on public.unit_pending_issue
 using (
   private.can_access_organization(organization_id)
   and (
     private.can_manage_organization(organization_id)
-    or unit_id = any((select private.current_visible_unit_ids()))
+    or unit_id = any((select private.current_visible_unit_ids())::uuid[])
   )
 );
 
