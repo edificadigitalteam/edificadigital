@@ -5,6 +5,12 @@ export function resolveCalendarModuleLabel(organization) {
   return override || DEFAULT_CALENDAR_MODULE_LABEL
 }
 
+export function selectDefaultCalendarPeriodId(periods, currentPeriodId = '') {
+  const rows = Array.isArray(periods) ? periods : []
+  if (currentPeriodId && rows.some((period) => period.id === currentPeriodId)) return currentPeriodId
+  return rows[0]?.id || ''
+}
+
 export function visibleCalendarActivities(activities, access) {
   const rows = Array.isArray(activities) ? activities : []
   const own = new Set(access?.ownUnitIds ?? [])

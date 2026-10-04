@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase.js'
 import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from '../management/ManagementStandaloneShell.jsx'
-import { DEFAULT_CALENDAR_MODULE_LABEL, buildCalendarActivityPayloads, canOpenCalendarActivityEntry, resolveCalendarModuleLabel, reviewStatusLabel } from './calendar.js'
+import { DEFAULT_CALENDAR_MODULE_LABEL, buildCalendarActivityPayloads, canOpenCalendarActivityEntry, resolveCalendarModuleLabel, reviewStatusLabel, selectDefaultCalendarPeriodId } from './calendar.js'
 import { canReviewUnitActivity, defaultOwnUnitId } from '../management/unitScope.js'
 import './management-calendar.css'
 
@@ -126,7 +126,7 @@ export default function ManagementCalendarPage(){
     setOrganization(responses[0].data ?? null)
     setPeriods(periodRows); setUnits(responses[2].data ?? []); setWorkPlans(responses[3].data ?? [])
     setObjectives(responses[4].data ?? []); setIndicators(responses[5].data ?? []); setActivities(responses[6].data ?? [])
-    setPeriodId((current)=>periodRows.some((period)=>period.id===current) ? current : periodRows.find((period)=>period.status==='active')?.id || periodRows[0]?.id || '')
+    setPeriodId((current)=>selectDefaultCalendarPeriodId(periodRows,current))
     setLoading(false)
   },[access.status,organizationId])
 
