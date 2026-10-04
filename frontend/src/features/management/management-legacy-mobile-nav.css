@@ -1,0 +1,99 @@
+.management-legacy-mobile-menu-button,
+.management-legacy-mobile-close-button { display: none; }
+
+@media(max-width:920px){
+  .management-mobile-header.management-legacy-mobile-header{
+    justify-content:flex-start!important;
+    gap:12px!important;
+    padding-left:12px!important;
+  }
+  .management-mobile-header.management-legacy-mobile-header .management-brand{
+    flex:1 1 auto;
+    min-width:0;
+  }
+  .management-mobile-header.management-legacy-mobile-header .management-mobile-actions,
+  .management-mobile-header.management-legacy-mobile-header .management-resources-mobile-link,
+  .management-mobile-header.management-legacy-mobile-header .management-finance-mobile-link,
+  .management-mobile-header.management-legacy-mobile-header .management-users-mobile-link{
+    display:none!important;
+  }
+  .management-legacy-mobile-menu-button{
+    order:-1;
+    display:flex!important;
+    min-width:44px;
+    min-height:44px;
+    width:44px;
+    height:44px;
+    flex:0 0 44px;
+    padding:0!important;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    border:1px solid rgba(255,255,255,.32)!important;
+    border-radius:10px;
+    background:rgba(255,255,255,.10)!important;
+    color:#fff!important;
+    cursor:pointer;
+  }
+  .management-legacy-mobile-menu-button span{
+    display:block;
+    width:22px;
+    height:3px;
+    border-radius:999px;
+    background:#fff;
+  }
+  .management-legacy-mobile-menu-button:focus-visible,
+  .management-legacy-mobile-close-button:focus-visible{
+    outline:2px solid var(--mg-yellow);
+    outline-offset:2px;
+  }
+  .management-sidebar.management-legacy-mobile-open{
+    display:flex!important;
+    position:fixed!important;
+    inset:0 auto 0 0!important;
+    z-index:99!important;
+    width:min(340px,90vw)!important;
+    max-width:100%;
+    height:100dvh!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain;
+    box-shadow:22px 0 48px rgba(15,6,22,.34);
+  }
+  .management-sidebar.management-legacy-mobile-open .management-sidebar-top{
+    padding-right:70px;
+  }
+  .management-legacy-mobile-close-button{
+    position:absolute;
+    top:12px;
+    right:12px;
+    z-index:102;
+    display:grid;
+    width:44px;
+    height:44px;
+    place-items:center;
+    border:1px solid rgba(255,255,255,.22);
+    border-radius:10px;
+    background:rgba(255,255,255,.08);
+    color:#fff;
+    font:inherit;
+    font-size:1.6rem;
+    line-height:1;
+    cursor:pointer;
+  }
+  .management-resources-mobile-link,
+  .management-finance-mobile-link,
+  .management-users-mobile-link{display:none!important;}
+}
+
+@media(max-width:420px){
+  .management-sidebar.management-legacy-mobile-open{width:min(330px,94vw)!important;}
+  .management-mobile-header.management-legacy-mobile-header{padding-right:58px!important;}
+}
+
+@media print{
+  .management-legacy-mobile-menu-button,
+  .management-legacy-mobile-close-button,
+  .management-legacy-mobile-backdrop{display:none!important;}
+}

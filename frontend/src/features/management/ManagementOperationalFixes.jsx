@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase.js'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import './management-fixes.css'
 import './management-grouped-nav.css'
+import './management-legacy-mobile-nav.css'
 
 function currentLanguage() {
   return document.documentElement.lang === 'en' || window.localStorage.getItem('edifica-language') === 'en' ? 'en' : 'es'
@@ -14,6 +15,9 @@ export default function ManagementOperationalFixes() {
   const [language, setLanguage] = useState(currentLanguage)
   const [mobileTarget, setMobileTarget] = useState(null)
   const [navTarget, setNavTarget] = useState(null)
+  const [legacySidebarTarget, setLegacySidebarTarget] = useState(null)
+  const [legacyMobileMenuNeeded, setLegacyMobileMenuNeeded] = useState(false)
+  const [legacyMobileMenuOpen, setLegacyMobileMenuOpen] = useState(false)
   const [financeNoticeTarget, setFinanceNoticeTarget] = useState(null)
   const [maintainersOpen, setMaintainersOpen] = useState(window.location.pathname.startsWith('/app/management/settings'))
   const [calendarOverride, setCalendarOverride] = useState('')
@@ -51,7 +55,16 @@ export default function ManagementOperationalFixes() {
     const findTargets = () => {
       observer.disconnect()
       try {
-        setMobileTarget(document.querySelector('.management-mobile-header'))
+        const header = document.querySelector('.management-mobile-header')
+        const sidebar = document.querySelector('.management-sidebar')
+        const hasCanonicalMobileMenu = Boolean(header?.querySelector('.management-mobile-menu-button:not(.management-legacy-mobile-menu-button)'))
+        const needsLegacyMobileMenu = Boolean(header && sidebar && !hasCanonicalMobileMenu)
+
+        setMobileTarget(header)
+        setLegacySidebarTarget(sidebar)
+        setLegacyMobileMenuNeeded(needsLegacyMobileMenu)
+        header?.classList.toggle('management-legacy-mobile-header', needsLegacyMobileMenu)
+        if (needsLegacyMobileMenu && sidebar && !sidebar.id) sidebar.id = 'management-legacy-mobile-sidebar'
 
         const financeHeading = document.querySelector('.finance-page .management-panel-heading')
         if (financeHeading) {
@@ -73,7 +86,7 @@ export default function ManagementOperationalFixes() {
           ? 'Every request from a directorate, agency, auxiliary, or other unit is routed to DIAF for review, approval, and release from an institutional fund.'
           : 'Toda solicitud de una Dirección, agencia, auxiliar u otra unidad llega a DIAF para su revisión, aprobación y posterior liberación desde un fondo institucional.')
 
-        const nav = document.querySelector('.management-sidebar nav')
+        const nav = sidebar?.querySelector('nav')
         if (!nav || nav.classList.contains('management-canonical-nav')) {
           setNavTarget(null)
           return
@@ -97,10 +110,39 @@ export default function ManagementOperationalFixes() {
       if (frame) window.cancelAnimationFrame(frame)
       observer.disconnect()
       languageObserver.disconnect()
+      document.querySelectorAll('.management-legacy-mobile-header').forEach((node) => node.classList.remove('management-legacy-mobile-header'))
+      document.querySelectorAll('.management-legacy-mobile-open').forEach((node) => node.classList.remove('management-legacy-mobile-open'))
       if (injectedNavMount?.isConnected) injectedNavMount.remove()
       if (injectedFinanceMount?.isConnected) injectedFinanceMount.remove()
     }
   }, [isManagement])
+
+  useEffect(() => {
+    const sidebar = legacySidebarTarget
+    if (!legacyMobileMenuNeeded || !sidebar) {
+      sidebar?.classList.remove('management-legacy-mobile-open')
+      return undefined
+    }
+    if (!legacyMobileMenuOpen) {
+      sidebar.classList.remove('management-legacy-mobile-open')
+      return undefined
+    }
+
+    const previousBodyOverflow = document.body.style.overflow
+    const previousHtmlOverflow = document.documentElement.style.overflow
+    sidebar.classList.add('management-legacy-mobile-open')
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+    const onKeyDown = (event) => { if (event.key === 'Escape') setLegacyMobileMenuOpen(false) }
+    document.addEventListener('keydown', onKeyDown)
+
+    return () => {
+      sidebar.classList.remove('management-legacy-mobile-open')
+      document.body.style.overflow = previousBodyOverflow
+      document.documentElement.style.overflow = previousHtmlOverflow
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [legacyMobileMenuNeeded, legacyMobileMenuOpen, legacySidebarTarget])
 
   useEffect(() => {
     const cleanPath = window.location.pathname.replace(/\/$/, '')
@@ -145,7 +187,6 @@ export default function ManagementOperationalFixes() {
     [labels.control, [[labels.tracking, '/app/management/tracking'], [labels.pendingIssues, '/app/management/pending-issues'], [labels.reports, '/app/management/reports']]],
   ]
   const isActive = (href) => href === '/app/management' ? path === href : path.startsWith(href)
-  const canonicalMobileHeader = mobileTarget?.querySelector('.management-mobile-menu-button')
 
   return <>
     {navTarget && createPortal(
@@ -184,17 +225,27 @@ export default function ManagementOperationalFixes() {
       </section>,
       financeNoticeTarget,
     )}
-    {mobileTarget && !canonicalMobileHeader && !mobileTarget.querySelector('.management-resources-mobile-link') && createPortal(
-      <a className="management-resources-mobile-link" href="/app/management/resources">{language === 'en' ? 'Resources' : 'Aportes'}</a>,
+    {mobileTarget && legacyMobileMenuNeeded && createPortal(
+      <button
+        type="button"
+        className="management-mobile-menu-button management-legacy-mobile-menu-button"
+        aria-expanded={legacyMobileMenuOpen}
+        aria-controls="management-legacy-mobile-sidebar"
+        aria-label={legacyMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+        title={legacyMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+        onClick={() => setLegacyMobileMenuOpen((current) => !current)}
+      >
+        <span /><span /><span />
+      </button>,
       mobileTarget,
     )}
-    {mobileTarget && !canonicalMobileHeader && !mobileTarget.querySelector('.management-finance-mobile-link') && createPortal(
-      <a className="management-finance-mobile-link" href="/app/management/finance">{language === 'en' ? 'Finance' : 'Finanzas'}</a>,
-      mobileTarget,
+    {legacyMobileMenuOpen && typeof document !== 'undefined' && createPortal(
+      <button type="button" className="management-mobile-backdrop management-legacy-mobile-backdrop" aria-label="Cerrar menú" onClick={() => setLegacyMobileMenuOpen(false)} />,
+      document.body,
     )}
-    {canAdmin && mobileTarget && !canonicalMobileHeader && !mobileTarget.querySelector('.management-users-mobile-link') && createPortal(
-      <a className="management-users-mobile-link" href="/app/admin/operators">{labels.users}</a>,
-      mobileTarget,
+    {legacyMobileMenuOpen && legacySidebarTarget && createPortal(
+      <button type="button" className="management-legacy-mobile-close-button" aria-label="Cerrar menú" title="Cerrar menú" onClick={() => setLegacyMobileMenuOpen(false)}>×</button>,
+      legacySidebarTarget,
     )}
   </>
 }
