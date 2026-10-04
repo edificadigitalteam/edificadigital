@@ -57,7 +57,7 @@ export default function ManagementOperationalFixes() {
       try {
         const header = document.querySelector('.management-mobile-header')
         const sidebar = document.querySelector('.management-sidebar')
-        const hasCanonicalMobileMenu = Boolean(header?.querySelector('.management-mobile-menu-button'))
+        const hasCanonicalMobileMenu = Boolean(header?.querySelector('.management-mobile-menu-button:not(.management-legacy-mobile-menu-button)'))
         const needsLegacyMobileMenu = Boolean(header && sidebar && !hasCanonicalMobileMenu)
 
         setMobileTarget(header)
