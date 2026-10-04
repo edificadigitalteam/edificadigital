@@ -8,6 +8,7 @@ import {
   canEditCalendarActivity,
   canOpenCalendarActivityEntry,
   buildCalendarActivityPayloads,
+  selectDefaultCalendarPeriodId,
 } from './calendar.js'
 
 const activities = [
@@ -19,6 +20,16 @@ const activities = [
 test('calendar module label falls back and supports a tenant override', () => {
   assert.equal(resolveCalendarModuleLabel(null), DEFAULT_CALENDAR_MODULE_LABEL)
   assert.equal(resolveCalendarModuleLabel({ calendar_module_label: 'Agenda anual' }), 'Agenda anual')
+})
+
+test('calendar defaults to the newest available management period and preserves an existing selection', () => {
+  const periods = [
+    { id: '2027', name: 'Gestión 2027', start_date: '2027-01-01', status: 'planning' },
+    { id: '2026', name: 'Gestión 2026', start_date: '2026-01-01', status: 'active' },
+  ]
+  assert.equal(selectDefaultCalendarPeriodId(periods, ''), '2027')
+  assert.equal(selectDefaultCalendarPeriodId(periods, '2026'), '2026')
+  assert.equal(selectDefaultCalendarPeriodId([], ''), '')
 })
 
 test('a unit sees only its own activities during ordinary work', () => {
