@@ -25,7 +25,42 @@
 .global-language-control:hover { border-color: #f28c28; }
 
 @media (max-width: 760px) {
-  .global-language-control { top: 12px; right: 12px; min-height: 38px; }
+  .global-language-control {
+    top: 15px;
+    right: 8px;
+    min-width: 52px;
+    min-height: 30px;
+    gap: 3px;
+    padding: 4px 6px;
+    border-radius: 8px;
+    box-shadow: 0 5px 16px rgba(52, 21, 80, .10);
+    font-size: .6rem;
+  }
+
+  .management-mobile-header {
+    padding-right: 64px !important;
+  }
+
+  .management-mobile-menu-button {
+    border-color: rgba(255,255,255,.46) !important;
+    background: #5b2e91 !important;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 5px 14px rgba(20,9,29,.22);
+  }
+
+  .management-mobile-menu-button span {
+    width: 22px !important;
+    height: 3px !important;
+    background: #fff !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .global-language-control {
+    right: 7px;
+    min-width: 48px;
+    padding-inline: 5px;
+    font-size: .57rem;
+  }
 }
 
 @media print {
