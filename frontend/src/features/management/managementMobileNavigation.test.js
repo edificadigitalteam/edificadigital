@@ -21,15 +21,12 @@ test('management shell exposes a real accessible mobile navigation drawer', asyn
 })
 
 test('mobile hamburger stays visually explicit and language selector is compact', async () => {
-  const [managementCss, languageCss] = await Promise.all([
-    read('./management.css'),
-    read('../../i18n/global-language.css'),
-  ])
+  const languageCss = await read('../../i18n/global-language.css')
 
-  assert.match(managementCss, /\.management-mobile-menu-button span\s*\{[^}]*width:\s*22px[^}]*height:\s*3px/s)
-  assert.match(managementCss, /\.management-mobile-menu-button\s*\{[^}]*box-shadow:/s)
-  assert.match(languageCss, /@media \(max-width:\s*760px\)[\s\S]*min-width:\s*52px[\s\S]*min-height:\s*30px/s)
-  assert.match(languageCss, /@media \(max-width:\s*760px\)[\s\S]*font-size:\s*\.6rem/s)
+  assert.match(languageCss, /@media \(max-width:\s*760px\)[\s\S]*\.management-mobile-menu-button span\s*\{[^}]*width:\s*22px[^}]*height:\s*3px/s)
+  assert.match(languageCss, /@media \(max-width:\s*760px\)[\s\S]*\.management-mobile-menu-button\s*\{[^}]*box-shadow:/s)
+  assert.match(languageCss, /@media \(max-width:\s*760px\)[\s\S]*\.global-language-control\s*\{[^}]*min-width:\s*52px[^}]*min-height:\s*30px/s)
+  assert.match(languageCss, /@media \(max-width:\s*760px\)[\s\S]*\.global-language-control\s*\{[^}]*font-size:\s*\.6rem/s)
 })
 
 test('pending issues is present in canonical and compatibility management navigation', async () => {
