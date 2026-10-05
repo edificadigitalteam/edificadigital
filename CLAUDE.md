@@ -89,7 +89,7 @@ Applied migrations establish the foundation, in-kind shipment model, foreign-key
 2. Inspect tables and migration history.
 3. Document the database change in the plan and pull request.
 4. Add failing pgTAP tests.
-5. Add a new immutable migration file.
+5. Add a new immutable migration file. A migration that creates a table or view in `public` grants its Data API access explicitly (see `AGENTS.md`, database rule 12).
 6. Apply the migration through Supabase migration history.
 7. Verify schema shape, constraints, policies, grants, and indexes.
 8. Execute a representative transaction and roll it back.
