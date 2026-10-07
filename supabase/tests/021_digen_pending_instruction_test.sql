@@ -1,7 +1,7 @@
 begin;
 set local search_path = public, extensions, pg_catalog;
 
-select plan(12);
+select plan(13);
 
 select has_column('public','unit_pending_issue','origin','pending issue stores its origin');
 select has_column('public','unit_pending_issue','issued_by_unit_id','pending issue stores issuing unit');
@@ -21,6 +21,19 @@ select ok(
 
 select has_function('private','current_operator_is_digen_director',array['uuid'],'DIGEN director authorization helper exists');
 select has_function('private','pending_instruction_target_unit_ids_json',array['uuid'],'DIGEN instruction target helper exists');
+
+select ok(
+  exists (
+    select 1 from pg_policies
+    where schemaname='public'
+      and tablename='unit_pending_issue'
+      and policyname='unit_pending_issue_select'
+      and qual ilike '%current_visible_unit_ids%'
+      and qual ilike '%digen_instruction%'
+      and qual ilike '%current_operator_is_digen_director%'
+  ),
+  'ordinary issues keep hierarchy visibility while DIGEN can follow issued instructions'
+);
 
 select ok(
   exists (
