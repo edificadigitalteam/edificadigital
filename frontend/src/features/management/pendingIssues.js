@@ -65,7 +65,22 @@ export function pendingIssueSummary(rows = []) {
   }, { pending: 0, inProgress: 0, completed: 0, urgent: 0 })
 }
 
-export function canEditPendingIssue(issue, access) {
+export function isDigenInstruction(issue) {
+  return issue?.origin === 'digen_instruction'
+}
+
+export function canRespondToPendingInstruction(issue, access) {
+  if (!isDigenInstruction(issue) || access?.canIssueInstructions) return false
   const own = new Set(access?.ownUnitIds ?? [])
   return Boolean(issue?.unit_id && own.has(issue.unit_id))
+}
+
+export function canManagePendingIssueContent(issue, access) {
+  if (isDigenInstruction(issue)) return Boolean(access?.canIssueInstructions)
+  const own = new Set(access?.ownUnitIds ?? [])
+  return Boolean(issue?.unit_id && own.has(issue.unit_id))
+}
+
+export function canEditPendingIssue(issue, access) {
+  return canManagePendingIssueContent(issue, access)
 }

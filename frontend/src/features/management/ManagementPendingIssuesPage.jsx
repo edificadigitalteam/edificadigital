@@ -4,7 +4,9 @@ import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from './ManagementStandaloneShell.jsx'
 import {
-  canEditPendingIssue,
+  canManagePendingIssueContent,
+  canRespondToPendingInstruction,
+  isDigenInstruction,
   pendingIssueStatusMeta,
   pendingIssueSummary,
   pendingIssueUrgencyMeta,
@@ -25,11 +27,21 @@ const copy = {
     consolidatedHelp: 'Ves los asuntos de tu unidad y de las unidades que dependen de ella.',
     ownHelp: 'Cada Dirección administra únicamente sus propios asuntos.',
     newIssue: '＋ Nuevo asunto',
+    assignInstruction: '＋ Asignar instrucción',
     editIssue: 'Editar asunto',
     createIssue: 'Nuevo asunto pendiente',
+    createInstruction: 'Nueva instrucción DIGEN',
+    editInstruction: 'Editar instrucción DIGEN',
+    assignTo: 'Asignar a Dirección / organización',
+    instructionHelp: 'La unidad seleccionada verá esta instrucción en sus asuntos pendientes y actualizará su cumplimiento.',
+    instructionBadge: 'Instrucción DIGEN',
+    instructionFor: 'Asignada a',
+    response: 'Respuesta de la Dirección',
+    responseHelp: 'Actualiza el estado para informar a DIGEN cómo avanza esta instrucción.',
     close: 'Cerrar',
     cancel: 'Cancelar',
     save: 'Guardar asunto',
+    saveInstruction: 'Asignar instrucción',
     saving: 'Guardando…',
     titleField: 'Asunto',
     description: 'Descripción',
@@ -53,9 +65,13 @@ const copy = {
     updated: 'Actualizado',
     edit: 'Editar',
     saved: 'Asunto guardado.',
+    instructionSaved: 'Instrucción asignada correctamente.',
+    statusSaved: 'Estado actualizado. DIGEN ya puede ver el avance.',
     noUnitAccess: 'Tu usuario todavía no está asignado a una Dirección o agencia con acceso a este módulo.',
+    noInstructionTargets: 'No hay Direcciones u organizaciones disponibles para asignar una instrucción.',
     loading: 'Cargando asuntos pendientes…',
     required: 'Completa el asunto y la descripción.',
+    targetRequired: 'Selecciona la Dirección u organización que recibirá la instrucción.',
   },
   en: {
     eyebrow: 'CONTROL AND FOLLOW-UP',
@@ -68,11 +84,21 @@ const copy = {
     consolidatedHelp: 'You see the pending issues of your unit and of the units below it.',
     ownHelp: 'Each unit manages only its own pending issues.',
     newIssue: '＋ New issue',
+    assignInstruction: '＋ Assign instruction',
     editIssue: 'Edit issue',
     createIssue: 'New pending issue',
+    createInstruction: 'New DIGEN instruction',
+    editInstruction: 'Edit DIGEN instruction',
+    assignTo: 'Assign to unit / organization',
+    instructionHelp: 'The selected unit will see this instruction in its pending issues and report its progress.',
+    instructionBadge: 'DIGEN instruction',
+    instructionFor: 'Assigned to',
+    response: 'Unit response',
+    responseHelp: 'Update the status so DIGEN can see the progress of this instruction.',
     close: 'Close',
     cancel: 'Cancel',
     save: 'Save issue',
+    saveInstruction: 'Assign instruction',
     saving: 'Saving…',
     titleField: 'Issue',
     description: 'Description',
@@ -96,14 +122,20 @@ const copy = {
     updated: 'Updated',
     edit: 'Edit',
     saved: 'Issue saved.',
+    instructionSaved: 'Instruction assigned successfully.',
+    statusSaved: 'Status updated. DIGEN can now see the progress.',
     noUnitAccess: 'Your user is not assigned to a unit or agency with access to this module yet.',
+    noInstructionTargets: 'There are no units or organizations available for an instruction.',
     loading: 'Loading pending issues…',
     required: 'Complete the issue and description.',
+    targetRequired: 'Select the unit or organization that will receive the instruction.',
   },
 }
 
 const emptyForm = () => ({
   id: '',
+  unit_id: '',
+  origin: 'unit',
   title: '',
   description: '',
   status: 'pending',
@@ -143,7 +175,14 @@ export default function ManagementPendingIssuesPage() {
   const [periods, setPeriods] = useState([])
   const [units, setUnits] = useState([])
   const [issues, setIssues] = useState([])
-  const [moduleAccess, setModuleAccess] = useState({ is_digen: false, unit_ids: [], can_view_consolidated: false, digen_unit_id: null })
+  const [moduleAccess, setModuleAccess] = useState({
+    is_digen: false,
+    unit_ids: [],
+    can_view_consolidated: false,
+    digen_unit_id: null,
+    can_issue_instructions: false,
+    instruction_target_unit_ids: [],
+  })
   const [periodId, setPeriodId] = useState('')
   const [selectedUnitId, setSelectedUnitId] = useState('')
   const [scope, setScope] = useState('mine')
@@ -206,13 +245,17 @@ export default function ManagementPendingIssuesPage() {
   const ownUnits = useMemo(() => units.filter((unit) => ownUnitIds.has(unit.id)), [units, ownUnitIds])
   const defaultUnitId = defaultOwnUnitId(units, moduleAccess)
   const consolidatedUnits = useMemo(() => visibleUnits(units, moduleAccess), [units, moduleAccess])
+  const instructionTargetIds = useMemo(() => new Set(moduleAccess.instruction_target_unit_ids ?? []), [moduleAccess.instruction_target_unit_ids])
+  const instructionTargets = useMemo(() => units.filter((unit) => instructionTargetIds.has(unit.id)), [units, instructionTargetIds])
 
   useEffect(() => {
     setSelectedUnitId((current) => ownUnitIds.has(current) ? current : defaultUnitId)
   }, [defaultUnitId, ownUnitIds])
 
   const currentUnit = units.find((unit) => unit.id === selectedUnitId)
+  const formUnit = units.find((unit) => unit.id === form.unit_id)
   const canCreate = Boolean(periodId && selectedUnitId && ownUnitIds.has(selectedUnitId))
+  const canIssueInstructions = Boolean(moduleAccess.can_issue_instructions)
 
   const periodIssues = useMemo(
     () => issues.filter((issue) => issue.management_period_id === periodId),
@@ -251,7 +294,20 @@ export default function ManagementPendingIssuesPage() {
 
   const openNew = () => {
     if (!canCreate || saving) return
-    setForm(emptyForm())
+    setForm({ ...emptyForm(), unit_id: selectedUnitId })
+    setFormOpen(true)
+    setError('')
+    setMessage('')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const openInstruction = () => {
+    if (!canIssueInstructions || saving) return
+    if (!instructionTargets.length) {
+      setError(t.noInstructionTargets)
+      return
+    }
+    setForm({ ...emptyForm(), origin: 'digen_instruction', unit_id: instructionTargets[0].id, status: 'pending' })
     setFormOpen(true)
     setError('')
     setMessage('')
@@ -259,14 +315,13 @@ export default function ManagementPendingIssuesPage() {
   }
 
   const openEdit = (issue) => {
-    if (!canEditPendingIssue(issue, { ownUnitIds: [...ownUnitIds], isDigen: moduleAccess.is_digen })) return
-    setSelectedUnitId(issue.unit_id)
-    setScope('mine')
-    setForm({
-      ...emptyForm(),
-      ...issue,
-      due_date: issue.due_date || '',
-    })
+    const permission = { ownUnitIds: [...ownUnitIds], canIssueInstructions }
+    if (!canManagePendingIssueContent(issue, permission)) return
+    if (!isDigenInstruction(issue)) {
+      setSelectedUnitId(issue.unit_id)
+      setScope('mine')
+    }
+    setForm({ ...emptyForm(), ...issue, due_date: issue.due_date || '' })
     setFormOpen(true)
     setError('')
     setMessage('')
@@ -275,9 +330,19 @@ export default function ManagementPendingIssuesPage() {
 
   const saveIssue = async (event) => {
     event.preventDefault()
-    if (!supabase || saving || !canCreate) return
+    if (!supabase || saving) return
+    const instruction = form.origin === 'digen_instruction'
+    const targetUnitId = instruction ? form.unit_id : selectedUnitId
+    const allowed = instruction
+      ? canIssueInstructions && instructionTargetIds.has(targetUnitId)
+      : canCreate
+    if (!allowed) return
     if (!form.title.trim() || !form.description.trim()) {
       setError(t.required)
+      return
+    }
+    if (instruction && !targetUnitId) {
+      setError(t.targetRequired)
       return
     }
 
@@ -287,10 +352,11 @@ export default function ManagementPendingIssuesPage() {
     const payload = {
       organization_id: organizationId,
       management_period_id: periodId,
-      unit_id: selectedUnitId,
+      unit_id: targetUnitId,
+      origin: instruction ? 'digen_instruction' : 'unit',
       title: form.title.trim(),
       description: form.description.trim(),
-      status: form.status,
+      status: instruction && !form.id ? 'pending' : form.status,
       urgency: form.urgency,
       due_date: form.due_date || null,
       updated_by: access.userId || null,
@@ -298,7 +364,7 @@ export default function ManagementPendingIssuesPage() {
     }
 
     const request = form.id
-      ? supabase.from('unit_pending_issue').update(payload).eq('id', form.id).eq('unit_id', selectedUnitId)
+      ? supabase.from('unit_pending_issue').update(payload).eq('id', form.id)
       : supabase.from('unit_pending_issue').insert(payload)
 
     const { error: requestError } = await request
@@ -306,7 +372,27 @@ export default function ManagementPendingIssuesPage() {
     else {
       setFormOpen(false)
       setForm(emptyForm())
-      setMessage(t.saved)
+      setMessage(instruction ? t.instructionSaved : t.saved)
+      await reloadIssues()
+    }
+    setSaving(false)
+  }
+
+  const updateInstructionStatus = async (issue, status) => {
+    if (!supabase || saving || issue.status === status) return
+    const permission = { ownUnitIds: [...ownUnitIds], canIssueInstructions }
+    if (!canRespondToPendingInstruction(issue, permission)) return
+    setSaving(true)
+    setError('')
+    setMessage('')
+    const { error: requestError } = await supabase
+      .from('unit_pending_issue')
+      .update({ status, updated_by: access.userId || null })
+      .eq('id', issue.id)
+      .eq('unit_id', issue.unit_id)
+    if (requestError) setError(requestError.message)
+    else {
+      setMessage(t.statusSaved)
       await reloadIssues()
     }
     setSaving(false)
@@ -332,11 +418,18 @@ export default function ManagementPendingIssuesPage() {
             <h1>{t.title}</h1>
             <span>{t.intro}</span>
           </div>
-          {scope === 'mine' && canCreate && (
-            <button type="button" title={language === 'en' ? 'Create a pending issue' : 'Registrar un asunto pendiente'} onClick={openNew} disabled={saving}>
-              {t.newIssue}
-            </button>
-          )}
+          <div className="pending-heading-actions">
+            {canIssueInstructions && (
+              <button className="instruction" type="button" title={t.assignInstruction} onClick={openInstruction} disabled={saving}>
+                {t.assignInstruction}
+              </button>
+            )}
+            {scope === 'mine' && canCreate && (
+              <button type="button" title={language === 'en' ? 'Create a pending issue' : 'Registrar un asunto pendiente'} onClick={openNew} disabled={saving}>
+                {t.newIssue}
+              </button>
+            )}
+          </div>
         </div>
 
         {error && <p className="management-flash error">{error}</p>}
@@ -363,7 +456,7 @@ export default function ManagementPendingIssuesPage() {
           </div>
         </section>
 
-        {!ownUnits.length && <p className="management-flash error">{t.noUnitAccess}</p>}
+        {!ownUnits.length && !canIssueInstructions && <p className="management-flash error">{t.noUnitAccess}</p>}
 
         {moduleAccess.is_digen && (
           <div className="pending-issues-scope-tabs" role="group" aria-label={language === 'en' ? 'Pending issues view' : 'Vista de asuntos pendientes'}>
@@ -373,15 +466,26 @@ export default function ManagementPendingIssuesPage() {
         )}
 
         {formOpen && (
-          <form className="management-form-card pending-issue-form" onSubmit={saveIssue}>
+          <form className={`management-form-card pending-issue-form ${form.origin === 'digen_instruction' ? 'pending-instruction-form' : ''}`} onSubmit={saveIssue}>
             <div className="management-form-title">
               <div>
-                <small>{currentUnit?.code || t.eyebrow}</small>
-                <h2>{form.id ? t.editIssue : t.createIssue}</h2>
+                <small>{form.origin === 'digen_instruction' ? t.instructionBadge : (currentUnit?.code || t.eyebrow)}</small>
+                <h2>{form.origin === 'digen_instruction' ? (form.id ? t.editInstruction : t.createInstruction) : (form.id ? t.editIssue : t.createIssue)}</h2>
+                {form.origin === 'digen_instruction' && <p>{t.instructionHelp}</p>}
               </div>
               <button type="button" title={t.close} onClick={() => setFormOpen(false)}>{t.close}</button>
             </div>
             <div className="management-form-grid">
+              {form.origin === 'digen_instruction' && (
+                <label className="wide pending-instruction-target">
+                  <span>{t.assignTo} *</span>
+                  <select value={form.unit_id} onChange={(event) => setForm((current) => ({ ...current, unit_id: event.target.value }))} required>
+                    <option value="">—</option>
+                    {instructionTargets.map((unit) => <option key={unit.id} value={unit.id}>{unit.code} · {unit.name}</option>)}
+                  </select>
+                  {formUnit && <small>{t.instructionFor}: {formUnit.code} · {formUnit.name}</small>}
+                </label>
+              )}
               <label className="wide">
                 <span>{t.titleField} *</span>
                 <input maxLength="180" value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} required />
@@ -390,12 +494,14 @@ export default function ManagementPendingIssuesPage() {
                 <span>{t.description} *</span>
                 <textarea maxLength="4000" value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} required />
               </label>
-              <label>
-                <span>{t.status}</span>
-                <select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}>
-                  {['pending', 'in_progress', 'completed'].map((value) => <option key={value} value={value}>{pendingIssueStatusMeta(value, language).label}</option>)}
-                </select>
-              </label>
+              {form.origin !== 'digen_instruction' && (
+                <label>
+                  <span>{t.status}</span>
+                  <select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}>
+                    {['pending', 'in_progress', 'completed'].map((value) => <option key={value} value={value}>{pendingIssueStatusMeta(value, language).label}</option>)}
+                  </select>
+                </label>
+              )}
               <label>
                 <span>{t.urgency}</span>
                 <select value={form.urgency} onChange={(event) => setForm((current) => ({ ...current, urgency: event.target.value }))}>
@@ -409,7 +515,7 @@ export default function ManagementPendingIssuesPage() {
             </div>
             <div className="management-form-actions">
               <button type="button" title={t.cancel} onClick={() => setFormOpen(false)}>{t.cancel}</button>
-              <button className="primary" title={t.save} disabled={saving}>{saving ? t.saving : t.save}</button>
+              <button className="primary" title={form.origin === 'digen_instruction' ? t.saveInstruction : t.save} disabled={saving}>{saving ? t.saving : (form.origin === 'digen_instruction' ? t.saveInstruction : t.save)}</button>
             </div>
           </form>
         )}
@@ -449,7 +555,7 @@ export default function ManagementPendingIssuesPage() {
                   <span>{t.unit}</span>
                   <select value={consolidatedUnitId} onChange={(event) => setConsolidatedUnitId(event.target.value)}>
                     <option value="">{t.allUnits}</option>
-                    {consolidatedUnits.map((unit) => <option key={unit.id} value={unit.id}>{unit.code} · {unit.name}</option>)}
+                    {(canIssueInstructions ? units : consolidatedUnits).map((unit) => <option key={unit.id} value={unit.id}>{unit.code} · {unit.name}</option>)}
                   </select>
                 </label>
               )}
@@ -467,25 +573,41 @@ export default function ManagementPendingIssuesPage() {
                     const status = pendingIssueStatusMeta(issue.status, language)
                     const urgency = pendingIssueUrgencyMeta(issue.urgency, language)
                     const unit = units.find((item) => item.id === issue.unit_id)
-                    const editable = canEditPendingIssue(issue, { ownUnitIds: [...ownUnitIds], isDigen: moduleAccess.is_digen })
+                    const instruction = isDigenInstruction(issue)
+                    const permission = { ownUnitIds: [...ownUnitIds], canIssueInstructions }
+                    const manageable = canManagePendingIssueContent(issue, permission)
+                    const respondable = canRespondToPendingInstruction(issue, permission)
                     return (
-                      <article className={`pending-issue-card status-${status.tone}`} key={issue.id}>
+                      <article className={`pending-issue-card status-${status.tone} ${instruction ? 'digen-instruction-card' : ''}`} key={issue.id}>
                         <div className="pending-issue-card-top">
                           <div className="pending-issue-badges">
+                            {instruction && <span className="pending-instruction-badge">{t.instructionBadge}</span>}
                             <span className={`pending-status-badge ${status.tone}`}><b aria-hidden="true">{status.icon}</b>{status.label}</span>
                             <span className={`pending-urgency-badge ${urgency.tone}`}>{t.urgency}: {urgency.label}</span>
                           </div>
-                          {scope === 'consolidated' && <span className="pending-unit-badge">{unit?.code || '—'}</span>}
+                          {(scope === 'consolidated' || instruction) && <span className="pending-unit-badge">{unit?.code || '—'}</span>}
                         </div>
                         <div className="pending-issue-copy">
                           <h3>{issue.title}</h3>
                           <p>{issue.description}</p>
                         </div>
                         <div className="pending-issue-meta">
+                          {instruction && <span><small>{t.instructionFor}</small><strong>{unit ? `${unit.code} · ${unit.name}` : '—'}</strong></span>}
                           <span><small>{t.due}</small><strong>{issue.due_date ? dateLabel(issue.due_date, language) : t.withoutDue}</strong></span>
                           <span><small>{t.updated}</small><strong>{timestampLabel(issue.updated_at, language)}</strong></span>
                         </div>
-                        {editable && (
+                        {respondable && (
+                          <div className="pending-instruction-response">
+                            <div><strong>{t.response}</strong><small>{t.responseHelp}</small></div>
+                            <div className="pending-status-actions" role="group" aria-label={t.response}>
+                              {['pending', 'in_progress', 'completed'].map((value) => {
+                                const meta = pendingIssueStatusMeta(value, language)
+                                return <button type="button" key={value} className={`${meta.tone} ${issue.status === value ? 'active' : ''}`} disabled={saving || issue.status === value} onClick={() => updateInstructionStatus(issue, value)}><b aria-hidden="true">{meta.icon}</b>{meta.label}</button>
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        {manageable && (
                           <div className="pending-issue-actions">
                             <button type="button" title={`${t.edit}: ${issue.title}`} onClick={() => openEdit(issue)}>{t.edit}</button>
                           </div>
