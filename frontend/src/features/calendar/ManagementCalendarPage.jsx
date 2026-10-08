@@ -4,7 +4,7 @@ import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from '../management/ManagementStandaloneShell.jsx'
 import { DEFAULT_CALENDAR_MODULE_LABEL, buildCalendarActivityPayloads, canOpenCalendarActivityEntry, resolveCalendarModuleLabel, reviewStatusLabel, selectDefaultCalendarPeriodId } from './calendar.js'
-import { canReviewUnitActivity, canViewAllUnits, defaultSelectableUnitId, selectableUnits } from '../management/unitScope.js'
+import { canReviewUnitActivity, canViewAllUnits, defaultSelectableUnitId, editableUnitIds, selectableUnits } from '../management/unitScope.js'
 import './management-calendar.css'
 
 const MONTHS = {
@@ -30,7 +30,7 @@ const copy = {
     invalidDates:'Revisa las fechas: la fecha de cierre debe ser igual o posterior a la fecha de inicio.', activityName:'Nombre de la actividad', notes:'Notas',
     clear:'Vaciar calendario', clearConfirm:'¿Vaciar todas las actividades de esta unidad para el año seleccionado? Esta acción eliminará únicamente el calendario propio visible.',
     clearDone:'Calendario de la unidad vaciado.', jointOn:'Habilitar vista conjunta', jointOff:'Cerrar vista conjunta',
-    jointEnabled:'Vista consolidada habilitada por la unidad general.', adminView:'Como administrador ves el calendario de todas las Direcciones y agencias.', privateView:'Tu calendario es visible para tu unidad y para las unidades de las que depende.',
+    jointEnabled:'Vista consolidada habilitada por la unidad general.', adminView:'Como administrador ves y editas el calendario de todas las Direcciones y agencias.', privateView:'Tu calendario es visible para tu unidad y para las unidades de las que depende.',
     digenView:'Ves el calendario de tu unidad y de las unidades que dependen de ella.', visibleActivities:'Actividades visibles', visibleUnits:'Unidades visibles',
     validated:'Validadas', observed:'Observadas', noActivities:'Sin actividades visibles.',
     noObjectives:'Esta unidad necesita al menos un objetivo en su Plan Anual antes de registrar actividades.', openPlan:'Abrir Plan Anual',
@@ -50,7 +50,7 @@ const copy = {
     invalidDates:'Check the dates: the end date must be the same as or later than the start date.', activityName:'Activity name', notes:'Notes',
     clear:'Clear calendar', clearConfirm:'Clear all activities for this unit and selected year? This only deletes the current unit calendar.',
     clearDone:'Unit calendar cleared.', jointOn:'Enable shared view', jointOff:'Close shared view', jointEnabled:'Consolidated view enabled by the top unit.',
-    adminView:'As an administrator you see the calendar of every unit and agency.', privateView:'Your calendar is visible to your unit and the units above it.', digenView:'You see the calendar of your unit and of the units below it.',
+    adminView:'As an administrator you see and edit the calendar of every unit and agency.', privateView:'Your calendar is visible to your unit and the units above it.', digenView:'You see the calendar of your unit and of the units below it.',
     visibleActivities:'Visible activities', visibleUnits:'Visible units', validated:'Validated', observed:'Observed', noActivities:'No visible activities.',
     noObjectives:'This unit needs at least one Annual Work Plan objective before activities can be created.', openPlan:'Open Annual Work Plan',
     activity:'Activity', objective:'Annual Work Plan objective', indicator:'Related indicator (optional)', dateFrom:'Start date', dateTo:'End date',
@@ -143,9 +143,9 @@ export default function ManagementCalendarPage(){
 
   useEffect(()=>{ loadAccess() },[loadAccess])
 
-  const ownUnitIds = useMemo(()=>new Set(calendarAccess.unit_ids ?? []),[calendarAccess.unit_ids])
   const viewAllUnits = canViewAllUnits(access.role)
   const unitOptions = useMemo(()=>selectableUnits(units, calendarAccess, { viewAll:viewAllUnits }),[units,calendarAccess,viewAllUnits])
+  const editableUnits = useMemo(()=>editableUnitIds(units, calendarAccess, { viewAll:viewAllUnits }),[units,calendarAccess,viewAllUnits])
   const defaultUnitId = defaultSelectableUnitId(units, calendarAccess, { viewAll:viewAllUnits })
 
   useEffect(()=>{
@@ -164,7 +164,7 @@ export default function ManagementCalendarPage(){
   const planIndicators = useMemo(()=>indicators.filter((indicator)=>indicator.management_period_id===periodId && indicator.unit_id===selectedUnitId && planObjectiveIds.has(indicator.objective_id)),[indicators,periodId,selectedUnitId,planObjectiveIds])
   const currentUnit = units.find((unit)=>unit.id===selectedUnitId)
   const moduleLabel = resolveCalendarModuleLabel(organization)
-  const canCreate = Boolean(selectedUnitId && ownUnitIds.has(selectedUnitId))
+  const canCreate = Boolean(selectedUnitId && editableUnits.has(selectedUnitId))
   const canViewConsolidated = Boolean(calendarAccess.can_view_consolidated)
   const visibleUnitCount = new Set(visibleActivities.map((activity)=>activity.unit_id).filter(Boolean)).size
 
@@ -181,7 +181,7 @@ export default function ManagementCalendarPage(){
     setBulkOpen(true); setFormOpen(false); setError(''); setMessage(''); window.scrollTo({top:0,behavior:'smooth'})
   }
   const openEdit = (activity) => {
-    if (!ownUnitIds.has(activity.unit_id)) return
+    if (!editableUnits.has(activity.unit_id)) return
     setSelectedUnitId(activity.unit_id)
     setForm({ ...emptyActivity(), ...activity, objective_id:activity.objective_id || '', end_date:activity.end_date || '', indicator_id:activity.indicator_id || '', description:activity.description || '', responsible_name:activity.responsible_name || '' })
     setFormOpen(true); setBulkOpen(false); setError(''); setMessage(''); window.scrollTo({top:0,behavior:'smooth'})
@@ -349,7 +349,7 @@ export default function ManagementCalendarPage(){
         {presentation==='calendar' ? <section className="calendar-year-grid">{MONTHS[language].map((month,index)=>{
           const monthRows=visibleActivities.filter((activity)=>new Date(activity.start_date + 'T12:00:00').getMonth()===index)
           return <article className="calendar-month-card" key={month}><header><span>{String(index+1).padStart(2,'0')}</span><strong>{month}</strong><b>{monthRows.length}</b></header><div>{monthRows.length ? monthRows.map((activity)=>{
-            const unit=units.find((row)=>row.id===activity.unit_id); const objective=objectives.find((row)=>row.id===activity.objective_id); const indicator=indicators.find((row)=>row.id===activity.indicator_id); const editable=ownUnitIds.has(activity.unit_id)
+            const unit=units.find((row)=>row.id===activity.unit_id); const objective=objectives.find((row)=>row.id===activity.objective_id); const indicator=indicators.find((row)=>row.id===activity.indicator_id); const editable=editableUnits.has(activity.unit_id)
             return <div className={'calendar-event review-' + (activity.review_status||'pending')} key={activity.id}>
               <div className="calendar-event-top"><span>{dateLabel(activity.start_date,language)}</span><b>{unit?.code||'—'}</b></div>
               <strong>{activity.title}</strong><small>{objective?.code||''}{indicator ? ' · ' + indicator.name : ''}</small>

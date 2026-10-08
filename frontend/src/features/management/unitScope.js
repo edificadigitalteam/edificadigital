@@ -40,3 +40,8 @@ export function selectableUnits(units = [], access = {}, { viewAll = false } = {
 export function defaultSelectableUnitId(units = [], access = {}, options = {}) {
   return defaultOwnUnitId(units, access) || selectableUnits(units, access, options)[0]?.id || ''
 }
+
+// Units the caller may write to: every unit for an admin, own units for everyone else.
+export function editableUnitIds(units = [], access = {}, { viewAll = false } = {}) {
+  return viewAll ? new Set(units.map((unit) => unit.id)) : idSet(access?.unit_ids)
+}

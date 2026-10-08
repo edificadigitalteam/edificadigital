@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { visibleUnits, supervisedUnits, defaultOwnUnitId, canReviewUnitActivity, selectableUnits, defaultSelectableUnitId, canViewAllUnits } from './unitScope.js'
+import { visibleUnits, supervisedUnits, defaultOwnUnitId, canReviewUnitActivity, selectableUnits, defaultSelectableUnitId, canViewAllUnits, editableUnitIds } from './unitScope.js'
 
 const units = [
   { id: 'gen', code: 'GEN', unit_type: 'directorate' },
@@ -72,4 +72,10 @@ test('the default selectable unit prefers an own unit and falls back to the firs
   assert.equal(defaultSelectableUnitId(units, { unit_ids: [] }, { viewAll: true }), 'gen')
   assert.equal(defaultSelectableUnitId(units, { unit_ids: ['dime'], digen_unit_id: 'dime' }, { viewAll: true }), 'dime')
   assert.equal(defaultSelectableUnitId(units, { unit_ids: [] }), '')
+})
+
+test('editable units are every unit for an admin and only own units for everyone else', () => {
+  assert.deepEqual([...editableUnitIds(units, { unit_ids: [] }, { viewAll: true })], ['gen', 'digen', 'diaf', 'dime', 'fbcc'])
+  assert.deepEqual([...editableUnitIds(units, digenDirector)], ['digen'])
+  assert.deepEqual([...editableUnitIds(units, { unit_ids: [] })], [])
 })

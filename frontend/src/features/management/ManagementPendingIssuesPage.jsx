@@ -12,7 +12,7 @@ import {
   pendingIssueUrgencyMeta,
   sortPendingIssues,
 } from './pendingIssues.js'
-import { visibleUnits, canViewAllUnits, defaultSelectableUnitId, selectableUnits } from './unitScope.js'
+import { visibleUnits, canViewAllUnits, defaultSelectableUnitId, editableUnitIds, selectableUnits } from './unitScope.js'
 import './management-pending-issues.css'
 
 const copy = {
@@ -26,7 +26,7 @@ const copy = {
     consolidated: 'Consolidado institucional',
     consolidatedHelp: 'Ves los asuntos de tu unidad y de las unidades que dependen de ella.',
     ownHelp: 'Cada Dirección administra únicamente sus propios asuntos.',
-    adminHelp: 'Como administrador ves los asuntos de todas las Direcciones y agencias.',
+    adminHelp: 'Como administrador ves y gestionas los asuntos de todas las Direcciones y agencias.',
     newIssue: '＋ Nuevo asunto',
     assignInstruction: '＋ Asignar instrucción',
     editIssue: 'Editar asunto',
@@ -84,7 +84,7 @@ const copy = {
     consolidated: 'Institutional consolidated',
     consolidatedHelp: 'You see the pending issues of your unit and of the units below it.',
     ownHelp: 'Each unit manages only its own pending issues.',
-    adminHelp: 'As an administrator you see the pending issues of every unit and agency.',
+    adminHelp: 'As an administrator you see and manage the pending issues of every unit and agency.',
     newIssue: '＋ New issue',
     assignInstruction: '＋ Assign instruction',
     editIssue: 'Edit issue',
@@ -243,9 +243,9 @@ export default function ManagementPendingIssuesPage() {
 
   useEffect(() => { loadData() }, [loadData])
 
-  const ownUnitIds = useMemo(() => new Set(moduleAccess.unit_ids ?? []), [moduleAccess.unit_ids])
   const viewAllUnits = canViewAllUnits(access.role)
   const unitOptions = useMemo(() => selectableUnits(units, moduleAccess, { viewAll: viewAllUnits }), [units, moduleAccess, viewAllUnits])
+  const editableUnits = useMemo(() => editableUnitIds(units, moduleAccess, { viewAll: viewAllUnits }), [units, moduleAccess, viewAllUnits])
   const defaultUnitId = defaultSelectableUnitId(units, moduleAccess, { viewAll: viewAllUnits })
   const consolidatedUnits = useMemo(() => visibleUnits(units, moduleAccess), [units, moduleAccess])
   const instructionTargetIds = useMemo(() => new Set(moduleAccess.instruction_target_unit_ids ?? []), [moduleAccess.instruction_target_unit_ids])
@@ -257,7 +257,7 @@ export default function ManagementPendingIssuesPage() {
 
   const currentUnit = units.find((unit) => unit.id === selectedUnitId)
   const formUnit = units.find((unit) => unit.id === form.unit_id)
-  const canCreate = Boolean(periodId && selectedUnitId && ownUnitIds.has(selectedUnitId))
+  const canCreate = Boolean(periodId && selectedUnitId && editableUnits.has(selectedUnitId))
   const canIssueInstructions = Boolean(moduleAccess.can_issue_instructions)
 
   const periodIssues = useMemo(
@@ -318,7 +318,7 @@ export default function ManagementPendingIssuesPage() {
   }
 
   const openEdit = (issue) => {
-    const permission = { ownUnitIds: [...ownUnitIds], canIssueInstructions }
+    const permission = { ownUnitIds: [...editableUnits], canIssueInstructions }
     if (!canManagePendingIssueContent(issue, permission)) return
     if (!isDigenInstruction(issue)) {
       setSelectedUnitId(issue.unit_id)
@@ -383,7 +383,7 @@ export default function ManagementPendingIssuesPage() {
 
   const updateInstructionStatus = async (issue, status) => {
     if (!supabase || saving || issue.status === status) return
-    const permission = { ownUnitIds: [...ownUnitIds], canIssueInstructions }
+    const permission = { ownUnitIds: [...editableUnits], canIssueInstructions }
     if (!canRespondToPendingInstruction(issue, permission)) return
     setSaving(true)
     setError('')
@@ -577,7 +577,7 @@ export default function ManagementPendingIssuesPage() {
                     const urgency = pendingIssueUrgencyMeta(issue.urgency, language)
                     const unit = units.find((item) => item.id === issue.unit_id)
                     const instruction = isDigenInstruction(issue)
-                    const permission = { ownUnitIds: [...ownUnitIds], canIssueInstructions }
+                    const permission = { ownUnitIds: [...editableUnits], canIssueInstructions }
                     const manageable = canManagePendingIssueContent(issue, permission)
                     const respondable = canRespondToPendingInstruction(issue, permission)
                     return (
