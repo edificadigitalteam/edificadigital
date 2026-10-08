@@ -4,7 +4,7 @@ import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from '../management/ManagementStandaloneShell.jsx'
 import { DEFAULT_CALENDAR_MODULE_LABEL, buildCalendarActivityPayloads, canOpenCalendarActivityEntry, resolveCalendarModuleLabel, reviewStatusLabel, selectDefaultCalendarPeriodId } from './calendar.js'
-import { canReviewUnitActivity, defaultOwnUnitId } from '../management/unitScope.js'
+import { canReviewUnitActivity, canViewAllUnits, defaultSelectableUnitId, selectableUnits } from '../management/unitScope.js'
 import './management-calendar.css'
 
 const MONTHS = {
@@ -30,7 +30,7 @@ const copy = {
     invalidDates:'Revisa las fechas: la fecha de cierre debe ser igual o posterior a la fecha de inicio.', activityName:'Nombre de la actividad', notes:'Notas',
     clear:'Vaciar calendario', clearConfirm:'¿Vaciar todas las actividades de esta unidad para el año seleccionado? Esta acción eliminará únicamente el calendario propio visible.',
     clearDone:'Calendario de la unidad vaciado.', jointOn:'Habilitar vista conjunta', jointOff:'Cerrar vista conjunta',
-    jointEnabled:'Vista consolidada habilitada por la unidad general.', privateView:'Tu calendario es visible para tu unidad y para las unidades de las que depende.',
+    jointEnabled:'Vista consolidada habilitada por la unidad general.', adminView:'Como administrador ves el calendario de todas las Direcciones y agencias.', privateView:'Tu calendario es visible para tu unidad y para las unidades de las que depende.',
     digenView:'Ves el calendario de tu unidad y de las unidades que dependen de ella.', visibleActivities:'Actividades visibles', visibleUnits:'Unidades visibles',
     validated:'Validadas', observed:'Observadas', noActivities:'Sin actividades visibles.',
     noObjectives:'Esta unidad necesita al menos un objetivo en su Plan Anual antes de registrar actividades.', openPlan:'Abrir Plan Anual',
@@ -50,7 +50,7 @@ const copy = {
     invalidDates:'Check the dates: the end date must be the same as or later than the start date.', activityName:'Activity name', notes:'Notes',
     clear:'Clear calendar', clearConfirm:'Clear all activities for this unit and selected year? This only deletes the current unit calendar.',
     clearDone:'Unit calendar cleared.', jointOn:'Enable shared view', jointOff:'Close shared view', jointEnabled:'Consolidated view enabled by the top unit.',
-    privateView:'Your calendar is visible to your unit and the units above it.', digenView:'You see the calendar of your unit and of the units below it.',
+    adminView:'As an administrator you see the calendar of every unit and agency.', privateView:'Your calendar is visible to your unit and the units above it.', digenView:'You see the calendar of your unit and of the units below it.',
     visibleActivities:'Visible activities', visibleUnits:'Visible units', validated:'Validated', observed:'Observed', noActivities:'No visible activities.',
     noObjectives:'This unit needs at least one Annual Work Plan objective before activities can be created.', openPlan:'Open Annual Work Plan',
     activity:'Activity', objective:'Annual Work Plan objective', indicator:'Related indicator (optional)', dateFrom:'Start date', dateTo:'End date',
@@ -144,12 +144,13 @@ export default function ManagementCalendarPage(){
   useEffect(()=>{ loadAccess() },[loadAccess])
 
   const ownUnitIds = useMemo(()=>new Set(calendarAccess.unit_ids ?? []),[calendarAccess.unit_ids])
-  const ownUnits = useMemo(()=>units.filter((unit)=>ownUnitIds.has(unit.id)),[units,ownUnitIds])
-  const defaultUnitId = defaultOwnUnitId(units, calendarAccess)
+  const viewAllUnits = canViewAllUnits(access.role)
+  const unitOptions = useMemo(()=>selectableUnits(units, calendarAccess, { viewAll:viewAllUnits }),[units,calendarAccess,viewAllUnits])
+  const defaultUnitId = defaultSelectableUnitId(units, calendarAccess, { viewAll:viewAllUnits })
 
   useEffect(()=>{
-    setSelectedUnitId((current)=>ownUnitIds.has(current) ? current : defaultUnitId)
-  },[defaultUnitId,ownUnitIds])
+    setSelectedUnitId((current)=>unitOptions.some((unit)=>unit.id===current) ? current : defaultUnitId)
+  },[defaultUnitId,unitOptions])
 
   const activePeriod = periods.find((period)=>period.id===periodId)
   const workPlanById = useMemo(()=>new Map(workPlans.map((plan)=>[plan.id,plan])),[workPlans])
@@ -284,11 +285,11 @@ export default function ManagementCalendarPage(){
 
       <section className="calendar-context-row">
         <label><span>{t.year}</span><select value={periodId} onChange={(event)=>{setPeriodId(event.target.value);setScope('mine');setFormOpen(false);setBulkOpen(false)}}>{periods.map((period)=><option key={period.id} value={period.id}>{period.name}</option>)}</select></label>
-        <label><span>{t.unit}</span><select value={selectedUnitId} onChange={(event)=>{setSelectedUnitId(event.target.value);setScope('mine');setFormOpen(false);setBulkOpen(false)}} disabled={ownUnits.length<=1}>{ownUnits.map((unit)=><option key={unit.id} value={unit.id}>{unit.code} · {unit.name}</option>)}</select></label>
-        <div className="calendar-access-summary"><strong>{calendarAccess.is_digen?t.digenView:calendarAccess.joint_review_enabled?t.jointEnabled:t.privateView}</strong><small>{currentUnit ? currentUnit.code + ' · ' + currentUnit.name : ''}</small></div>
+        <label><span>{t.unit}</span><select value={selectedUnitId} onChange={(event)=>{setSelectedUnitId(event.target.value);setScope('mine');setFormOpen(false);setBulkOpen(false)}} disabled={unitOptions.length<=1}>{unitOptions.map((unit)=><option key={unit.id} value={unit.id}>{unit.code} · {unit.name}</option>)}</select></label>
+        <div className="calendar-access-summary"><strong>{viewAllUnits?t.adminView:calendarAccess.is_digen?t.digenView:calendarAccess.joint_review_enabled?t.jointEnabled:t.privateView}</strong><small>{currentUnit ? currentUnit.code + ' · ' + currentUnit.name : ''}</small></div>
       </section>
 
-      {!ownUnits.length && <p className="management-flash error">{t.noUnitAccess}</p>}
+      {!unitOptions.length && !viewAllUnits && <p className="management-flash error">{t.noUnitAccess}</p>}
 
       {bulkOpen && <form className="management-form-card calendar-bulk-form" onSubmit={saveBulkActivities}>
         <div className="management-form-title calendar-bulk-title"><div><small>{currentUnit?.code || t.preliminary} · {activePeriod?.name || ''}</small><h2>{t.bulkTitle}</h2><p>{t.bulkIntro}</p></div><button type="button" onClick={()=>setBulkOpen(false)}>{t.cancel}</button></div>
