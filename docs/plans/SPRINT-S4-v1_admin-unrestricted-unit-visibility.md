@@ -21,7 +21,7 @@ so an admin outside the organization chart saw an empty selector and the
 Annual plan, tracking, indicators, reports and finance already gave admins every unit.
 
 - Calendar and Pending issues enable create/edit/delete/clear for an admin on every unit.
-- `supabase/migrations/20261008150000_admin_unit_edit_access.sql` and
+- `supabase/migrations/20261008145936_admin_unit_edit_access.sql` and
   `supabase/tests/022_admin_unit_edit_access_test.sql`.
 
 ## Rules kept
@@ -49,4 +49,6 @@ Editing required a migration: `private.can_manage_calendar_plan` and
   transaction with a real admin that has no unit membership: both helpers went from
   `false` to `true` for every plan/unit of its organization and stayed `false` for other
   organizations. Nothing was persisted.
-- Pending: apply the migration to `edifydb`, run pgTAP 022 and the advisors.
+- Applied to `edifydb` as `20261008145936` (`admin_unit_edit_access`). pgTAP 022: 4/4. Post-apply check:
+  admin without membership manages every plan/unit of its organization and none of other
+  organizations; `anon` cannot execute the helpers. Security and performance advisors: no new findings.
