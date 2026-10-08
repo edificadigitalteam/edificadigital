@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { visibleUnits, supervisedUnits, defaultOwnUnitId, canReviewUnitActivity } from './unitScope.js'
+import { visibleUnits, supervisedUnits, defaultOwnUnitId, canReviewUnitActivity, selectableUnits, defaultSelectableUnitId, canViewAllUnits, editableUnitIds } from './unitScope.js'
 
 const units = [
   { id: 'gen', code: 'GEN', unit_type: 'directorate' },
@@ -52,4 +52,30 @@ test('calendar review is allowed only on units below the reviewer', () => {
   assert.equal(canReviewUnitActivity({ unit_id: 'fbcc' }, digenDirector), false)
   assert.equal(canReviewUnitActivity({ unit_id: 'digen' }, digenDirector), false)
   assert.equal(canReviewUnitActivity({ unit_id: 'dime' }, dimeDirector), false)
+})
+
+test('tenant admins see every unit without belonging to one', () => {
+  assert.equal(canViewAllUnits('admin'), true)
+  assert.equal(canViewAllUnits('super_admin'), true)
+  assert.equal(canViewAllUnits('operator'), false)
+  assert.equal(canViewAllUnits(undefined), false)
+})
+
+test('selectable units are every unit for an admin and only own units for everyone else', () => {
+  const adminWithoutUnit = { unit_ids: [], visible_unit_ids: ['gen', 'digen', 'diaf', 'dime', 'fbcc'] }
+  assert.deepEqual(selectableUnits(units, adminWithoutUnit, { viewAll: true }).map((unit) => unit.code), ['GEN', 'DIGEN', 'DIAF', 'DIME', 'FBCC'])
+  assert.deepEqual(selectableUnits(units, digenDirector).map((unit) => unit.code), ['DIGEN'])
+  assert.deepEqual(selectableUnits(units, { unit_ids: [] }), [])
+})
+
+test('the default selectable unit prefers an own unit and falls back to the first unit for an admin', () => {
+  assert.equal(defaultSelectableUnitId(units, { unit_ids: [] }, { viewAll: true }), 'gen')
+  assert.equal(defaultSelectableUnitId(units, { unit_ids: ['dime'], digen_unit_id: 'dime' }, { viewAll: true }), 'dime')
+  assert.equal(defaultSelectableUnitId(units, { unit_ids: [] }), '')
+})
+
+test('editable units are every unit for an admin and only own units for everyone else', () => {
+  assert.deepEqual([...editableUnitIds(units, { unit_ids: [] }, { viewAll: true })], ['gen', 'digen', 'diaf', 'dime', 'fbcc'])
+  assert.deepEqual([...editableUnitIds(units, digenDirector)], ['digen'])
+  assert.deepEqual([...editableUnitIds(units, { unit_ids: [] })], [])
 })
