@@ -278,6 +278,90 @@ begin
 end;
 $$;
 
+-- Cross-unit editing also needs unrestricted DIGEN calendar reading.
+-- Administrators retain their previously existing read access.
+create or replace function private.can_view_calendar_plan(target_plan_id uuid)
+returns boolean language sql stable security definer set search_path = ''
+as $
+  select exists (
+    select 1
+    from public.unit_work_plan p
+    join public.management_period mp on mp.id = p.management_period_id
+    where p.id = target_plan_id
+      and private.can_access_organization(p.organization_id)
+      and (
+        private.can_manage_organization(p.organization_id)
+        or private.current_operator_is_digen_director(p.organization_id)
+        or p.unit_id = any(private.current_visible_unit_ids())
+        or (
+          mp.calendar_joint_review_enabled
+          and exists (
+            select 1 from public.organization_unit_member m
+            where m.organization_id = p.organization_id
+              and m.operator_access_id = private.current_operator_access_id()
+              and m.active
+              and m.unit_role in ('director','manager','operator','reviewer')
+          )
+        )
+      )
+  );
+$;
+
+alter policy unit_work_plan_select on public.unit_work_plan
+using (
+  private.can_access_organization(organization_id)
+  and (
+    private.can_manage_organization(organization_id)
+    or private.can_review_management_reports(organization_id)
+    or private.current_operator_is_digen_director(organization_id)
+    or unit_id = any((select private.current_visible_unit_ids())::uuid[])
+  )
+);
+
+alter policy institutional_objective_select on public.institutional_objective
+using (
+  private.can_access_organization(organization_id)
+  and (
+    work_plan_id is null
+    or private.can_manage_organization(organization_id)
+    or private.can_review_management_reports(organization_id)
+    or private.current_operator_is_digen_director(organization_id)
+    or exists (
+      select 1 from public.unit_work_plan p
+      where p.id = institutional_objective.work_plan_id
+        and p.unit_id = any((select private.current_visible_unit_ids())::uuid[])
+    )
+  )
+);
+
+alter policy management_indicator_select on public.management_indicator
+using (
+  private.can_access_organization(organization_id)
+  and (
+    private.can_manage_organization(organization_id)
+    or private.can_review_management_reports(organization_id)
+    or private.current_operator_is_digen_director(organization_id)
+    or unit_id = any((select private.current_visible_unit_ids())::uuid[])
+  )
+);
+
+-- DIGEN may edit other units' activities, while clearing an entire calendar
+-- stays limited to a unit's active members.
+alter policy unit_work_activity_delete on public.unit_work_activity
+using (
+  private.can_access_organization(organization_id)
+  and exists (
+    select 1 from public.unit_work_plan p
+    join public.organization_unit_member m
+      on m.unit_id = p.unit_id
+     and m.organization_id = p.organization_id
+    where p.id = unit_work_activity.work_plan_id
+      and m.operator_access_id = private.current_operator_access_id()
+      and m.active
+      and m.unit_role in ('director','manager','operator','reviewer')
+  )
+);
+
 revoke all on function private.can_self_evaluate_unit(uuid,uuid) from public, anon;
 revoke all on function private.guard_executive_evaluation() from public, anon, authenticated;
 revoke all on function public.evaluation_access_overview(uuid) from public, anon;
