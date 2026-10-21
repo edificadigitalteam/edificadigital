@@ -71,7 +71,10 @@ begin
     or new.management_period_id is distinct from old.management_period_id
     or new.unit_id is distinct from old.unit_id or new.created_by is distinct from old.created_by
   ) then raise exception using errcode='23514',message='Evaluation ownership and period cannot change'; end if;
-  if new.status='submitted' then new.submitted_at:=coalesce(old.submitted_at,now()); else new.submitted_at:=null; end if;
+  if new.status='submitted' then
+    if tg_op='INSERT' then new.submitted_at:=now();
+    else new.submitted_at:=coalesce(old.submitted_at,now()); end if;
+  else new.submitted_at:=null; end if;
   new.updated_at:=now();
   return new;
 end;
@@ -174,3 +177,28 @@ end;
 $$;
 revoke all on function public.digen_update_calendar_activity(uuid,jsonb) from public,anon;
 grant execute on function public.digen_update_calendar_activity(uuid,jsonb) to authenticated;
+
+-- Expose only eligible own units for self-assessment; DIGEN overview is separate
+-- from finance and institutional administrator permissions.
+create or replace function public.executive_evaluation_access_overview(target_organization_id uuid default null)
+returns jsonb language plpgsql security definer set search_path=''
+as $$
+declare
+  org_id uuid:=private.current_operator_organization_id();
+  eligible_ids jsonb;
+begin
+  if not private.is_authorized_operator() then raise exception using errcode='42501',message='Unauthorized'; end if;
+  if private.is_super_admin() and target_organization_id is not null then org_id:=target_organization_id; end if;
+  if org_id is null or not private.can_access_organization(org_id) then raise exception using errcode='42501',message='Organization access denied'; end if;
+  select coalesce(jsonb_agg(distinct u.id),'[]'::jsonb) into eligible_ids
+  from public.organization_unit u join public.organization_unit_member m
+    on m.unit_id=u.id and m.organization_id=u.organization_id
+  where u.organization_id=org_id and u.active and m.active
+    and m.operator_access_id=private.current_operator_access_id()
+    and m.unit_role in ('director','manager');
+  return jsonb_build_object('organization_id',org_id,
+    'eligible_unit_ids',eligible_ids,'can_view_submitted',private.is_digen_evaluation_viewer(org_id));
+end;
+$$;
+revoke all on function public.executive_evaluation_access_overview(uuid) from public,anon;
+grant execute on function public.executive_evaluation_access_overview(uuid) to authenticated;
