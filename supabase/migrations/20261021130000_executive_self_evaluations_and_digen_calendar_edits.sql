@@ -124,6 +124,22 @@ $$;
 revoke all on function public.admin_set_evaluation_module_label(uuid,text) from public,anon;
 grant execute on function public.admin_set_evaluation_module_label(uuid,text) to authenticated;
 
+-- Append-only, private correction history for institutional audit.
+create table if not exists private.calendar_activity_correction (
+  id uuid primary key default gen_random_uuid(),
+  activity_id uuid not null references public.unit_work_activity(id) on delete restrict,
+  organization_id uuid not null references public.organization(id) on delete cascade,
+  corrected_by uuid not null references auth.users(id) on delete restrict,
+  before_value jsonb not null,
+  after_value jsonb not null,
+  corrected_at timestamptz not null default now()
+);
+create index if not exists calendar_activity_correction_activity_idx on private.calendar_activity_correction(activity_id,corrected_at desc);
+create index if not exists calendar_activity_correction_org_idx on private.calendar_activity_correction(organization_id,corrected_at desc);
+create index if not exists calendar_activity_correction_actor_idx on private.calendar_activity_correction(corrected_by);
+alter table private.calendar_activity_correction enable row level security;
+revoke all on private.calendar_activity_correction from public,anon,authenticated;
+
 -- Controlled DIGEN correction during the annual calendar meeting. Preserve plan,
 -- unit, objective, indicator, ownership and financial/approval boundaries.
 create or replace function public.digen_update_calendar_activity(target_activity_id uuid, payload jsonb)
@@ -138,10 +154,12 @@ declare
   new_end date;
   new_status text;
   new_modality text;
+  current_updated timestamptz;
+  old_snapshot jsonb;
 begin
   if not private.is_authorized_operator() then raise exception using errcode='42501',message='Unauthorized'; end if;
-  select a.organization_id,p.unit_id,p.management_period_id
-    into row_org,row_unit,row_period
+  select a.organization_id,p.unit_id,p.management_period_id,a.updated_at,to_jsonb(a)
+    into row_org,row_unit,row_period,current_updated,old_snapshot
   from public.unit_work_activity a join public.unit_work_plan p on p.id=a.work_plan_id
   where a.id=target_activity_id
   for update of a;
@@ -155,6 +173,10 @@ begin
     or (payload ? 'objective_id') or (payload ? 'indicator_id') or (payload ? 'created_by')
     or (payload ? 'review_status') or (payload ? 'reviewed_by') then
     raise exception using errcode='22023',message='Only calendar activity content can be edited';
+  end if;
+  if nullif(payload->>'expected_updated_at','') is not null
+     and nullif(payload->>'expected_updated_at','')::timestamptz is distinct from current_updated then
+    raise exception using errcode='40001',message='Activity was updated by another user. Reload before saving changes';
   end if;
   new_title:=nullif(btrim(payload->>'title'),'');
   new_start:=nullif(payload->>'start_date','')::date;
@@ -172,9 +194,12 @@ begin
       review_status='pending',review_note=null,reviewed_at=null,reviewed_by=null,
       updated_by=auth.uid(),updated_at=now()
   where a.id=target_activity_id and a.organization_id=row_org;
+  insert into private.calendar_activity_correction(activity_id,organization_id,corrected_by,before_value,after_value)
+  select target_activity_id,row_org,auth.uid(),old_snapshot,to_jsonb(a)
+  from public.unit_work_activity a where a.id=target_activity_id;
   return target_activity_id;
 end;
-$$;
+$;
 revoke all on function public.digen_update_calendar_activity(uuid,jsonb) from public,anon;
 grant execute on function public.digen_update_calendar_activity(uuid,jsonb) to authenticated;
 
