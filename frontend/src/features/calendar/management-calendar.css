@@ -90,3 +90,13 @@
   .calendar-bulk-row{padding:10px}
   .calendar-bulk-row-number>span{width:30px;height:30px}
 }
+
+/* The General Director's correction form keeps the owning unit explicit.
+   List view offers the same edit action as the monthly cards. */
+.calendar-supervisor-context{display:grid;gap:4px;padding:12px 14px;background:#fcf7ff;border:1px solid #d9c6e6;border-left:4px solid #f58220;border-radius:10px}
+.calendar-supervisor-context strong{color:#54236b;font-size:.86rem}
+.calendar-supervisor-context small{color:#7b6d81;line-height:1.45}
+.calendar-list-edit-button{display:inline-flex;align-items:center;justify-content:center;min-height:34px;margin-top:8px;padding:0 12px;border:1px solid #6d2f7e;border-radius:8px;background:#fff;color:#5d2670;font:inherit;font-size:.75rem;font-weight:850;cursor:pointer}
+.calendar-list-edit-button:hover{background:#f5eef9}
+.calendar-list-edit-button:focus-visible{outline:3px solid #f58220;outline-offset:3px}
+@media print{.calendar-list-edit-button{display:none!important}}
