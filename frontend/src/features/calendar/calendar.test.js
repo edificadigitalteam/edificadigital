@@ -100,3 +100,20 @@ test('bulk calendar payloads share defaults and allow an optional objective', ()
   assert.equal(payloads[0].modality, 'hybrid')
   assert.equal(payloads[1].description, 'Detalle')
 })
+
+test('DIGEN corrects only subordinate calendar activities, without opening unrelated units', () => {
+  const access = {ownUnitIds:['digen'],isDigen:true,supervisedUnitIds:['diprom','dime']}
+  assert.equal(canEditCalendarActivity({unit_id:'digen'},access),true)
+  assert.equal(canEditCalendarActivity({unit_id:'diprom'},access),true)
+  assert.equal(canEditCalendarActivity({unit_id:'dime'},access),true)
+  assert.equal(canEditCalendarActivity({unit_id:'other'},access),false)
+  assert.equal(canEditCalendarActivity({unit_id:'diprom'},{...access,isDigen:false}),false)
+  assert.equal(canEditCalendarActivity({unit_id:'diprom'},{ownUnitIds:['diaf'],isDigen:false,jointReviewEnabled:true}),false)
+})
+
+test('evaluation is registered as a tenant-renamable module', () => {
+  const module = renameableModules.find((item) => item.key === 'evaluation')
+  assert.equal(module?.column,'evaluation_module_label')
+  assert.equal(module?.rpc,'admin_set_evaluation_module_label')
+  assert.equal(module?.defaultLabel,'Evaluación')
+})
