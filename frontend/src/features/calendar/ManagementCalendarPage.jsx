@@ -36,7 +36,7 @@ const copy = {
     noObjectives:'Esta unidad necesita al menos un objetivo en su Plan Anual antes de registrar actividades.', openPlan:'Abrir Plan Anual',
     activity:'Actividad', objective:'Objetivo del Plan Anual', indicator:'Indicador relacionado (opcional)', dateFrom:'Fecha de inicio', dateTo:'Fecha de cierre',
     responsible:'Responsable', modality:'Modalidad', status:'Estado', details:'Notas / detalles', save:'Guardar actividad', saving:'Guardando…',
-    cancel:'Cancelar', edit:'Editar', validate:'Validar', observe:'Observar', reviewState:'Estado de revisión', date:'Fecha', direction:'Dirección',
+    cancel:'Cancelar', edit:'Editar', digenEdit:'DIGEN · Editar actividad', editUnit:'Dirección responsable (solo consulta)', editHint:'La Dirección y los vínculos de objetivo e indicador permanecen intactos.', validate:'Validar', observe:'Observar', reviewState:'Estado de revisión', date:'Fecha', direction:'Dirección',
     objectiveIndicator:'Objetivo / indicador', loading:'Cargando calendario…', saved:'Actividad guardada.', reviewed:'Revisión actualizada.',
     jointChanged:'Visibilidad conjunta actualizada.', noUnitAccess:'Tu usuario todavía no está asignado a una Dirección o agencia con acceso al calendario.',
   },
@@ -55,7 +55,7 @@ const copy = {
     noObjectives:'This unit needs at least one Annual Work Plan objective before activities can be created.', openPlan:'Open Annual Work Plan',
     activity:'Activity', objective:'Annual Work Plan objective', indicator:'Related indicator (optional)', dateFrom:'Start date', dateTo:'End date',
     responsible:'Responsible', modality:'Modality', status:'Status', details:'Notes / details', save:'Save activity', saving:'Saving…', cancel:'Cancel',
-    edit:'Edit', validate:'Validate', observe:'Observe', reviewState:'Review status', date:'Date', direction:'Unit',
+    edit:'Edit', digenEdit:'General Director · Edit activity', editUnit:'Responsible unit (read only)', editHint:'The unit, objective and indicator remain unchanged.', validate:'Validate', observe:'Observe', reviewState:'Review status', date:'Date', direction:'Unit',
     objectiveIndicator:'Objective / indicator', loading:'Loading calendar…', saved:'Activity saved.', reviewed:'Review updated.',
     jointChanged:'Shared visibility updated.', noUnitAccess:'Your user is not yet assigned to a unit or agency with calendar access.',
   },
@@ -165,6 +165,11 @@ export default function ManagementCalendarPage(){
   const currentUnit = units.find((unit)=>unit.id===selectedUnitId)
   const moduleLabel = resolveCalendarModuleLabel(organization)
   const canCreate = Boolean(selectedUnitId && editableUnits.has(selectedUnitId))
+  const digenUnit = units.find((unit)=>String(unit.code||'').trim().toUpperCase()==='DIGEN')
+  const canDigenCorrect = Boolean(digenUnit && calendarAccess.unit_ids?.includes(digenUnit.id))
+  const canEditActivity = (activity) => Boolean(editableUnits.has(activity.unit_id) || (canDigenCorrect && canReviewUnitActivity(activity,calendarAccess)))
+  const editingUnit = units.find((unit)=>unit.id===workPlanById.get(form.work_plan_id)?.unit_id)
+  const editingSupervised = Boolean(editingUnit && !editableUnits.has(editingUnit.id) && canDigenCorrect && canReviewUnitActivity({unit_id:editingUnit.id},calendarAccess))
   const canViewConsolidated = Boolean(calendarAccess.can_view_consolidated)
   const visibleUnitCount = new Set(visibleActivities.map((activity)=>activity.unit_id).filter(Boolean)).size
 
@@ -181,8 +186,8 @@ export default function ManagementCalendarPage(){
     setBulkOpen(true); setFormOpen(false); setError(''); setMessage(''); window.scrollTo({top:0,behavior:'smooth'})
   }
   const openEdit = (activity) => {
-    if (!editableUnits.has(activity.unit_id)) return
-    setSelectedUnitId(activity.unit_id)
+    if (!canEditActivity(activity)) return
+    if (editableUnits.has(activity.unit_id)) setSelectedUnitId(activity.unit_id)
     setForm({ ...emptyActivity(), ...activity, objective_id:activity.objective_id || '', end_date:activity.end_date || '', indicator_id:activity.indicator_id || '', description:activity.description || '', responsible_name:activity.responsible_name || '' })
     setFormOpen(true); setBulkOpen(false); setError(''); setMessage(''); window.scrollTo({top:0,behavior:'smooth'})
   }
@@ -224,17 +229,26 @@ export default function ManagementCalendarPage(){
 
   const saveActivity = async (event) => {
     event.preventDefault()
-    if (!supabase || saving || !canCreate || !ownSelectedPlan || !form.title.trim() || !form.start_date) return
-    setSaving(true); setError(''); setMessage('')
-    const objectiveId = form.objective_id || null
-    const payload = {
-      organization_id:organizationId, work_plan_id:ownSelectedPlan.id, objective_id:objectiveId, indicator_id:objectiveId ? (form.indicator_id || null) : null,
-      title:form.title.trim(), description:form.description.trim() || null, start_date:form.start_date, end_date:form.end_date || null,
-      status:form.status, responsible_name:form.responsible_name.trim() || null, modality:form.modality, updated_by:access.userId || null,
+    if (!supabase || saving || !form.id || !form.title.trim() || !form.start_date) return
+    if (form.end_date && form.end_date<form.start_date){ setError(t.invalidDates); return }
+    const isOwnEdit=Boolean(editingUnit && editableUnits.has(editingUnit.id))
+    if (!isOwnEdit && !editingSupervised) return
+    setSaving(true);setError('');setMessage('')
+    const basic={
+      title:form.title.trim(), description:form.description.trim()||null,
+      start_date:form.start_date,end_date:form.end_date||null,
+      status:form.status,responsible_name:form.responsible_name.trim()||null,modality:form.modality,
     }
-    const { error:requestError } = await supabase.from('unit_work_activity').update(payload).eq('id',form.id).eq('work_plan_id',ownSelectedPlan.id)
-    if (requestError) setError(requestError.message)
-    else { setFormOpen(false); setForm(emptyActivity()); setMessage(t.saved); await reloadActivities() }
+    const result=editingSupervised
+      ? await supabase.rpc('digen_update_calendar_activity',{target_activity_id:form.id,payload:basic})
+      : await supabase.from('unit_work_activity').update({
+          ...basic,organization_id:organizationId,work_plan_id:form.work_plan_id,
+          objective_id:form.objective_id||null,
+          indicator_id:form.objective_id?(form.indicator_id||null):null,
+          updated_by:access.userId||null,
+        }).eq('id',form.id).eq('work_plan_id',form.work_plan_id)
+    if(result.error)setError(result.error.message)
+    else{setFormOpen(false);setForm(emptyActivity());setMessage(t.saved);await reloadActivities()}
     setSaving(false)
   }
 
@@ -318,11 +332,12 @@ export default function ManagementCalendarPage(){
       </form>}
 
       {formOpen && <form className="management-form-card calendar-activity-form" onSubmit={saveActivity}>
-        <div className="management-form-title"><div><small>{t.preliminary}</small><h2>{form.id?t.edit:t.newActivity.replace('＋ ','')}</h2></div><button type="button" onClick={()=>setFormOpen(false)}>{t.cancel}</button></div>
+        <div className="management-form-title"><div><small>{t.preliminary}</small><h2>{editingSupervised?t.digenEdit:form.id?t.edit:t.newActivity.replace('＋ ','')}</h2></div><button type="button" onClick={()=>setFormOpen(false)}>{t.cancel}</button></div>
         <div className="management-form-grid">
+          {editingSupervised && <div className="calendar-supervisor-context wide"><strong>{t.editUnit}: {editingUnit?.code} · {editingUnit?.name}</strong><small>{t.editHint}</small></div>}
           <label className="wide"><span>{t.activity} *</span><input value={form.title} onChange={(event)=>setForm((current)=>({...current,title:event.target.value}))} required /></label>
-          <label><span>{t.objective}</span><select value={form.objective_id} onChange={(event)=>setForm((current)=>({...current,objective_id:event.target.value,indicator_id:''}))}><option value="">{t.noObjective}</option>{planObjectives.map((objective)=><option key={objective.id} value={objective.id}>{objective.code} · {objective.title}</option>)}</select></label>
-          <label><span>{t.indicator}</span><select value={form.indicator_id} disabled={!form.objective_id} onChange={(event)=>setForm((current)=>({...current,indicator_id:event.target.value}))}><option value="">—</option>{planIndicators.filter((indicator)=>indicator.objective_id===form.objective_id).map((indicator)=><option key={indicator.id} value={indicator.id}>{indicator.name}</option>)}</select></label>
+          {!editingSupervised&&<label><span>{t.objective}</span><select value={form.objective_id} onChange={(event)=>setForm((current)=>({...current,objective_id:event.target.value,indicator_id:''}))}><option value="">{t.noObjective}</option>{planObjectives.map((objective)=><option key={objective.id} value={objective.id}>{objective.code} · {objective.title}</option>)}</select></label>}
+          {!editingSupervised&&<label><span>{t.indicator}</span><select value={form.indicator_id} disabled={!form.objective_id} onChange={(event)=>setForm((current)=>({...current,indicator_id:event.target.value}))}><option value="">—</option>{planIndicators.filter((indicator)=>indicator.objective_id===form.objective_id).map((indicator)=><option key={indicator.id} value={indicator.id}>{indicator.name}</option>)}</select></label>}
           <label><span>{t.dateFrom} *</span><input type="date" value={form.start_date} min={activePeriod?.start_date} max={activePeriod?.end_date} onChange={(event)=>setForm((current)=>({...current,start_date:event.target.value}))} required /></label>
           <label><span>{t.dateTo}</span><input type="date" value={form.end_date} min={form.start_date||activePeriod?.start_date} max={activePeriod?.end_date} onChange={(event)=>setForm((current)=>({...current,end_date:event.target.value}))} /></label>
           <label><span>{t.responsible}</span><input value={form.responsible_name} onChange={(event)=>setForm((current)=>({...current,responsible_name:event.target.value}))} /></label>
@@ -349,7 +364,7 @@ export default function ManagementCalendarPage(){
         {presentation==='calendar' ? <section className="calendar-year-grid">{MONTHS[language].map((month,index)=>{
           const monthRows=visibleActivities.filter((activity)=>new Date(activity.start_date + 'T12:00:00').getMonth()===index)
           return <article className="calendar-month-card" key={month}><header><span>{String(index+1).padStart(2,'0')}</span><strong>{month}</strong><b>{monthRows.length}</b></header><div>{monthRows.length ? monthRows.map((activity)=>{
-            const unit=units.find((row)=>row.id===activity.unit_id); const objective=objectives.find((row)=>row.id===activity.objective_id); const indicator=indicators.find((row)=>row.id===activity.indicator_id); const editable=editableUnits.has(activity.unit_id)
+            const unit=units.find((row)=>row.id===activity.unit_id); const objective=objectives.find((row)=>row.id===activity.objective_id); const indicator=indicators.find((row)=>row.id===activity.indicator_id); const editable=canEditActivity(activity)
             return <div className={'calendar-event review-' + (activity.review_status||'pending')} key={activity.id}>
               <div className="calendar-event-top"><span>{dateLabel(activity.start_date,language)}</span><b>{unit?.code||'—'}</b></div>
               <strong>{activity.title}</strong><small>{objective?.code||''}{indicator ? ' · ' + indicator.name : ''}</small>
@@ -361,7 +376,7 @@ export default function ManagementCalendarPage(){
           <div className="calendar-list-head"><span>{t.date}</span><span>{t.activity}</span><span>{t.direction}</span><span>{t.objectiveIndicator}</span><span>{t.reviewState}</span></div>
           {visibleActivities.length ? visibleActivities.map((activity)=>{
             const unit=units.find((row)=>row.id===activity.unit_id); const objective=objectives.find((row)=>row.id===activity.objective_id); const indicator=indicators.find((row)=>row.id===activity.indicator_id)
-            return <div className="calendar-list-row" key={activity.id}><div className="calendar-list-cell" data-label={t.date}><span>{dateLabel(activity.start_date,language)}</span></div><div className="calendar-list-cell calendar-list-activity" data-label={t.activity}><strong>{activity.title}</strong></div><div className="calendar-list-cell" data-label={t.direction}><span>{unit?.code||'—'}</span></div><div className="calendar-list-cell calendar-list-objective" data-label={t.objectiveIndicator}><span>{objective?.code||'—'}</span>{indicator?<small>{indicator.name}</small>:null}</div><div className="calendar-list-cell" data-label={t.reviewState}><span className={'calendar-review-badge ' + (activity.review_status||'pending')}>{reviewStatusLabel(activity.review_status,language)}</span></div></div>
+            return <div className="calendar-list-row" key={activity.id}><div className="calendar-list-cell" data-label={t.date}><span>{dateLabel(activity.start_date,language)}</span></div><div className="calendar-list-cell calendar-list-activity" data-label={t.activity}><strong>{activity.title}</strong></div><div className="calendar-list-cell" data-label={t.direction}><span>{unit?.code||'—'}</span></div><div className="calendar-list-cell calendar-list-objective" data-label={t.objectiveIndicator}><span>{objective?.code||'—'}</span>{indicator?<small>{indicator.name}</small>:null}</div><div className="calendar-list-cell" data-label={t.reviewState}><span className={'calendar-review-badge ' + (activity.review_status||'pending')}>{reviewStatusLabel(activity.review_status,language)}</span>{canEditActivity(activity)&&<button className="calendar-list-edit-button" type="button" onClick={()=>openEdit(activity)}>{t.edit}</button>}</div></div>
           }) : <p className="management-empty">{t.noActivities}</p>}
         </section>}
       </>}
