@@ -95,8 +95,8 @@ export default function ManagementStandaloneShell({ access, children }) {
   useEffect(() => {
     if (!supabase || access.status !== 'authorized' || !access.organizationId) return undefined
     let cancelled = false
-    supabase.from('organization').select('calendar_module_label').eq('id', access.organizationId).single()
-      .then(({ data }) => { if (!cancelled) setCalendarLabel(String(data?.calendar_module_label || '').trim() || 'Calendario') })
+    supabase.from('organization').select('calendar_module_label,evaluation_module_label').eq('id', access.organizationId).single()
+      .then(({ data }) => { if (!cancelled) { setCalendarLabel(String(data?.calendar_module_label || '').trim() || 'Calendario'); setEvaluationLabel(String(data?.evaluation_module_label || '').trim() || 'Evaluación') } })
     return () => { cancelled = true }
   }, [access.organizationId, access.status])
 
@@ -130,6 +130,7 @@ export default function ManagementStandaloneShell({ access, children }) {
         <ManagementNavigation
           path={path}
           calendarLabel={calendarLabel}
+          evaluationLabel={evaluationLabel}
           canAdmin={canAdmin}
           maintainersOpen={maintainersOpen}
           onToggleMaintainers={() => setMaintainersOpen((current) => !current)}
@@ -156,6 +157,7 @@ export default function ManagementStandaloneShell({ access, children }) {
         <ManagementNavigation
           path={path}
           calendarLabel={calendarLabel}
+          evaluationLabel={evaluationLabel}
           canAdmin={canAdmin}
           maintainersOpen={maintainersOpen}
           onToggleMaintainers={() => setMaintainersOpen((current) => !current)}
