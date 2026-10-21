@@ -8,6 +8,7 @@ import OrganizationalManagementApp from './features/management/OrganizationalMan
 import ManagementStructurePage from './features/management/ManagementStructurePage.jsx'
 import ManagementObjectivesPage from './features/management/ManagementObjectivesPage.jsx'
 import ManagementCalendarPage from './features/calendar/ManagementCalendarPage.jsx'
+import ExecutiveEvaluationPage from './features/evaluation/ExecutiveEvaluationPage.jsx'
 import ManagementTrackingPage from './features/management/ManagementTrackingPage.jsx'
 import ManagementPendingIssuesPage from './features/management/ManagementPendingIssuesPage.jsx'
 import ManagementIndicatorFormPage from './features/management/ManagementIndicatorFormPage.jsx'
@@ -49,6 +50,7 @@ const isManagementRelationshipRoles = pathname.startsWith('/app/management/setti
 const isManagementModuleLabels = pathname.startsWith('/app/management/settings/module-labels')
 const isManagementStructure = pathname === '/app/management/structure' || pathname === '/app/management/structure/'
 const isManagementObjectives = pathname.startsWith('/app/management/objectives')
+const isManagementEvaluation = pathname.startsWith('/app/management/evaluation')
 const isManagementCalendar = pathname.startsWith('/app/management/calendar')
 const isManagementIndicatorNew = pathname === '/app/management/tracking/new' || pathname === '/app/management/tracking/new/'
 const isManagementTracking = pathname.startsWith('/app/management/tracking')
@@ -108,6 +110,7 @@ function RootApplication() {
   else if (isManagementRelationshipRoles) content = <ManagementMemberCatalogPage catalog="roles" />
   else if (isManagementModuleLabels) content = <ManagementModuleLabelsPage />
   else if (isManagementStructure) content = <ManagementStructurePage />
+  else if (isManagementEvaluation) content = <ExecutiveEvaluationPage />
   else if (isManagementCalendar) content = <ManagementCalendarPage />
   else if (isManagementObjectives) content = <ManagementObjectivesPage />
   else if (isManagementIndicatorNew) content = <ManagementIndicatorFormPage />
