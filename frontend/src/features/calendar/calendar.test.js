@@ -54,10 +54,13 @@ test('joint review temporarily exposes the consolidated calendar read-only', () 
   assert.equal(canEditCalendarActivity({ unit_id: 'dime' }, { ownUnitIds: ['diprom'], isDigen: false }), false)
 })
 
-test('DIGEN can edit its own activities but not another unit activity', () => {
-  const access = { ownUnitIds: ['digen'], isDigen: true }
-  assert.equal(canEditCalendarActivity({ unit_id: 'digen' }, access), true)
-  assert.equal(canEditCalendarActivity({ unit_id: 'diprom' }, access), false)
+test('DIGEN director alone receives cross-unit calendar edit permission', () => {
+  const digen = { ownUnitIds: ['digen'], isDigen: true, canEditConsolidated: true }
+  const admin = { ownUnitIds: [], isAdmin: true, canEditConsolidated: false }
+  assert.equal(canEditCalendarActivity({ unit_id: 'digen' }, digen), true)
+  assert.equal(canEditCalendarActivity({ unit_id: 'diprom' }, digen), true)
+  assert.equal(canEditCalendarActivity({ unit_id: 'diprom' }, admin), false)
+  assert.equal(canEditCalendarActivity({ unit_id: 'diprom' }, { ownUnitIds: ['diprom'] }), true)
 })
 
 test('calendar is registered as a tenant-renamable module', () => {
