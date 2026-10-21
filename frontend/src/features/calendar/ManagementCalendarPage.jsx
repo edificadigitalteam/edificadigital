@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase.js'
 import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from '../management/ManagementStandaloneShell.jsx'
-import { DEFAULT_CALENDAR_MODULE_LABEL, buildCalendarActivityPayloads, canOpenCalendarActivityEntry, resolveCalendarModuleLabel, reviewStatusLabel, selectDefaultCalendarPeriodId } from './calendar.js'
+import { DEFAULT_CALENDAR_MODULE_LABEL, buildCalendarActivityPayloads, canEditCalendarActivity, canOpenCalendarActivityEntry, resolveCalendarModuleLabel, reviewStatusLabel, selectDefaultCalendarPeriodId } from './calendar.js'
 import { canReviewUnitActivity, canViewAllUnits, defaultSelectableUnitId, editableUnitIds, selectableUnits } from '../management/unitScope.js'
 import './management-calendar.css'
 
@@ -167,9 +167,15 @@ export default function ManagementCalendarPage(){
   const canCreate = Boolean(selectedUnitId && editableUnits.has(selectedUnitId))
   const digenUnit = units.find((unit)=>String(unit.code||'').trim().toUpperCase()==='DIGEN')
   const canDigenCorrect = Boolean(digenUnit && calendarAccess.unit_ids?.includes(digenUnit.id))
-  const canEditActivity = (activity) => Boolean(editableUnits.has(activity.unit_id) || (canDigenCorrect && canReviewUnitActivity(activity,calendarAccess)))
+  const canEditActivity = (activity) => canEditCalendarActivity(activity,{
+    ownUnitIds:[...editableUnits],
+    supervisedUnitIds:calendarAccess.supervised_unit_ids || [],
+    isDigen:canDigenCorrect,
+  })
   const editingUnit = units.find((unit)=>unit.id===workPlanById.get(form.work_plan_id)?.unit_id)
-  const editingSupervised = Boolean(editingUnit && !editableUnits.has(editingUnit.id) && canDigenCorrect && canReviewUnitActivity({unit_id:editingUnit.id},calendarAccess))
+  const editingSupervised = Boolean(editingUnit && !editableUnits.has(editingUnit.id) && canEditCalendarActivity({unit_id:editingUnit.id},{
+    ownUnitIds:[...editableUnits],supervisedUnitIds:calendarAccess.supervised_unit_ids || [],isDigen:canDigenCorrect,
+  }))
   const canViewConsolidated = Boolean(calendarAccess.can_view_consolidated)
   const visibleUnitCount = new Set(visibleActivities.map((activity)=>activity.unit_id).filter(Boolean)).size
 
@@ -240,7 +246,7 @@ export default function ManagementCalendarPage(){
       status:form.status,responsible_name:form.responsible_name.trim()||null,modality:form.modality,
     }
     const result=editingSupervised
-      ? await supabase.rpc('digen_update_calendar_activity',{target_activity_id:form.id,payload:basic})
+      ? await supabase.rpc('digen_update_calendar_activity',{target_activity_id:form.id,payload:{...basic,expected_updated_at:form.updated_at}})
       : await supabase.from('unit_work_activity').update({
           ...basic,organization_id:organizationId,work_plan_id:form.work_plan_id,
           objective_id:form.objective_id||null,
