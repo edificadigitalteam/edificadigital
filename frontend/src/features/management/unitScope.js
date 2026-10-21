@@ -21,7 +21,7 @@ export function defaultOwnUnitId(units = [], access = {}) {
 }
 
 export function canReviewUnitActivity(activity, access = {}) {
-  return Boolean(activity?.unit_id && idSet(access?.supervised_unit_ids).has(activity.unit_id))
+  return Boolean(activity?.unit_id && (access?.can_edit_consolidated === true || idSet(access?.supervised_unit_ids).has(activity.unit_id)))
 }
 
 // Tenant admins see every unit of the organization without belonging to one.
