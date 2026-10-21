@@ -54,11 +54,12 @@ test('joint review temporarily exposes the consolidated calendar read-only', () 
   assert.equal(canEditCalendarActivity({ unit_id: 'dime' }, { ownUnitIds: ['diprom'], isDigen: false }), false)
 })
 
-test('DIGEN director alone receives cross-unit calendar edit permission', () => {
-  const digen = { ownUnitIds: ['digen'], isDigen: true, canEditConsolidated: true }
+test('GEN and DIGEN leadership receive cross-unit calendar editing; ordinary admins do not', () => {
+  const gen = { ownUnitIds: ['gen'], canEditConsolidated: true }
+  const digen = { ownUnitIds: ['digen'], canEditConsolidated: true }
   const admin = { ownUnitIds: [], isAdmin: true, canEditConsolidated: false }
-  assert.equal(canEditCalendarActivity({ unit_id: 'digen' }, digen), true)
-  assert.equal(canEditCalendarActivity({ unit_id: 'diprom' }, digen), true)
+  assert.equal(canEditCalendarActivity({ unit_id: 'diprom' }, gen), true)
+  assert.equal(canEditCalendarActivity({ unit_id: 'dime' }, digen), true)
   assert.equal(canEditCalendarActivity({ unit_id: 'diprom' }, admin), false)
   assert.equal(canEditCalendarActivity({ unit_id: 'diprom' }, { ownUnitIds: ['diprom'] }), true)
 })
