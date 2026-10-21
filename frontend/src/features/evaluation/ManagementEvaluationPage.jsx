@@ -21,45 +21,45 @@ const competencyEn = [
 ]
 const messages = {
   es: {
-    eyebrow: 'CONTROL Y RENDICIÓN', title: 'Evaluación', intro: 'Autoevaluación ejecutiva institucional. Cada director completa su formulario personal y DIGEN recibe las evaluaciones enviadas.',
+    eyebrow: 'CONTROL Y RENDICIÓN', title: 'Evaluación', intro: 'Autoevaluación ejecutiva institucional. Cada director completa su formulario personal y GEN y DIGEN reciben las evaluaciones enviadas.',
     period: 'Gestión', unit: 'Dirección / agencia', personal: 'Mi autoevaluación', collection: 'Evaluaciones recibidas',
     director: 'Director(a)', joined: 'Año de ingreso', number: 'Nº de período', date: 'Fecha', location: 'Lugar',
     swot: 'Matriz DOFA', groups: { strengths: 'Fortalezas', opportunities: 'Oportunidades', weaknesses: 'Debilidades', threats: 'Amenazas' },
     profile: 'Perfil ocupacional', skill: 'Talento humano', rating: 'Autoevaluación',
     achievement: 'Logros alcanzados en el período según los objetivos de la Dirección',
     ratings: ['Fortaleza · Alto','Fortaleza · Medio','Fortaleza · Bajo','Debilidad · Alto','Debilidad · Medio','Debilidad · Bajo'],
-    choose: 'Selecciona una valoración', save: 'Guardar borrador', submit: 'Enviar a DIGEN', saving: 'Guardando…',
-    draftSaved: 'Borrador guardado.', submitted: 'Autoevaluación enviada a DIGEN.',
+    choose: 'Selecciona una valoración', save: 'Guardar borrador', submit: 'Enviar a GEN y DIGEN', saving: 'Guardando…',
+    draftSaved: 'Borrador guardado.', submitted: 'Autoevaluación enviada a GEN y DIGEN.',
     complete: 'Completa los datos generales y las 18 valoraciones del perfil ocupacional para enviar.',
-    confirm: '¿Enviar la autoevaluación a DIGEN? Después de enviarla quedará cerrada.',
-    received: 'Enviadas', drafts: 'Borradores', ownSubmitted: 'Esta autoevaluación fue enviada a DIGEN y quedó cerrada.',
+    confirm: '¿Enviar la autoevaluación a GEN y DIGEN? Después de enviarla quedará cerrada.',
+    received: 'Enviadas', drafts: 'Borradores', ownSubmitted: 'Esta autoevaluación fue enviada a GEN y DIGEN y quedó cerrada.',
     ownDraft: 'Puedes guardar y continuar tu autoevaluación cuando lo necesites.',
     listEmpty: 'Todavía no hay evaluaciones registradas para esta gestión.',
-    onlyDirectors: 'La autoevaluación está habilitada para directores con una asignación activa. DIGEN puede consultar el consolidado.',
+    onlyDirectors: 'La autoevaluación está habilitada para directores con una asignación activa. GEN y DIGEN pueden consultar el consolidado.',
     open: 'Ver evaluación', close: 'Cerrar detalle', completed: 'Valoraciones completadas', strengths: 'Fortalezas', weaknesses: 'Debilidades',
-    status: 'Estado', submittedStatus: 'Enviada', draftStatus: 'Borrador', readOnly: 'Consulta reservada a DIGEN',
-    privacy: 'Acceso privado. Los resultados individuales quedan disponibles para su autor y para el Director General de DIGEN.',
+    status: 'Estado', submittedStatus: 'Enviada', draftStatus: 'Borrador', readOnly: 'Consulta reservada a GEN y DIGEN',
+    privacy: 'Acceso privado. Los resultados individuales quedan disponibles para su autor y para los responsables autorizados de GEN y DIGEN.',
     loading: 'Cargando evaluaciones…', noPeriod: 'Aún no hay gestiones registradas.', failed: 'Se produjo un error. Revisa el mensaje e inténtalo nuevamente.',
   },
   en: {
-    eyebrow: 'ACCOUNTABILITY', title: 'Evaluation', intro: 'Institutional executive self-evaluation. Each director completes their individual form; DIGEN receives submitted evaluations.',
+    eyebrow: 'ACCOUNTABILITY', title: 'Evaluation', intro: 'Institutional executive self-evaluation. Each director completes their individual form; GEN and DIGEN receive submitted evaluations.',
     period: 'Management period', unit: 'Unit / agency', personal: 'My self-evaluation', collection: 'Received evaluations',
     director: 'Director', joined: 'Year joined', number: 'Term number', date: 'Date', location: 'Location',
     swot: 'SWOT matrix', groups: { strengths: 'Strengths', opportunities: 'Opportunities', weaknesses: 'Weaknesses', threats: 'Threats' },
     profile: 'Occupational profile', skill: 'Competency', rating: 'Self-rating',
     achievement: 'Achievements during the period aligned with the unit’s objectives',
     ratings: ['Strength · High','Strength · Medium','Strength · Low','Weakness · High','Weakness · Medium','Weakness · Low'],
-    choose: 'Choose a rating', save: 'Save draft', submit: 'Submit to DIGEN', saving: 'Saving…',
-    draftSaved: 'Draft saved.', submitted: 'Self-evaluation submitted to DIGEN.',
+    choose: 'Choose a rating', save: 'Save draft', submit: 'Submit to GEN and DIGEN', saving: 'Saving…',
+    draftSaved: 'Draft saved.', submitted: 'Self-evaluation submitted to GEN and DIGEN.',
     complete: 'Complete the general details and all 18 occupational ratings before submitting.',
-    confirm: 'Submit this evaluation to DIGEN? It will be final after submission.',
-    received: 'Submitted', drafts: 'Drafts', ownSubmitted: 'This evaluation has been submitted to DIGEN and is final.',
+    confirm: 'Submit this evaluation to GEN and DIGEN? It will be final after submission.',
+    received: 'Submitted', drafts: 'Drafts', ownSubmitted: 'This evaluation has been submitted to GEN and DIGEN and is final.',
     ownDraft: 'You can save and return to your self-evaluation as needed.',
     listEmpty: 'There are no evaluations for this period yet.',
-    onlyDirectors: 'Evaluations are available to active directors. DIGEN may view the consolidated records.',
+    onlyDirectors: 'Evaluations are available to active directors. GEN and DIGEN may view the consolidated records.',
     open: 'View evaluation', close: 'Close details', completed: 'Rated competencies', strengths: 'Strengths', weaknesses: 'Weaknesses',
-    status: 'Status', submittedStatus: 'Submitted', draftStatus: 'Draft', readOnly: 'DIGEN-only review',
-    privacy: 'Private access. Individual responses are available to their author and the DIGEN general director.',
+    status: 'Status', submittedStatus: 'Submitted', draftStatus: 'Draft', readOnly: 'GEN and DIGEN-only review',
+    privacy: 'Private access. Individual responses are available to their author and authorized GEN and DIGEN leaders.',
     loading: 'Loading evaluations…', noPeriod: 'No management periods available.', failed: 'An error occurred. Review the message and try again.',
   },
 }
@@ -110,7 +110,7 @@ export default function ManagementEvaluationPage() {
   const [organization, setOrganization] = useState(null)
   const [periods, setPeriods] = useState([])
   const [units, setUnits] = useState([])
-  const [overview, setOverview] = useState({ director_unit_ids: [], is_digen_director: false })
+  const [overview, setOverview] = useState({ director_unit_ids: [], can_review_all_evaluations: false })
   const [rows, setRows] = useState([])
   const [periodId, setPeriodId] = useState('')
   const [unitId, setUnitId] = useState('')
@@ -139,7 +139,7 @@ export default function ManagementEvaluationPage() {
     ])
     const failed = results.find((result) => result.error)
     if (failed) { setError(failed.error.message); setLoading(false); return }
-    setOverview(results[0].data || { director_unit_ids: [], is_digen_director: false })
+    setOverview(results[0].data || { director_unit_ids: [], can_review_all_evaluations: false })
     setOrganization(results[1].data)
     const periodRows = results[2].data || []
     setPeriods(periodRows); setUnits(results[3].data || []); setRows(results[4].data || [])
@@ -157,11 +157,11 @@ export default function ManagementEvaluationPage() {
   useEffect(() => {
     setForm(normalizeEvaluation(ownRow, access.displayName || ''))
   }, [ownRow, periodId, unitId, access.displayName])
-  const isDigen = Boolean(overview.is_digen_director)
+  const canReviewAll = Boolean(overview.can_review_all_evaluations)
   const periodRows = rows.filter((row) => row.management_period_id === periodId)
   const submittedRows = periodRows.filter((row) => row.status === 'submitted')
   const currentPeriod = periods.find((period) => period.id === periodId)
-  const detail = isDigen ? submittedRows.find((row) => row.id === selectedDetail) : null
+  const detail = canReviewAll ? submittedRows.find((row) => row.id === selectedDetail) : null
 
   const save = async (status) => {
     if (saving || !directorUnitIds.has(unitId) || !periodId || ownRow?.status === 'submitted') return
@@ -242,9 +242,9 @@ export default function ManagementEvaluationPage() {
               <button type="button" disabled={saving} onClick={()=>save('submitted')}>{saving ? t.saving : t.submit}</button></div>
           </>}
         </section>}
-        {!directorUnits.length && !isDigen && <p className="management-empty">{t.onlyDirectors}</p>}
-        {isDigen && periodId && <section className="evaluation-consolidated">
-          <div className="evaluation-section-header"><div><small>DIGEN</small><h2>{t.collection}</h2></div>
+        {!directorUnits.length && !canReviewAll && <p className="management-empty">{t.onlyDirectors}</p>}
+        {canReviewAll && periodId && <section className="evaluation-consolidated">
+          <div className="evaluation-section-header"><div><small>GEN · DIGEN</small><h2>{t.collection}</h2></div>
             <div className="evaluation-counts"><span>{t.received}: <b>{submittedRows.length}</b></span><span>{t.drafts}: <b>{periodRows.length-submittedRows.length}</b></span></div></div>
           {!submittedRows.length && <p className="management-empty">{t.listEmpty}</p>}
           {submittedRows.map((row) => <article className="evaluation-submission" key={row.id}>
