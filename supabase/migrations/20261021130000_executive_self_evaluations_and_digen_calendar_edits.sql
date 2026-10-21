@@ -132,7 +132,7 @@ grant execute on function public.admin_set_evaluation_module_label(uuid,text) to
 -- Append-only, private correction history for institutional audit.
 create table if not exists private.calendar_activity_correction (
   id uuid primary key default gen_random_uuid(),
-  activity_id uuid not null references public.unit_work_activity(id) on delete restrict,
+  activity_id uuid references public.unit_work_activity(id) on delete set null,
   organization_id uuid not null references public.organization(id) on delete cascade,
   corrected_by uuid not null references auth.users(id) on delete restrict,
   before_value jsonb not null,
