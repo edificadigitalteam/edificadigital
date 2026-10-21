@@ -20,7 +20,11 @@ export function visibleCalendarActivities(activities, access) {
 
 export function canEditCalendarActivity(activity, access) {
   const own = new Set(access?.ownUnitIds ?? [])
-  return Boolean(activity?.unit_id && own.has(activity.unit_id))
+  const supervised = new Set(access?.supervisedUnitIds ?? [])
+  return Boolean(activity?.unit_id && (
+    own.has(activity.unit_id) ||
+    (access?.isDigen === true && supervised.has(activity.unit_id))
+  ))
 }
 
 export function reviewStatusLabel(status, language = 'es') {
