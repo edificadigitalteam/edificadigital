@@ -45,6 +45,8 @@ All project plans are stored in `/docs/plans/` with a consistent naming conventi
 | S5-MEMBERS | [SPRINT-S5-v1_member-directory-and-mantenedores.md](SPRINT-S5-v1_member-directory-and-mantenedores.md) | ✅ Implemented | Member directory "Miembros" (persons and organizations, many-to-many relationships) plus tenant-configurable catalogs ("Mantenedores"); foundation for a later anniversary-greeting automation phase |
 | S6-DATES | [SPRINT-S6-v1_member-dates-and-tenure.md](SPRINT-S6-v1_member-dates-and-tenure.md) | ✅ Implemented | Two optional complete dates on a member — celebration (founding or birthday) and affiliation — with elapsed time shown beside each |
 
+| S10-EVAL | [SPRINT-S10-v1_private-evaluations-and-digen-calendar.md](SPRINT-S10-v1_private-evaluations-and-digen-calendar.md) | 🧪 In Review | Self-evaluations privately restricted to DIGEN and cross-unit calendar editing; database activation pending |
+
 ### Legend
 
 - 📋 **Draft** — Being written
