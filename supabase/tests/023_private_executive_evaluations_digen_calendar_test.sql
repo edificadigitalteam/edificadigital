@@ -3,13 +3,13 @@ set local search_path = public, extensions, pg_catalog;
 select plan(12);
 select has_table('public','executive_self_evaluation','Evaluation data is persisted');
 select has_column('public','organization','evaluation_module_label','Evaluations can be renamed');
-select row_eq(
-  'select (select relrowsecurity from pg_class where oid=''public.executive_self_evaluation''::regclass)',
-  row(true), 'RLS protects the evaluation table'
+select ok(
+  (select relrowsecurity from pg_class where oid='public.executive_self_evaluation'::regclass),
+  'RLS protects the evaluation table'
 );
-select has_policy('public','executive_self_evaluation','executive_evaluation_read','Evaluation reading is scoped');
-select has_policy('public','executive_self_evaluation','executive_evaluation_insert','Evaluation creation is scoped');
-select has_policy('public','executive_self_evaluation','executive_evaluation_update_draft','Draft changes are scoped');
+select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='executive_self_evaluation' and policyname='executive_evaluation_read'),'Evaluation reading is scoped');
+select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='executive_self_evaluation' and policyname='executive_evaluation_insert'),'Evaluation creation is scoped');
+select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='executive_self_evaluation' and policyname='executive_evaluation_update_draft'),'Draft changes are scoped');
 select ok(pg_get_functiondef('private.can_manage_calendar_plan(uuid)'::regprocedure)
   ilike '%current_operator_is_digen_director(p.organization_id)%','DIGEN director may edit every unit calendar');
 select unlike(pg_get_functiondef('private.can_manage_calendar_plan(uuid)'::regprocedure),
