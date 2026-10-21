@@ -1,0 +1,287 @@
+-- SPRINT S10: private executive self-evaluations and DIGEN-only cross-unit calendar edits.
+-- Uses the existing private.current_operator_is_digen_director() membership authorization.
+alter table public.organization
+  add column if not exists evaluation_module_label text
+  check (evaluation_module_label is null or char_length(trim(evaluation_module_label)) between 1 and 60);
+
+create table if not exists public.executive_self_evaluation (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organization(id) on delete cascade,
+  management_period_id uuid not null references public.management_period(id) on delete cascade,
+  unit_id uuid not null references public.organization_unit(id) on delete cascade,
+  evaluator_user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  director_name text not null default '',
+  year_joined integer,
+  period_number integer,
+  evaluation_date date not null default current_date,
+  location text not null default '',
+  swot jsonb not null default '{"strengths":[],"opportunities":[],"weaknesses":[],"threats":[]}'::jsonb,
+  competencies jsonb not null default '{}'::jsonb,
+  achievements jsonb not null default '[]'::jsonb,
+  status text not null default 'draft' check(status in ('draft','submitted')),
+  submitted_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(management_period_id, unit_id, evaluator_user_id),
+  check(year_joined is null or year_joined between 1900 and 2100),
+  check(period_number is null or period_number between 1 and 100),
+  check(jsonb_typeof(swot) = 'object'),
+  check(jsonb_typeof(competencies) = 'object'),
+  check(jsonb_typeof(achievements) = 'array'),
+  check(jsonb_array_length(achievements) <= 7)
+);
+create index if not exists executive_evaluation_org_period_idx
+  on public.executive_self_evaluation(organization_id, management_period_id, status);
+create index if not exists executive_evaluation_unit_idx
+  on public.executive_self_evaluation(unit_id, evaluator_user_id);
+
+create or replace function private.can_self_evaluate_unit(target_organization_id uuid, target_unit_id uuid)
+returns boolean language sql stable security definer set search_path = ''
+as $$
+  select private.is_authorized_operator()
+    and private.can_access_organization(target_organization_id)
+    and exists(
+      select 1 from public.organization_unit_member m
+      join public.organization_unit u on u.id = m.unit_id and u.organization_id = m.organization_id
+      where m.organization_id = target_organization_id
+        and m.unit_id = target_unit_id
+        and m.operator_access_id = private.current_operator_access_id()
+        and m.unit_role = 'director'
+        and m.active and u.active
+    );
+$$;
+
+create or replace function private.guard_executive_evaluation()
+returns trigger language plpgsql security definer set search_path = ''
+as $$
+declare
+  key text;
+  entries integer;
+begin
+  if not exists (
+    select 1 from public.management_period p
+    join public.organization_unit u on u.organization_id = p.organization_id
+    where p.id = new.management_period_id
+      and u.id = new.unit_id
+      and p.organization_id = new.organization_id
+      and u.active
+  ) then
+    raise exception using errcode='23514', message='The unit and management period must belong to the same organization.';
+  end if;
+
+  if tg_op = 'UPDATE' then
+    if old.status = 'submitted' then
+      raise exception using errcode='42501', message='Submitted evaluations are final.';
+    end if;
+    if new.organization_id is distinct from old.organization_id
+      or new.management_period_id is distinct from old.management_period_id
+      or new.unit_id is distinct from old.unit_id
+      or new.evaluator_user_id is distinct from old.evaluator_user_id
+      or new.created_at is distinct from old.created_at then
+      raise exception using errcode='42501', message='Evaluation identity cannot be changed.';
+    end if;
+  end if;
+
+  foreach key in array array['strengths','opportunities','weaknesses','threats'] loop
+    if jsonb_typeof(new.swot -> key) is distinct from 'array'
+      or jsonb_array_length(new.swot -> key) > 3 then
+      raise exception using errcode='23514', message='Each SWOT category allows up to three statements.';
+    end if;
+  end loop;
+
+  if new.status = 'submitted' then
+    if trim(new.director_name) = '' or trim(new.location) = ''
+      or new.year_joined is null or new.period_number is null then
+      raise exception using errcode='23514', message='Complete director information before submitting.';
+    end if;
+    select count(*) into entries
+    from jsonb_each_text(new.competencies) c
+    where c.key ~ '^([1-9]|1[0-8])$'
+      and c.value in ('strength_high','strength_medium','strength_low',
+                      'weakness_high','weakness_medium','weakness_low');
+    if entries <> 18 or
+       (select count(*) from jsonb_each(new.competencies)) <> 18 then
+      raise exception using errcode='23514', message='All 18 competencies must be evaluated.';
+    end if;
+    new.submitted_at := now();
+  else
+    new.submitted_at := null;
+  end if;
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists executive_evaluation_guard on public.executive_self_evaluation;
+create trigger executive_evaluation_guard
+before insert or update on public.executive_self_evaluation
+for each row execute function private.guard_executive_evaluation();
+
+alter table public.executive_self_evaluation enable row level security;
+revoke all on public.executive_self_evaluation from public, anon;
+grant select, insert, update on public.executive_self_evaluation to authenticated;
+
+create policy executive_evaluation_read
+on public.executive_self_evaluation for select to authenticated
+using (
+  (private.current_operator_is_digen_director(organization_id)
+    and private.can_access_organization(organization_id))
+  or (evaluator_user_id = (select auth.uid())
+    and private.can_self_evaluate_unit(organization_id, unit_id))
+);
+
+create policy executive_evaluation_insert
+on public.executive_self_evaluation for insert to authenticated
+with check (
+  evaluator_user_id = (select auth.uid())
+  and private.can_self_evaluate_unit(organization_id, unit_id)
+);
+
+create policy executive_evaluation_update_draft
+on public.executive_self_evaluation for update to authenticated
+using (
+  status = 'draft'
+  and evaluator_user_id = (select auth.uid())
+  and private.can_self_evaluate_unit(organization_id, unit_id)
+)
+with check (
+  evaluator_user_id = (select auth.uid())
+  and private.can_self_evaluate_unit(organization_id, unit_id)
+);
+
+create or replace function public.evaluation_access_overview(target_organization_id uuid default null)
+returns jsonb language plpgsql security definer set search_path = ''
+as $$
+declare
+  org_id uuid;
+  director_units jsonb;
+begin
+  if not private.is_authorized_operator() then
+    raise exception using errcode='42501', message='Unauthorized';
+  end if;
+  org_id := case when private.is_super_admin() and target_organization_id is not null
+    then target_organization_id else private.current_operator_organization_id() end;
+  if org_id is null or not private.can_access_organization(org_id) then
+    raise exception using errcode='42501', message='Organization access denied';
+  end if;
+  select coalesce(jsonb_agg(u.id order by u.sort_order, u.name), '[]'::jsonb)
+    into director_units
+  from public.organization_unit_member m
+  join public.organization_unit u on u.id=m.unit_id and u.organization_id=m.organization_id
+  where m.organization_id=org_id
+    and m.operator_access_id=private.current_operator_access_id()
+    and m.unit_role='director' and m.active and u.active;
+  return jsonb_build_object(
+    'organization_id', org_id,
+    'director_unit_ids', director_units,
+    'is_digen_director', private.current_operator_is_digen_director(org_id)
+  );
+end;
+$$;
+
+create or replace function public.admin_set_evaluation_module_label(
+  target_organization_id uuid, new_label text
+) returns text language plpgsql security definer set search_path = ''
+as $$
+declare cleaned_label text;
+begin
+  if not private.can_manage_organization(target_organization_id) then
+    raise exception using errcode='42501', message='Only organization administrators can rename modules.';
+  end if;
+  cleaned_label := nullif(trim(coalesce(new_label,'')), '');
+  if cleaned_label is not null and char_length(cleaned_label)>60 then
+    raise exception using errcode='22001', message='The module label may contain at most 60 characters.';
+  end if;
+  update public.organization set evaluation_module_label=cleaned_label
+   where id=target_organization_id;
+  if not found then raise exception using errcode='P0002', message='Organization not found'; end if;
+  return cleaned_label;
+end;
+$$;
+
+-- Reserve cross-unit changes in the institutional calendar for the DIGEN director.
+-- The previous broad tenant-admin override is intentionally removed.
+create or replace function private.can_manage_calendar_plan(target_plan_id uuid)
+returns boolean language sql stable security definer set search_path = ''
+as $$
+  select private.is_authorized_operator()
+    and exists (
+      select 1 from public.unit_work_plan p
+      where p.id = target_plan_id
+        and private.can_access_organization(p.organization_id)
+        and (
+          private.current_operator_is_digen_director(p.organization_id)
+          or exists (
+            select 1 from public.organization_unit_member m
+            where m.unit_id = p.unit_id
+              and m.organization_id = p.organization_id
+              and m.active
+              and m.operator_access_id = private.current_operator_access_id()
+              and m.unit_role in ('director','manager','operator','reviewer')
+          )
+        )
+    );
+$$;
+
+create or replace function public.calendar_access_overview(
+  target_organization_id uuid default null, target_period_id uuid default null
+) returns jsonb language plpgsql security definer set search_path = ''
+as $$
+declare
+  org_id uuid;
+  membership_unit_ids jsonb;
+  has_oversight boolean := false;
+  sees_all boolean := false;
+  joint_enabled boolean := false;
+  can_edit_all boolean := false;
+begin
+  if not private.is_authorized_operator() then
+    raise exception using errcode='42501', message='Unauthorized';
+  end if;
+  org_id := case
+    when private.is_super_admin() and target_organization_id is not null then target_organization_id
+    else private.current_operator_organization_id()
+  end;
+  if org_id is null or not private.can_access_organization(org_id) then
+    raise exception using errcode='42501', message='Organization access denied';
+  end if;
+  select coalesce(jsonb_agg(m.unit_id order by m.created_at), '[]'::jsonb)
+  into membership_unit_ids
+  from public.organization_unit_member m
+  where m.organization_id = org_id
+    and m.operator_access_id = private.current_operator_access_id()
+    and m.active and m.unit_role in ('director','manager','operator','reviewer');
+
+  has_oversight := private.current_operator_has_oversight(org_id);
+  sees_all := private.can_manage_organization(org_id);
+  can_edit_all := private.current_operator_is_digen_director(org_id);
+  if target_period_id is not null then
+    select mp.calendar_joint_review_enabled into joint_enabled
+    from public.management_period mp
+    where mp.id=target_period_id and mp.organization_id=org_id;
+    joint_enabled := coalesce(joint_enabled,false);
+  end if;
+
+  return jsonb_build_object(
+    'organization_id',org_id,
+    'digen_unit_id',private.current_top_unit_id(org_id),
+    'is_digen',has_oversight,
+    'unit_ids',membership_unit_ids,
+    'visible_unit_ids',private.visible_unit_ids_json(org_id),
+    'supervised_unit_ids',private.supervised_unit_ids_json(org_id),
+    'can_review',has_oversight,
+    'can_manage_joint_review',private.current_operator_oversees_organization(org_id),
+    'joint_review_enabled',joint_enabled,
+    'can_view_consolidated',has_oversight or sees_all or joint_enabled or can_edit_all,
+    'can_edit_consolidated',can_edit_all
+  );
+end;
+$$;
+
+revoke all on function private.can_self_evaluate_unit(uuid,uuid) from public, anon;
+revoke all on function private.guard_executive_evaluation() from public, anon, authenticated;
+revoke all on function public.evaluation_access_overview(uuid) from public, anon;
+revoke all on function public.admin_set_evaluation_module_label(uuid,text) from public, anon;
+grant execute on function private.can_self_evaluate_unit(uuid,uuid) to authenticated;
+grant execute on function public.evaluation_access_overview(uuid) to authenticated;
+grant execute on function public.admin_set_evaluation_module_label(uuid,text) to authenticated;
