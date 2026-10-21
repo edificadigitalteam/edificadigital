@@ -7,13 +7,13 @@
 
 - Sección nueva **Control y rendición → Evaluación**, disponible para los directores activos de cada Dirección o agencia, dentro de su organización.
 - Cada director completa su propia autoevaluación en línea, en la gestión seleccionada, y puede guardar borradores o enviarla de forma definitiva.
-- Los responsables autorizados de **GEN** (membresías activas `director`, `manager`, `operator` o `reviewer`) y el **director de DIGEN** (membresía activa `director`) pueden consultar las autoevaluaciones de otros usuarios. Los demás directores consultan sus propias evaluaciones.
+- Los responsables autorizados de **GEN** (membresías activas `director`, `manager`, `operator` o `reviewer`) y el **director de DIGEN** (membresía activa `director`) pueden consultar las autoevaluaciones de otros usuarios. Los administradores de la organización también consultan las evaluaciones **enviadas**. Los borradores solo los ve su autor. Los demás directores consultan sus propias evaluaciones.
 - El documento de la CNBV «Evaluación a titular de posición ejecutiva · Gestión 2026» guía el formulario, conservando las 4 categorías DOFA (3 campos cada una), 18 criterios con 6 valoraciones y 7 logros. La suma muestra **conteos** de fortalezas y debilidades, sin inventar una calificación institucional.
 - Los registros enviados quedan cerrados. La interfaz puede abrirlos en modo lectura; GEN y DIGEN ven la lista de evaluaciones enviadas.
 - Se puede renombrar «Evaluación» en Mantenedores según el sistema de nombres actual; la navegación funciona en escritorio y teléfono.
 - Se mantiene soporte ES/EN.
 - GEN y DIGEN pueden revisar, validar y **editar las actividades de cualquier unidad** en el Calendario 2026/2027, desde la vista consolidada. El consolidado recarga cada 12 segundos y tiene un botón de actualización inmediata para uso en la reunión.
-- Los directores siguen editando actividades de su unidad; los administradores conservan su lectura institucional y la gestión de pendientes, con las modificaciones transversales del calendario reservadas a los responsables autorizados de GEN y al director de DIGEN.
+- Los directores siguen editando actividades de su unidad; los administradores conservan su lectura institucional, la gestión de pendientes y la edición transversal del calendario (migración 20261008145936), igual que los responsables autorizados de GEN y el director de DIGEN.
 - «Vaciar calendario» y permisos de eliminación solo contemplan actividades de una unidad propia.
 
 ## Archivos y cambios de base de datos

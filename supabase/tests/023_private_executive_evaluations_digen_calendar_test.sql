@@ -1,6 +1,6 @@
 begin;
 set local search_path = public, extensions, pg_catalog;
-select plan(18);
+select plan(19);
 select has_table('public','executive_self_evaluation','Evaluation data is persisted');
 select has_column('public','organization','evaluation_module_label','Evaluations can be renamed');
 select ok(
@@ -12,8 +12,11 @@ select ok(exists(select 1 from pg_policies where schemaname='public' and tablena
 select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='executive_self_evaluation' and policyname='executive_evaluation_update_draft'),'Draft changes are scoped');
 select ok(pg_get_functiondef('private.can_manage_calendar_plan(uuid)'::regprocedure)
   ilike '%current_operator_is_gen_or_digen_leader(p.organization_id)%','GEN and DIGEN leaders may edit every unit calendar');
-select unlike(pg_get_functiondef('private.can_manage_calendar_plan(uuid)'::regprocedure),
-  '%can_manage_organization(p.organization_id)%','Tenant admin alone cannot edit across units');
+select ok(pg_get_functiondef('private.can_manage_calendar_plan(uuid)'::regprocedure)
+  ilike '%can_manage_organization(p.organization_id)%','Tenant admin keeps cross-unit calendar editing');
+select ok((select qual::text from pg_policies
+  where schemaname='public' and tablename='executive_self_evaluation' and policyname='executive_evaluation_read')
+  ilike '%''submitted''%can_manage_organization(organization_id)%','Admin and GEN/DIGEN read submitted evaluations only');
 select ok(pg_get_functiondef('private.guard_executive_evaluation()'::regprocedure)
   ilike '%Submitted evaluations are final%','Submitted records are immutable');
 select ok(pg_get_functiondef('private.can_self_evaluate_unit(uuid,uuid)'::regprocedure)
