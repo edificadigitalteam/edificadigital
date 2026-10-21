@@ -20,7 +20,7 @@ export function visibleCalendarActivities(activities, access) {
 
 export function canEditCalendarActivity(activity, access) {
   const own = new Set(access?.ownUnitIds ?? [])
-  return Boolean(activity?.unit_id && own.has(activity.unit_id))
+  return Boolean(activity?.unit_id && (own.has(activity.unit_id) || access?.canEditConsolidated === true))
 }
 
 export function reviewStatusLabel(status, language = 'es') {
