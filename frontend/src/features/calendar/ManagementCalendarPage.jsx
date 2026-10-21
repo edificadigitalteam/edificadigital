@@ -134,9 +134,13 @@ export default function ManagementCalendarPage(){
 
   const loadAccess = useCallback(async () => {
     if (!supabase || !organizationId || !periodId) return
-    const { data,error:requestError } = await supabase.rpc('calendar_access_overview',{ target_organization_id:organizationId, target_period_id:periodId })
+    const [calendarResponse,evaluationResponse] = await Promise.all([
+      supabase.rpc('calendar_access_overview',{ target_organization_id:organizationId, target_period_id:periodId }),
+      supabase.rpc('executive_evaluation_access_overview',{ target_organization_id:organizationId }),
+    ])
+    const requestError=calendarResponse.error||evaluationResponse.error
     if (requestError) { setError(requestError.message); return }
-    const next = data ?? {}
+    const next = { ...(calendarResponse.data ?? {}),can_correct_supervised:Boolean(evaluationResponse.data?.can_view_submitted) }
     setCalendarAccess(next)
     setScope((current)=>current==='consolidated' && !next.can_view_consolidated ? 'mine' : current)
   },[organizationId,periodId])
@@ -166,7 +170,7 @@ export default function ManagementCalendarPage(){
   const moduleLabel = resolveCalendarModuleLabel(organization)
   const canCreate = Boolean(selectedUnitId && editableUnits.has(selectedUnitId))
   const digenUnit = units.find((unit)=>String(unit.code||'').trim().toUpperCase()==='DIGEN')
-  const canDigenCorrect = Boolean(digenUnit && calendarAccess.unit_ids?.includes(digenUnit.id))
+  const canDigenCorrect = Boolean(digenUnit && calendarAccess.unit_ids?.includes(digenUnit.id) && calendarAccess.can_correct_supervised)
   const canEditActivity = (activity) => canEditCalendarActivity(activity,{
     ownUnitIds:[...editableUnits],
     supervisedUnitIds:calendarAccess.supervised_unit_ids || [],
