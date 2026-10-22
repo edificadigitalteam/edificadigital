@@ -9,6 +9,7 @@ import {
   canOpenCalendarActivityEntry,
   buildCalendarActivityPayloads,
   selectDefaultCalendarPeriodId,
+  calendarAccessSummaryKey,
 } from './calendar.js'
 
 const activities = [
@@ -103,4 +104,15 @@ test('bulk calendar payloads share defaults and allow an optional objective', ()
   assert.equal(payloads[0].responsible_name, 'Equipo DIPROM')
   assert.equal(payloads[0].modality, 'hybrid')
   assert.equal(payloads[1].description, 'Detalle')
+})
+
+test('calendar access summary names the administrator separately from GEN and DIGEN', () => {
+  assert.equal(calendarAccessSummaryKey('admin', { can_edit_consolidated: true }), 'adminEditView')
+  assert.equal(calendarAccessSummaryKey('super_admin', { can_edit_consolidated: true }), 'adminEditView')
+  assert.equal(calendarAccessSummaryKey('admin', {}), 'adminView')
+  assert.equal(calendarAccessSummaryKey('operator', { can_edit_consolidated: true, is_digen: true }), 'digenEditView')
+  assert.equal(calendarAccessSummaryKey('operator', { is_digen: true }), 'digenView')
+  assert.equal(calendarAccessSummaryKey('operator', { joint_review_enabled: true }), 'jointEnabled')
+  assert.equal(calendarAccessSummaryKey('operator', {}), 'privateView')
+  assert.equal(calendarAccessSummaryKey(undefined, undefined), 'privateView')
 })

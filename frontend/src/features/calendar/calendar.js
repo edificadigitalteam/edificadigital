@@ -1,8 +1,21 @@
+import { canViewAllUnits } from '../management/unitScope.js'
+
 export const DEFAULT_CALENDAR_MODULE_LABEL = 'Calendario'
 
 export function resolveCalendarModuleLabel(organization) {
   const override = String(organization?.calendar_module_label ?? '').trim()
   return override || DEFAULT_CALENDAR_MODULE_LABEL
+}
+
+// Picks the translation key for the calendar access banner. Tenant administrators get their
+// own wording even when the database also grants them cross-unit editing.
+export function calendarAccessSummaryKey(role, calendarAccess = {}) {
+  const access = calendarAccess || {}
+  if (canViewAllUnits(role)) return access.can_edit_consolidated ? 'adminEditView' : 'adminView'
+  if (access.can_edit_consolidated) return 'digenEditView'
+  if (access.is_digen) return 'digenView'
+  if (access.joint_review_enabled) return 'jointEnabled'
+  return 'privateView'
 }
 
 export function selectDefaultCalendarPeriodId(periods, currentPeriodId = '') {

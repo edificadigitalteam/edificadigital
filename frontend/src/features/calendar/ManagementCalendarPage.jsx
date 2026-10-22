@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase.js'
 import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from '../management/ManagementStandaloneShell.jsx'
-import { DEFAULT_CALENDAR_MODULE_LABEL, buildCalendarActivityPayloads, canOpenCalendarActivityEntry, resolveCalendarModuleLabel, reviewStatusLabel, selectDefaultCalendarPeriodId } from './calendar.js'
+import { DEFAULT_CALENDAR_MODULE_LABEL, buildCalendarActivityPayloads, calendarAccessSummaryKey, canOpenCalendarActivityEntry, resolveCalendarModuleLabel, reviewStatusLabel, selectDefaultCalendarPeriodId } from './calendar.js'
 import { canReviewUnitActivity, canViewAllUnits, defaultSelectableUnitId, editableUnitIds, selectableUnits } from '../management/unitScope.js'
 import './management-calendar.css'
 
@@ -30,7 +30,7 @@ const copy = {
     invalidDates:'Revisa las fechas: la fecha de cierre debe ser igual o posterior a la fecha de inicio.', activityName:'Nombre de la actividad', notes:'Notas',
     clear:'Vaciar calendario', clearConfirm:'¿Vaciar todas las actividades de esta unidad para el año seleccionado? Esta acción eliminará únicamente el calendario propio visible.',
     clearDone:'Calendario de la unidad vaciado.', jointOn:'Habilitar vista conjunta', jointOff:'Cerrar vista conjunta',
-    jointEnabled:'Vista consolidada habilitada por la unidad general.', adminView:'Como administrador puedes consultar los calendarios de todas las Direcciones y agencias.', digenEditView:'GEN y DIGEN pueden revisar y editar en vivo las actividades de todas las Direcciones y agencias.', refresh:'Actualizar actividades', live:'El consolidado se actualiza automáticamente durante la reunión.', actions:'Acciones', privateView:'Tu calendario es visible para tu unidad y para las unidades de las que depende.',
+    jointEnabled:'Vista consolidada habilitada por la unidad general.', adminView:'Como administrador puedes consultar los calendarios de todas las Direcciones y agencias.', adminEditView:'Como administrador puedes consultar y editar los calendarios de todas las Direcciones y agencias.', digenEditView:'GEN y DIGEN pueden revisar y editar en vivo las actividades de todas las Direcciones y agencias.', refresh:'Actualizar actividades', live:'El consolidado se actualiza automáticamente durante la reunión.', actions:'Acciones', privateView:'Tu calendario es visible para tu unidad y para las unidades de las que depende.',
     digenView:'Ves el calendario de tu unidad y de las unidades que dependen de ella.', visibleActivities:'Actividades visibles', visibleUnits:'Unidades visibles',
     validated:'Validadas', observed:'Observadas', noActivities:'Sin actividades visibles.',
     noObjectives:'Esta unidad necesita al menos un objetivo en su Plan Anual antes de registrar actividades.', openPlan:'Abrir Plan Anual',
@@ -50,7 +50,7 @@ const copy = {
     invalidDates:'Check the dates: the end date must be the same as or later than the start date.', activityName:'Activity name', notes:'Notes',
     clear:'Clear calendar', clearConfirm:'Clear all activities for this unit and selected year? This only deletes the current unit calendar.',
     clearDone:'Unit calendar cleared.', jointOn:'Enable shared view', jointOff:'Close shared view', jointEnabled:'Consolidated view enabled by the top unit.',
-    adminView:'As an administrator you can view the calendars of all units and agencies.', digenEditView:'GEN and DIGEN may review and edit the activities of every unit in real time.', refresh:'Refresh activities', live:'The consolidated view refreshes automatically during the meeting.', actions:'Actions', privateView:'Your calendar is visible to your unit and the units above it.', digenView:'You see the calendar of your unit and of the units below it.',
+    adminView:'As an administrator you can view the calendars of all units and agencies.', adminEditView:'As an administrator you can view and edit the calendars of all units and agencies.', digenEditView:'GEN and DIGEN may review and edit the activities of every unit in real time.', refresh:'Refresh activities', live:'The consolidated view refreshes automatically during the meeting.', actions:'Actions', privateView:'Your calendar is visible to your unit and the units above it.', digenView:'You see the calendar of your unit and of the units below it.',
     visibleActivities:'Visible activities', visibleUnits:'Visible units', validated:'Validated', observed:'Observed', noActivities:'No visible activities.',
     noObjectives:'This unit needs at least one Annual Work Plan objective before activities can be created.', openPlan:'Open Annual Work Plan',
     activity:'Activity', objective:'Annual Work Plan objective', indicator:'Related indicator (optional)', dateFrom:'Start date', dateTo:'End date',
@@ -296,7 +296,7 @@ export default function ManagementCalendarPage(){
       <section className="calendar-context-row">
         <label><span>{t.year}</span><select value={periodId} onChange={(event)=>{setPeriodId(event.target.value);setScope('mine');setFormOpen(false);setBulkOpen(false)}}>{periods.map((period)=><option key={period.id} value={period.id}>{period.name}</option>)}</select></label>
         <label><span>{t.unit}</span><select value={selectedUnitId} onChange={(event)=>{setSelectedUnitId(event.target.value);setScope('mine');setFormOpen(false);setBulkOpen(false)}} disabled={unitOptions.length<=1}>{unitOptions.map((unit)=><option key={unit.id} value={unit.id}>{unit.code} · {unit.name}</option>)}</select></label>
-        <div className="calendar-access-summary"><strong>{calendarAccess.can_edit_consolidated?t.digenEditView:viewAllUnits?t.adminView:calendarAccess.is_digen?t.digenView:calendarAccess.joint_review_enabled?t.jointEnabled:t.privateView}</strong><small>{currentUnit ? currentUnit.code + ' · ' + currentUnit.name : ''}</small></div>
+        <div className="calendar-access-summary"><strong>{t[calendarAccessSummaryKey(access.role, calendarAccess)]}</strong><small>{currentUnit ? currentUnit.code + ' · ' + currentUnit.name : ''}</small></div>
       </section>
 
       {!unitOptions.length && !viewAllUnits && <p className="management-flash error">{t.noUnitAccess}</p>}
