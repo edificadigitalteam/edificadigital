@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-22
 **Issue:** #136
-**Estado:** Migración aplicada en `edifydb` (`rrqyihsjftlloizsccvi`) el 22/10/2026 como versión `20261022135016`. PR pendiente de merge.
+**Estado:** Migración aplicada en `edifydb` (`rrqyihsjftlloizsccvi`) el 22/10/2026 como versión `20261022135016`. Completado: fusionado en `main` con el #137 el 22/10/2026.
 
 > **Decisión reemplazada el mismo día.** El product owner decidió después que el admin del tenant actúe sin restricciones (revisa, borra, emite instrucciones DIGEN y lee borradores). Ver `SPRINT-S10.2-v1_tenant-admin-full-management-access.md`. Esta migración sigue en el historial; su clave `can_review_consolidated` se mantiene y ahora también es verdadera para el admin.
 

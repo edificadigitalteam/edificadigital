@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-22
 **Issue:** #136
-**Estado:** Migración `20261022142118_tenant_admin_full_management_access.sql` aplicada en `edifydb` (`rrqyihsjftlloizsccvi`) el 22/10/2026. El product owner autorizó por chat aplicarla y fusionar el #137.
+**Estado:** Migración `20261022142118_tenant_admin_full_management_access.sql` aplicada en `edifydb` (`rrqyihsjftlloizsccvi`) el 22/10/2026. El product owner autorizó por chat aplicarla y fusionar el #137. Completado: fusionado en `main` el 22/10/2026 (`1669a79`), lo que cerró el #136.
 
 ## Decisión del product owner (2026-10-22)
 
