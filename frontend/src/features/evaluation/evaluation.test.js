@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { EXECUTIVE_COMPETENCIES, blankEvaluation, evaluationIsComplete, evaluationPayload, normalizeEvaluation, evaluationRatingCounts, evaluationsForCollection, eligibleEvaluationUnits } from './evaluation.js'
+import { EXECUTIVE_COMPETENCIES, blankEvaluation, evaluationIsComplete, evaluationPayload, normalizeEvaluation, evaluationRatingCounts, evaluationsForCollection, eligibleEvaluationUnits, isEvaluationResultUnit } from './evaluation.js'
 
 test('evaluation preserves the source Word structure: 4 SWOT groups, 18 skills, 7 achievements', () => {
   const form = blankEvaluation('Directora')
@@ -57,4 +57,6 @@ test('only subordinate directorates may submit; GEN and DIGEN receive results wi
   assert.deepEqual(eligibleEvaluationUnits(units, ['f'], false).map((unit) => unit.code), ['DIAF'])
   assert.deepEqual(eligibleEvaluationUnits(units, [], false), [])
   assert.deepEqual(eligibleEvaluationUnits([], memberships, false), [])
+  assert.equal(isEvaluationResultUnit({ code: 'DIPROM', active: false }), true)
+  assert.equal(isEvaluationResultUnit({ code: 'DIGEN', active: false }), false)
 })
