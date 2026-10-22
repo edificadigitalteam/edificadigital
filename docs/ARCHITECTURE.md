@@ -11,7 +11,8 @@ Edifica Digital combines a public bilingual landing page with an authenticated o
 | `/donations/monetary/new` | Register cash, transfers, foreign currency, and other monetary receipts | Bilingual continuous workflow with local draft and private evidence |
 | Receive, Transform, Impact | Record the complete operational cycle | Database foundation deployed; interface integration proceeds by module |
 | Reports and dashboard | Summarize resources, operations, and impact | Reporting model defined; application views proceed by module |
-| `/app/management/calendar` | Build each unit's preliminary annual calendar and let DIGEN supervise the institutional consolidated view | Tenant-scoped module backed by Annual Work Plan activities, optional objective links, bulk activity entry, and RLS-enforced unit privacy |
+| `/app/management/calendar` | Build each unit's preliminary annual calendar and let GEN leaders and the DIGEN director edit, validate and share the institutional consolidated view | Tenant-scoped module backed by Annual Work Plan activities, optional objective links, bulk activity entry, and RLS-enforced unit privacy |
+| `/app/management/evaluation` | Executive self-evaluations under Control y rendición, guided by the CNBV "Evaluación a titular de posición ejecutiva" format (DOFA, 18 competencies, achievements) | Tenant-scoped module (`frontend/src/features/evaluation/`); active unit directors create and edit their own drafts, GEN leaders, the DIGEN director and the tenant `admin` read submitted evaluations only, and a submission is final; tenant-renamable |
 | `/app/management/pending-issues` | Track pending matters, urgency, due dates and completion by unit | Unit-scoped RLS; DIGEN receives a read-only institutional consolidated view across units |
 
 The product name shown on the primary page and production domain is `somosedificadigital`.
@@ -106,7 +107,7 @@ The budget module requires a dedicated schema and migration. Operational donatio
 
 The preliminary Calendar is a tenant-only planning surface. It reuses `unit_work_activity`: objectives and optional indicators remain part of the Annual Work Plan, while the calendar provides the month/list operational view.
 
-Ordinary unit members receive a database-enforced view of their own unit calendar. DIGEN receives a consolidated read view plus dedicated review actions, while direct edits stay scoped to DIGEN's own work plan. DIGEN can temporarily enable a period-level consolidated read view for active unit members; the write boundary remains unchanged during that shared review. The module is tenant-renamable and appears under Planificación.
+Ordinary unit members receive a database-enforced view of their own unit calendar and edit their own unit's activities. GEN leaders (active `director`, `manager`, `operator` or `reviewer` members of the `GEN` unit) and the DIGEN director edit and validate every unit's calendar from the consolidated view, and control the period-level shared view that temporarily lets active unit members read the consolidated calendar; the write boundary for ordinary members remains unchanged during that shared review. The tenant `admin` also reads and edits every unit's calendar (`20261008145936_admin_unit_edit_access.sql`). Deleting activities, including "Vaciar calendario", stays with active members of the activity's own unit. The consolidated view refreshes every 12 seconds and offers an immediate refresh button for live review meetings. These rules are enforced in the database (`20261021142000_private_executive_evaluations_digen_calendar.sql`). The module is tenant-renamable and appears under Planificación. See `docs/plans/SPRINT-S10-v1_private-evaluations-and-digen-calendar.md`.
 
 ## Security and data access
 
