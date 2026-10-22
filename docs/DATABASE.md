@@ -249,6 +249,8 @@ The repository pgTAP specifications are in `supabase/tests/`. Run them against a
 
 The job uses only the throwaway local stack inside the runner. It reads no repository secret, project reference, access token, service-role key, or database password, and it never connects to `edifydb`. Reproduce it locally with the same two commands (`supabase start`, then `supabase test db`). A red `Database checks` run blocks review of the pull request; fix the migration or the test, or add a corrective migration when the failing file is already applied.
 
+**Replay-guard exception (2026-10-22).** The first CI run showed that `20260917031741_add_digen_and_management_report_oversight.sql` could not replay on an empty database: its CNBV data block ran `raise exception 'CNBV organization not found'`. A later corrective migration cannot fix a file that aborts the replay, so, with the product owner's approval, that one line was changed to `raise notice …; return;`. This is the same guard `20261001214651_cnbv_general_level_unit.sql` already uses. On an empty database only the CNBV data block is skipped; the file's DDL still runs. `edifydb` is unaffected: the migration is already recorded there and is never re-executed. This is the only applied file edited for replay. Every other fix still goes in a later migration.
+
 ## Authenticated submission
 
 `donation.submission_key` and `donation.created_by` provide retry identity and submission audit data. The unique `(created_by, submission_key)` index prevents repeated client attempts from creating duplicate donations.

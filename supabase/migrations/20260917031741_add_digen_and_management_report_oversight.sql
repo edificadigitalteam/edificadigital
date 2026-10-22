@@ -9,7 +9,10 @@ begin
   limit 1;
 
   if org_id is null then
-    raise exception 'CNBV organization not found';
+    -- Replay guard (2026-10-22): skip the CNBV data block on databases without
+    -- the CNBV tenant, e.g. an empty CI/local stack. No effect on edifydb.
+    raise notice 'CNBV organization not found; skipping DIGEN data setup';
+    return;
   end if;
 
   select id into digen_id

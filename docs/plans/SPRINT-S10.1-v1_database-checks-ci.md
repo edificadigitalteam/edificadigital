@@ -17,7 +17,9 @@ The S10 migration (`20261021142000_private_executive_evaluations_digen_calendar.
 
 ## Database impact
 
-None to the deployed schema. If a historical migration fails on replay, the fix is a later corrective migration; applied files stay immutable.
+None to the deployed schema.
+
+The first CI run failed on `20260917031741_add_digen_and_management_report_oversight.sql`, which raised `CNBV organization not found` on an empty database. A later migration cannot repair a file that aborts the replay, so the product owner approved a one-line guard edit (`raise notice …; return;`), matching `20261001214651_cnbv_general_level_unit.sql`. `edifydb` already recorded this migration and never re-runs it. See "Replay-guard exception" in `docs/DATABASE.md`.
 
 ## Verification
 
