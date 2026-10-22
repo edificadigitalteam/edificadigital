@@ -38,7 +38,7 @@ An AI agent must:
 - keep secrets out of logs, source control, client code, and documentation;
 - avoid direct commits to `main`;
 - leave every external change traceable through migrations, commits, and documentation;
-- merge only after an approving review is recorded on GitHub (a chat message saying "approved" is not enough).
+- merge only after a human approval, given either as an approving review on GitHub or as an explicit instruction in the agent conversation (see "Merging and branch deletion").
 
 ## Mandatory delivery workflow
 
@@ -55,7 +55,7 @@ plan → database notice → failing tests → implementation → refactor → v
 5. **Refactor.** Improve structure while tests remain green.
 6. **Verify.** Run the narrowest relevant checks first, then the broader suite (`pnpm test`, `pnpm lint`, `pnpm build` in `frontend/`), plus accessibility, schema checks, and Supabase security and performance advisors.
 7. **Document.** Update architecture, database reference, plan status, specs, and ADRs when the implemented truth changes — in the same change, not later.
-8. **Review.** Publish a pull request and obtain a recorded human approval.
+8. **Review.** Publish a pull request and obtain a human approval (GitHub review or explicit chat instruction).
 9. **Merge and clean up.** Merge, then delete the branch (see "Git and release").
 
 For urgent work, compress feedback loops while preserving the order above.
@@ -251,7 +251,9 @@ Every pull request includes:
 
 ### Merging and branch deletion
 
-- Merge only when CI is green on the current head, there is no conflict, and an approving review is recorded on GitHub.
+- Merge only when CI is green on the current head, there is no conflict, and a human has approved. Either form of approval counts:
+  - an approving review on GitHub; or
+  - an explicit instruction from a product owner or human developer in the agent conversation that names the PR (for example "fusiona el #129"). Before merging, the agent records it as a PR comment: who approved, that it was by chat, the date, and the approved head commit. Approval covers that commit only; a later push needs a new approval.
 - `main` uses **Squash and merge**. A PR stacked on another PR's branch may use a merge commit.
 - **Delete the branch as the final step of every merge — mandatory.** Whoever merges deletes the head branch on GitHub ("Delete branch" button, or `git push origin --delete <branch>`) and locally (`git branch -D <branch>`). Before deleting, check that no open PR uses it as its base; if one does, retarget that PR first.
 - A merged PR is finished. Follow-up work starts from an up-to-date `main` on a new branch and a new PR.
@@ -284,7 +286,7 @@ Merges to `main` publish automatically to `edificadigital.vercel.app` and `somos
 - [ ] Accessibility and responsive states were checked.
 - [ ] Existing design language is preserved.
 - [ ] Public-facing changes preserve the SEO baseline (see `docs/adr/ADR-005-seo-and-ai-discoverability.md`).
-- [ ] The PR is focused, has a recorded approval, and its branch is deleted after merge.
+- [ ] The PR is focused, has a human approval (GitHub review or chat instruction recorded as a PR comment), and its branch is deleted after merge.
 
 ## Canonical references
 
