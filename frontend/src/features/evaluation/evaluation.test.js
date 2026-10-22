@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { EXECUTIVE_COMPETENCIES, blankEvaluation, evaluationIsComplete, evaluationPayload, normalizeEvaluation, evaluationRatingCounts, evaluationsForCollection } from './evaluation.js'
+import { EXECUTIVE_COMPETENCIES, blankEvaluation, evaluationIsComplete, evaluationPayload, normalizeEvaluation, evaluationRatingCounts, evaluationsForCollection, eligibleEvaluationUnits } from './evaluation.js'
 
 test('evaluation preserves the source Word structure: 4 SWOT groups, 18 skills, 7 achievements', () => {
   const form = blankEvaluation('Directora')
@@ -41,4 +41,20 @@ test('the evaluation collection lists submitted rows, and drafts too for the ten
   assert.deepEqual(evaluationsForCollection(rows, 'p1', { includeDrafts: true }).map((row) => row.id), ['a', 'b'])
   assert.deepEqual(evaluationsForCollection(rows, 'p3', { includeDrafts: true }), [])
   assert.deepEqual(evaluationsForCollection(null, 'p1'), [])
+})
+
+test('only subordinate directorates may submit; GEN and DIGEN receive results without forms', () => {
+  const units = [
+    { id: 'g', code: 'GEN', active: true },
+    { id: 'd', code: 'DIGEN', active: true },
+    { id: 'f', code: 'DIAF', active: true },
+    { id: 'p', code: 'DIPROM', active: true },
+    { id: 'off', code: 'DIME', active: false },
+  ]
+  const memberships = ['g', 'd', 'f', 'p', 'off']
+  assert.deepEqual(eligibleEvaluationUnits(units, memberships, false).map((unit) => unit.code), ['DIAF', 'DIPROM'])
+  assert.deepEqual(eligibleEvaluationUnits(units, memberships, true), [])
+  assert.deepEqual(eligibleEvaluationUnits(units, ['f'], false).map((unit) => unit.code), ['DIAF'])
+  assert.deepEqual(eligibleEvaluationUnits(units, [], false), [])
+  assert.deepEqual(eligibleEvaluationUnits([], memberships, false), [])
 })
