@@ -6,6 +6,10 @@ The Edifica Digital operational database is deployed in Supabase project `edifyd
 
 All database identifiers and stored enum-like values use English `snake_case`. Spanish and English belong in interface content, catalog display names, exports, and reports.
 
+## Pending evaluation permissions migration
+
+- `20261022182000_directorate_only_self_evaluations.sql` is prepared on the S10.3 correction branch but **has not been applied** to `edifydb`. It makes GEN/DIGEN recipients only, narrows self-evaluation submission to active directors of other units, and reports `is_evaluation_supervisor` in `evaluation_access_overview`. It preserves tenant-admin visibility of draft evaluations. The Supabase connector currently lacks permission to inspect `rrqyihsjftlloizsccvi`; apply and test on that project only after access is restored. The deployed baseline reported below remains unchanged.
+
 ## Applied migrations
 
 | Order | Repository migration | Supabase migration | Purpose |
