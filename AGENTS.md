@@ -83,7 +83,7 @@ Do not add a nav entry or route without these answers.
 
 - `private.operator_access.role` is `operator`, `admin`, or `super_admin`.
 - `super_admin` is the **host** plane: organizations/tenants, cross-tenant user provisioning, and plans. Host accounts have `organization_id = null` and no access to a single tenant's operational content. The sidebar shows only "Plataforma" (Organizaciones y hosts, Personas habilitadas, Planes y facturación); tenant-content URLs fall back to Organizaciones y hosts; bare `/app` lands there instead of the `PlatformHome` module picker.
-- `admin` and `operator` are the **tenant** plane, scoped to one organization. They see and manage the same tenant content. `admin` additionally manages its organization's users and views its plan/billing under "Mi organización", and — since `20261008145936` (#125) — writes to every unit of its organization in Calendar and Pending issues without unit membership. Since `20261022150000` (#136, product owner decision 2026-10-22) the tenant admin acts without restrictions in those modules: it also validates/observes calendar activities, controls the shared calendar view, deletes activities and clears any unit's calendar, issues, rewrites and deletes DIGEN instructions, and reads executive-evaluation drafts. It still cannot write another person's evaluation.
+- `admin` and `operator` are the **tenant** plane, scoped to one organization. They see and manage the same tenant content. `admin` additionally manages its organization's users and views its plan/billing under "Mi organización", and — since `20261008145936` (#125) — writes to every unit of its organization in Calendar and Pending issues without unit membership. Since `20261022142118` (#136, product owner decision 2026-10-22) the tenant admin acts without restrictions in those modules: it also validates/observes calendar activities, controls the shared calendar view, deletes activities and clears any unit's calendar, issues, rewrites and deletes DIGEN instructions, and reads executive-evaluation drafts. It still cannot write another person's evaluation.
 
 ### Organizational units, GEN, and DIGEN
 
@@ -167,7 +167,7 @@ Full decision record: `docs/adr/ADR-005-seo-and-ai-discoverability.md`.
 
 The only authorized project is `edifydb`, reference `rrqyihsjftlloizsccvi`. Other visible Supabase projects are outside scope unless the user explicitly identifies them.
 
-Deployed baseline, checked on 2026-10-22 (latest migration `20261022135016`, 75 entries in migration history):
+Deployed baseline, checked on 2026-10-22 (latest migration `20261022142118`, 76 entries in migration history):
 
 - 57 tables in `public`, every one with RLS enabled, and the security-invoker view `inventory_lot_balance`;
 - `private` schema (not exposed through the API) with `beneficiary` and `beneficiary_event` (forced RLS), `operator_access`, and `record_change_log`;

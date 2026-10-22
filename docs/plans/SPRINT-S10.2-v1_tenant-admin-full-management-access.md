@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-22
 **Issue:** #136
-**Estado:** Implementado en rama de revisión. Migración `20261022150000_tenant_admin_full_management_access.sql` pendiente de aplicar en `edifydb`.
+**Estado:** Migración `20261022142118_tenant_admin_full_management_access.sql` aplicada en `edifydb` (`rrqyihsjftlloizsccvi`) el 22/10/2026. El product owner autorizó por chat aplicarla y fusionar el #137.
 
 ## Decisión del product owner (2026-10-22)
 
@@ -25,7 +25,7 @@ El administrador del tenant debe poder hacer todo, sin restricciones, en los mó
 
 ## Base de datos
 
-Migración `20261022150000_tenant_admin_full_management_access.sql`. Cada función reemplazada se copió de su definición en vivo en `edifydb` y solo se agregó al admin:
+Migración `20261022142118_tenant_admin_full_management_access.sql`. Cada función reemplazada se copió de su definición en vivo en `edifydb` y solo se agregó al admin:
 
 | Objeto | Cambio |
 |---|---|
@@ -55,9 +55,14 @@ Migración `20261022150000_tenant_admin_full_management_access.sql`. Cada funci�
 - Suite pgTAP completa en local: 415 aserciones, 0 fallos.
 - `node --test`: `canClearUnitCalendar` y `evaluationsForCollection` fallan antes y pasan después.
 
-## Verificación pendiente
+## Verificación en `edifydb`
 
-Requiere autorización explícita para `edifydb`. Pasos: prueba en una transacción revertida con 025 y 026, aplicar con `apply_migration`, renombrar el archivo a la versión registrada, correr los advisors y actualizar este plan, `docs/DATABASE.md` y el PR.
+- **Pruebas revertidas antes de aplicar.** La migración con 025: 24/24. La migración con 026 sin sus 5 comprobaciones de borrado: 19/19.
+  - Las sentencias con `DELETE` provocan la confirmación del conector, que expira a los 60 s (dos intentos agotados; se verificó después que no quedó nada).
+  - Por eso las comprobaciones de borrado se validaron en local (48/48 en la corrida combinada), y las políticas de borrado se revisaron en vivo.
+- **Aplicación.** Con `apply_migration`, versión `20261022142118`; el historial queda en 76 entradas y el archivo se renombró a esa versión.
+- **Revisión en vivo.** Helper presente y sin ejecución para `anon`. `pending_issue_access_overview` sigue como `security invoker`. Las claves nuevas existen. Las 4 políticas de `unit_pending_issue` usan el helper, y las de borrado y lectura de evaluación incluyen al admin.
+- **Advisors.** Sin hallazgos nuevos: seguridad 3/50/1 y rendimiento 51/3/123.
 
 ## Riesgos y reversión
 

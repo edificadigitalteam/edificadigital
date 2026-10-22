@@ -67,7 +67,7 @@ select ok(
       and qual ilike '%digen_instruction%'
       and qual ilike '%can_issue_digen_instructions%'
   ),
-  'only the DIGEN director or the tenant admin (20261022150000) manages deletion of DIGEN instructions'
+  'only the DIGEN director or the tenant admin (20261022142118) manages deletion of DIGEN instructions'
 );
 
 select ok(

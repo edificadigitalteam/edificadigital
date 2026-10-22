@@ -1,5 +1,5 @@
 -- SPRINT S10.1/S10.2 (#136): calendar_access_overview flags match what the review RPCs allow.
--- Since 20261022150000 the tenant admin edits, reviews and controls the shared view of every
+-- Since 20261022142118 the tenant admin edits, reviews and controls the shared view of every
 -- unit; GEN/DIGEN leaders and supervising units keep reviewing; a leaf-unit director does not.
 -- Behavioral test with throwaway fixtures, rolled back.
 begin;
