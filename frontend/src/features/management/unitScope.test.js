@@ -55,10 +55,18 @@ test('calendar review is allowed only on units below the reviewer', () => {
 })
 
 test('GEN and DIGEN leaders can review activities outside their hierarchy', () => {
-  const leader = { unit_ids: ['digen'], supervised_unit_ids: [], can_edit_consolidated: true }
+  const leader = { unit_ids: ['digen'], supervised_unit_ids: [], can_edit_consolidated: true, can_review_consolidated: true }
   assert.equal(canReviewUnitActivity({ unit_id: 'diaf' }, leader), true)
   assert.equal(canReviewUnitActivity({ unit_id: 'fbcc' }, leader), true)
   assert.equal(canReviewUnitActivity({ unit_id: 'diaf' }, { unit_ids: ['digen'], supervised_unit_ids: [] }), false)
+})
+
+test('tenant admins edit every unit but review only through a supervising membership', () => {
+  const admin = { unit_ids: [], supervised_unit_ids: [], can_edit_consolidated: true, can_review_consolidated: false }
+  assert.equal(canReviewUnitActivity({ unit_id: 'diaf' }, admin), false)
+  assert.equal(canReviewUnitActivity({ unit_id: 'fbcc' }, admin), false)
+  const supervisingAdmin = { ...admin, supervised_unit_ids: ['dime'] }
+  assert.equal(canReviewUnitActivity({ unit_id: 'dime' }, supervisingAdmin), true)
 })
 
 test('tenant admins see every unit without belonging to one', () => {
