@@ -83,14 +83,14 @@ Do not add a nav entry or route without these answers.
 
 - `private.operator_access.role` is `operator`, `admin`, or `super_admin`.
 - `super_admin` is the **host** plane: organizations/tenants, cross-tenant user provisioning, and plans. Host accounts have `organization_id = null` and no access to a single tenant's operational content. The sidebar shows only "Plataforma" (Organizaciones y hosts, Personas habilitadas, Planes y facturación); tenant-content URLs fall back to Organizaciones y hosts; bare `/app` lands there instead of the `PlatformHome` module picker.
-- `admin` and `operator` are the **tenant** plane, scoped to one organization. They see and manage the same tenant content. `admin` additionally manages its organization's users and views its plan/billing under "Mi organización", and — since `20261008145936` (#125) — writes to every unit of its organization in Calendar and Pending issues without unit membership.
+- `admin` and `operator` are the **tenant** plane, scoped to one organization. They see and manage the same tenant content. `admin` additionally manages its organization's users and views its plan/billing under "Mi organización", and — since `20261008145936` (#125) — writes to every unit of its organization in Calendar and Pending issues without unit membership. Since `20261022150000` (#136, product owner decision 2026-10-22) the tenant admin acts without restrictions in those modules: it also validates/observes calendar activities, controls the shared calendar view, deletes activities and clears any unit's calendar, issues, rewrites and deletes DIGEN instructions, and reads executive-evaluation drafts. It still cannot write another person's evaluation.
 
 ### Organizational units, GEN, and DIGEN
 
 - Units form a hierarchy. A person sees their own units and every unit below them (`private.current_visible_unit_ids()`).
 - **DIGEN** (active DIGEN director) and **GEN** (active director, manager, operator, or reviewer of the `GEN` unit) are institutional supervisors (`private.current_operator_is_gen_or_digen_leader`). They read every submitted executive evaluation, edit and validate every unit's calendar, and control the shared calendar view.
-- Executive self-evaluations (`public.executive_self_evaluation`): only active unit directors create and edit their own drafts; drafts are visible only to their author; GEN, DIGEN, and the tenant admin read submitted evaluations only; submitted evaluations are final.
-- Issuing DIGEN instructions in Pending issues stays reserved to the DIGEN Director General.
+- Executive self-evaluations (`public.executive_self_evaluation`): only active unit directors create and edit their own drafts; drafts are visible to their author and the tenant admin; GEN and DIGEN read submitted evaluations only; submitted evaluations are final.
+- Issuing DIGEN instructions in Pending issues is reserved to the DIGEN Director General and the tenant admin (`private.can_issue_digen_instructions`).
 - Roles come from active memberships in the exact organization. User-editable metadata never grants access.
 
 ## Current product decisions
