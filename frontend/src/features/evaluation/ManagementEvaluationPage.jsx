@@ -6,7 +6,7 @@ import ManagementStandaloneShell from '../management/ManagementStandaloneShell.j
 import {
   EXECUTIVE_COMPETENCIES, SWOT_GROUPS, COMPETENCY_RATINGS,
   blankEvaluation, normalizeEvaluation, evaluationIsComplete,
-  evaluationPayload, evaluationRatingCounts, evaluationsForCollection, eligibleEvaluationUnits, isEvaluatingUnit } from './evaluation.js'
+  evaluationPayload, evaluationRatingCounts, evaluationsForCollection, eligibleEvaluationUnits, isEvaluationResultUnit } from './evaluation.js'
 import './management-evaluation.css'
 
 const competencyEn = [
@@ -133,7 +133,7 @@ export default function ManagementEvaluationPage() {
       supabase.rpc('evaluation_access_overview', { target_organization_id: organizationId }),
       supabase.from('organization').select('id,name,evaluation_module_label').eq('id',organizationId).single(),
       supabase.from('management_period').select('id,name,start_date,end_date').eq('organization_id',organizationId).order('start_date',{ ascending: false }),
-      supabase.from('organization_unit').select('id,code,name,active,sort_order').eq('organization_id',organizationId).eq('active',true).order('sort_order'),
+      supabase.from('organization_unit').select('id,code,name,active,sort_order').eq('organization_id',organizationId).order('sort_order'),
       supabase.from('executive_self_evaluation').select('*').eq('organization_id',organizationId).order('created_at',{ ascending: false }),
     ])
     const failed = results.find((result) => result.error)
@@ -157,7 +157,7 @@ export default function ManagementEvaluationPage() {
     setForm(normalizeEvaluation(ownRow, access.displayName || ''))
   }, [ownRow, periodId, unitId, access.displayName])
   const canReviewAll = Boolean(overview.can_review_all_evaluations)
-  const evaluableUnitIds = new Set(units.filter(isEvaluatingUnit).map((unit) => unit.id))
+  const evaluableUnitIds = new Set(units.filter(isEvaluationResultUnit).map((unit) => unit.id))
   const periodRows = rows.filter((row) => row.management_period_id === periodId && evaluableUnitIds.has(row.unit_id))
   const submittedRows = periodRows.filter((row) => row.status === 'submitted')
   const currentPeriod = periods.find((period) => period.id === periodId)
