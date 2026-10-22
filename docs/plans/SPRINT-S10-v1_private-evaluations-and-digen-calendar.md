@@ -1,7 +1,7 @@
 # SPRINT-S10 · Evaluación ejecutiva privada y revisión conjunta del Calendario
 
 **Fecha:** 2026-10-21  
-**Estado:** Implementado en rama de revisión. Pendiente aplicación/verificación de migración en `edifydb`, pruebas pgTAP, aprobación y merge del PR.
+**Estado:** Completado. Fusionado en `main` con el #127. Migraciones `20261021142000` y `20261022122717` aplicadas en `edifydb` el 22/10/2026 (ver «Seguridad, validación y despliegue»). Ajustes posteriores en `SPRINT-S10.1` y `SPRINT-S10.2`.
 
 ## Solicitud y decisiones
 
