@@ -4,6 +4,8 @@
 **Issue:** #136
 **Estado:** Migración aplicada en `edifydb` (`rrqyihsjftlloizsccvi`) el 22/10/2026 como versión `20261022135016`. PR pendiente de merge.
 
+> **Decisión reemplazada el mismo día.** El product owner decidió después que el admin del tenant actúe sin restricciones (revisa, borra, emite instrucciones DIGEN y lee borradores). Ver `SPRINT-S10.2-v1_tenant-admin-full-management-access.md`. Esta migración sigue en el historial; su clave `can_review_consolidated` se mantiene y ahora también es verdadera para el admin.
+
 ## Resultado
 
 Las banderas que recibe la interfaz coinciden con lo que la base de datos permite. El administrador del tenant sigue consultando y editando el calendario de todas las unidades, pero ya no ve los botones **Validar** / **Observar** ni **Habilitar/Deshabilitar vista consolidada**, porque `review_calendar_activity` y `set_calendar_joint_review` lo rechazan (`42501`). La decisión del product owner (2026-10-22) es la opción 2 del issue: el admin edita y no revisa.
