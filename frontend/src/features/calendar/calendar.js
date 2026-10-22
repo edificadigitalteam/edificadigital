@@ -18,6 +18,14 @@ export function calendarAccessSummaryKey(role, calendarAccess = {}) {
   return 'privateView'
 }
 
+// "Vaciar calendario": active members of the unit, plus the tenant admin
+// (can_delete_consolidated). GEN/DIGEN leaders edit every unit but delete only their own.
+export function canClearUnitCalendar(unitId, calendarAccess = {}) {
+  const access = calendarAccess || {}
+  if (!unitId) return false
+  return access.can_delete_consolidated === true || (access.unit_ids || []).includes(unitId)
+}
+
 export function selectDefaultCalendarPeriodId(periods, currentPeriodId = '') {
   const rows = Array.isArray(periods) ? periods : []
   if (currentPeriodId && rows.some((period) => period.id === currentPeriodId)) return currentPeriodId
