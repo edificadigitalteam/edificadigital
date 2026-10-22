@@ -255,7 +255,7 @@ Every pull request includes:
   - an approving review on GitHub; or
   - an explicit instruction from a product owner or human developer in the agent conversation that names the PR (for example "fusiona el #129"). Before merging, the agent records it as a PR comment: who approved, that it was by chat, the date, and the approved head commit. Approval covers that commit only; a later push needs a new approval.
 - `main` uses **Squash and merge**. A PR stacked on another PR's branch may use a merge commit.
-- **Delete the branch as the final step of every merge — mandatory.** Whoever merges deletes the head branch on GitHub ("Delete branch" button, or `git push origin --delete <branch>`) and locally (`git branch -D <branch>`). Before deleting, check that no open PR uses it as its base; if one does, retarget that PR first.
+- **Delete the branch as the final step of every merge — mandatory.** The repository has GitHub's "Automatically delete head branches" enabled (since 2026-10-22), so GitHub deletes the head branch on merge. Whoever merges confirms it is gone (`git ls-remote --heads origin <branch>`), deletes it by hand if it remains ("Delete branch" button or `git push origin --delete <branch>`), and deletes the local copy (`git branch -D <branch>`). Before merging a PR whose branch is the base of another open PR, retarget that PR first. If an agent cannot delete a remote branch, it says so and leaves it for a person.
 - A merged PR is finished. Follow-up work starts from an up-to-date `main` on a new branch and a new PR.
 
 ### Deployment
