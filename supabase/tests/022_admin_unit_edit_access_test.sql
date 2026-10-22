@@ -19,8 +19,8 @@ select ok(
 );
 
 select ok(
-  pg_get_functiondef('private.guard_pending_issue_scope()'::regprocedure) ilike '%Only the DIGEN Director General can issue instructions.%',
-  'issuing DIGEN instructions stays reserved to the DIGEN Director General'
+  pg_get_functiondef('private.guard_pending_issue_scope()'::regprocedure) ilike '%can_issue_digen_instructions(new.organization_id)%',
+  'issuing DIGEN instructions is reserved to the DIGEN Director General and, since 20261022142118, the tenant admin'
 );
 
 select * from finish();

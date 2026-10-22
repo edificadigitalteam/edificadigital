@@ -86,3 +86,11 @@ export function evaluationRatingCounts(competencies = {}) {
     completed: values.filter((value) => COMPETENCY_RATINGS.includes(value)).length,
   }
 }
+
+// Rows shown in the "Evaluaciones recibidas" collection for one period: submitted ones,
+// plus drafts for the tenant admin (can_read_draft_evaluations). RLS decides what arrives.
+export function evaluationsForCollection(rows, periodId, { includeDrafts = false } = {}) {
+  return (Array.isArray(rows) ? rows : [])
+    .filter((row) => row.management_period_id === periodId)
+    .filter((row) => includeDrafts || row.status === 'submitted')
+}

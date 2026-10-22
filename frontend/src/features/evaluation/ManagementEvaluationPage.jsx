@@ -6,8 +6,7 @@ import ManagementStandaloneShell from '../management/ManagementStandaloneShell.j
 import {
   EXECUTIVE_COMPETENCIES, SWOT_GROUPS, COMPETENCY_RATINGS,
   blankEvaluation, normalizeEvaluation, evaluationIsComplete,
-  evaluationPayload, evaluationRatingCounts,
-} from './evaluation.js'
+  evaluationPayload, evaluationRatingCounts, evaluationsForCollection } from './evaluation.js'
 import './management-evaluation.css'
 
 const competencyEn = [
@@ -35,9 +34,9 @@ const messages = {
     received: 'Enviadas', drafts: 'Borradores', ownSubmitted: 'Esta autoevaluación fue enviada a GEN y DIGEN y quedó cerrada.',
     ownDraft: 'Puedes guardar y continuar tu autoevaluación cuando lo necesites.',
     listEmpty: 'Todavía no hay evaluaciones registradas para esta gestión.',
-    onlyDirectors: 'La autoevaluación está habilitada para directores con una asignación activa. GEN y DIGEN pueden consultar el consolidado.',
+    onlyDirectors: 'La autoevaluación está habilitada para directores con una asignación activa. GEN, DIGEN y la administración pueden consultar el consolidado.',
     open: 'Ver evaluación', close: 'Cerrar detalle', completed: 'Valoraciones completadas', strengths: 'Fortalezas', weaknesses: 'Debilidades',
-    status: 'Estado', submittedStatus: 'Enviada', draftStatus: 'Borrador', readOnly: 'Consulta reservada a GEN y DIGEN',
+    status: 'Estado', submittedStatus: 'Enviada', draftStatus: 'Borrador', readOnly: 'Consulta reservada a GEN, DIGEN y la administración', adminKicker: 'Administración',
     privacy: 'Acceso privado. Los resultados individuales quedan disponibles para su autor y para los responsables autorizados de GEN y DIGEN.',
     loading: 'Cargando evaluaciones…', noPeriod: 'Aún no hay gestiones registradas.', failed: 'Se produjo un error. Revisa el mensaje e inténtalo nuevamente.',
   },
@@ -56,9 +55,9 @@ const messages = {
     received: 'Submitted', drafts: 'Drafts', ownSubmitted: 'This evaluation has been submitted to GEN and DIGEN and is final.',
     ownDraft: 'You can save and return to your self-evaluation as needed.',
     listEmpty: 'There are no evaluations for this period yet.',
-    onlyDirectors: 'Evaluations are available to active directors. GEN and DIGEN may view the consolidated records.',
+    onlyDirectors: 'Evaluations are available to active directors. GEN, DIGEN and administration may view the consolidated records.',
     open: 'View evaluation', close: 'Close details', completed: 'Rated competencies', strengths: 'Strengths', weaknesses: 'Weaknesses',
-    status: 'Status', submittedStatus: 'Submitted', draftStatus: 'Draft', readOnly: 'GEN and DIGEN-only review',
+    status: 'Status', submittedStatus: 'Submitted', draftStatus: 'Draft', readOnly: 'Review reserved to GEN, DIGEN and administration', adminKicker: 'Administration',
     privacy: 'Private access. Individual responses are available to their author and authorized GEN and DIGEN leaders.',
     loading: 'Loading evaluations…', noPeriod: 'No management periods available.', failed: 'An error occurred. Review the message and try again.',
   },
@@ -161,7 +160,9 @@ export default function ManagementEvaluationPage() {
   const periodRows = rows.filter((row) => row.management_period_id === periodId)
   const submittedRows = periodRows.filter((row) => row.status === 'submitted')
   const currentPeriod = periods.find((period) => period.id === periodId)
-  const detail = canReviewAll ? submittedRows.find((row) => row.id === selectedDetail) : null
+  const includeDrafts = Boolean(overview.can_read_draft_evaluations)
+  const collectionRows = evaluationsForCollection(rows, periodId, { includeDrafts })
+  const detail = canReviewAll ? collectionRows.find((row) => row.id === selectedDetail) : null
 
   const save = async (status) => {
     if (saving || !directorUnitIds.has(unitId) || !periodId || ownRow?.status === 'submitted') return
@@ -244,11 +245,11 @@ export default function ManagementEvaluationPage() {
         </section>}
         {!directorUnits.length && !canReviewAll && <p className="management-empty">{t.onlyDirectors}</p>}
         {canReviewAll && periodId && <section className="evaluation-consolidated">
-          <div className="evaluation-section-header"><div><small>GEN · DIGEN</small><h2>{t.collection}</h2></div>
+          <div className="evaluation-section-header"><div><small>{includeDrafts ? t.adminKicker : 'GEN · DIGEN'}</small><h2>{t.collection}</h2></div>
             <div className="evaluation-counts"><span>{t.received}: <b>{submittedRows.length}</b></span><span>{t.drafts}: <b>{periodRows.length-submittedRows.length}</b></span></div></div>
-          {!submittedRows.length && <p className="management-empty">{t.listEmpty}</p>}
-          {submittedRows.map((row) => <article className="evaluation-submission" key={row.id}>
-            <div><strong>{row.director_name}</strong><span>{units.find((unit)=>unit.id===row.unit_id)?.name || '—'} · {row.evaluation_date}</span></div>
+          {!collectionRows.length && <p className="management-empty">{t.listEmpty}</p>}
+          {collectionRows.map((row) => <article className="evaluation-submission" key={row.id}>
+            <div><strong>{row.director_name}</strong><span>{units.find((unit)=>unit.id===row.unit_id)?.name || '—'} · {row.evaluation_date}{includeDrafts ? ` · ${row.status === 'submitted' ? t.submittedStatus : t.draftStatus}` : ''}</span></div>
             <button type="button" onClick={()=>setSelectedDetail((id)=>id===row.id ? '' : row.id)}>{selectedDetail===row.id ? t.close : t.open}</button>
           </article>)}
           {detail && <div className="evaluation-details" aria-live="polite">

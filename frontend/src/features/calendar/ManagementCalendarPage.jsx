@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase.js'
 import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from '../management/ManagementStandaloneShell.jsx'
-import { DEFAULT_CALENDAR_MODULE_LABEL, buildCalendarActivityPayloads, calendarAccessSummaryKey, canOpenCalendarActivityEntry, resolveCalendarModuleLabel, reviewStatusLabel, selectDefaultCalendarPeriodId } from './calendar.js'
+import { DEFAULT_CALENDAR_MODULE_LABEL, buildCalendarActivityPayloads, calendarAccessSummaryKey, canOpenCalendarActivityEntry, resolveCalendarModuleLabel, reviewStatusLabel, selectDefaultCalendarPeriodId, canClearUnitCalendar } from './calendar.js'
 import { canReviewUnitActivity, canViewAllUnits, defaultSelectableUnitId, editableUnitIds, selectableUnits } from '../management/unitScope.js'
 import './management-calendar.css'
 
@@ -28,9 +28,9 @@ const copy = {
     sharedData:'DATOS COMPARTIDOS', activitiesToLoad:'ACTIVIDADES A CARGAR', addRow:'＋ Agregar otra actividad', removeRow:'Quitar',
     saveBatch:'Guardar actividades', incompleteRows:'Completa el nombre y la fecha de inicio de cada actividad agregada.',
     invalidDates:'Revisa las fechas: la fecha de cierre debe ser igual o posterior a la fecha de inicio.', activityName:'Nombre de la actividad', notes:'Notas',
-    clear:'Vaciar calendario', clearConfirm:'¿Vaciar todas las actividades de esta unidad para el año seleccionado? Esta acción eliminará únicamente el calendario propio visible.',
+    clear:'Vaciar calendario', clearConfirm:'¿Vaciar todas las actividades de esta unidad para el año seleccionado? Solo se eliminan las actividades de la unidad seleccionada.',
     clearDone:'Calendario de la unidad vaciado.', jointOn:'Habilitar vista conjunta', jointOff:'Cerrar vista conjunta',
-    jointEnabled:'Vista consolidada habilitada por la unidad general.', adminView:'Como administrador puedes consultar los calendarios de todas las Direcciones y agencias.', adminEditView:'Como administrador puedes consultar y editar los calendarios de todas las Direcciones y agencias.', digenEditView:'GEN y DIGEN pueden revisar y editar en vivo las actividades de todas las Direcciones y agencias.', refresh:'Actualizar actividades', live:'El consolidado se actualiza automáticamente durante la reunión.', actions:'Acciones', privateView:'Tu calendario es visible para tu unidad y para las unidades de las que depende.',
+    jointEnabled:'Vista consolidada habilitada por la unidad general.', adminView:'Como administrador puedes consultar los calendarios de todas las Direcciones y agencias.', adminEditView:'Como administrador puedes consultar, editar, revisar y vaciar los calendarios de todas las Direcciones y agencias.', digenEditView:'GEN y DIGEN pueden revisar y editar en vivo las actividades de todas las Direcciones y agencias.', refresh:'Actualizar actividades', live:'El consolidado se actualiza automáticamente durante la reunión.', actions:'Acciones', privateView:'Tu calendario es visible para tu unidad y para las unidades de las que depende.',
     digenView:'Ves el calendario de tu unidad y de las unidades que dependen de ella.', visibleActivities:'Actividades visibles', visibleUnits:'Unidades visibles',
     validated:'Validadas', observed:'Observadas', noActivities:'Sin actividades visibles.',
     noObjectives:'Esta unidad necesita al menos un objetivo en su Plan Anual antes de registrar actividades.', openPlan:'Abrir Plan Anual',
@@ -48,9 +48,9 @@ const copy = {
     sharedData:'SHARED DETAILS', activitiesToLoad:'ACTIVITIES TO LOAD', addRow:'＋ Add another activity', removeRow:'Remove',
     saveBatch:'Save activities', incompleteRows:'Complete the name and start date for every activity you added.',
     invalidDates:'Check the dates: the end date must be the same as or later than the start date.', activityName:'Activity name', notes:'Notes',
-    clear:'Clear calendar', clearConfirm:'Clear all activities for this unit and selected year? This only deletes the current unit calendar.',
+    clear:'Clear calendar', clearConfirm:'Clear all activities for this unit and selected year? Only the selected unit activities are deleted.',
     clearDone:'Unit calendar cleared.', jointOn:'Enable shared view', jointOff:'Close shared view', jointEnabled:'Consolidated view enabled by the top unit.',
-    adminView:'As an administrator you can view the calendars of all units and agencies.', adminEditView:'As an administrator you can view and edit the calendars of all units and agencies.', digenEditView:'GEN and DIGEN may review and edit the activities of every unit in real time.', refresh:'Refresh activities', live:'The consolidated view refreshes automatically during the meeting.', actions:'Actions', privateView:'Your calendar is visible to your unit and the units above it.', digenView:'You see the calendar of your unit and of the units below it.',
+    adminView:'As an administrator you can view the calendars of all units and agencies.', adminEditView:'As an administrator you can view, edit, review and clear the calendars of all units and agencies.', digenEditView:'GEN and DIGEN may review and edit the activities of every unit in real time.', refresh:'Refresh activities', live:'The consolidated view refreshes automatically during the meeting.', actions:'Actions', privateView:'Your calendar is visible to your unit and the units above it.', digenView:'You see the calendar of your unit and of the units below it.',
     visibleActivities:'Visible activities', visibleUnits:'Visible units', validated:'Validated', observed:'Observed', noActivities:'No visible activities.',
     noObjectives:'This unit needs at least one Annual Work Plan objective before activities can be created.', openPlan:'Open Annual Work Plan',
     activity:'Activity', objective:'Annual Work Plan objective', indicator:'Related indicator (optional)', dateFrom:'Start date', dateTo:'End date',
@@ -165,7 +165,7 @@ export default function ManagementCalendarPage(){
   const currentUnit = units.find((unit)=>unit.id===selectedUnitId)
   const moduleLabel = resolveCalendarModuleLabel(organization)
   const canCreate = Boolean(selectedUnitId && editableUnits.has(selectedUnitId))
-  const canClearOwn = Boolean((calendarAccess.unit_ids || []).includes(selectedUnitId))
+  const canClearOwn = canClearUnitCalendar(selectedUnitId, calendarAccess)
   const canViewConsolidated = Boolean(calendarAccess.can_view_consolidated)
   const visibleUnitCount = new Set(visibleActivities.map((activity)=>activity.unit_id).filter(Boolean)).size
 

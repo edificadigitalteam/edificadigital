@@ -20,8 +20,11 @@ export function defaultOwnUnitId(units = [], access = {}) {
   return units.find((unit) => own.has(unit.id))?.id || ''
 }
 
+// Review follows the database: supervising units and GEN/DIGEN leaders
+// (can_review_consolidated). Cross-unit editing (can_edit_consolidated) also covers
+// the tenant admin, so it never grants review on its own.
 export function canReviewUnitActivity(activity, access = {}) {
-  return Boolean(activity?.unit_id && (access?.can_edit_consolidated === true || idSet(access?.supervised_unit_ids).has(activity.unit_id)))
+  return Boolean(activity?.unit_id && (access?.can_review_consolidated === true || idSet(access?.supervised_unit_ids).has(activity.unit_id)))
 }
 
 // Tenant admins see every unit of the organization without belonging to one.
