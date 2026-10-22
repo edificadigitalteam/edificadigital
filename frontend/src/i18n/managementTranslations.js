@@ -356,6 +356,10 @@ export const managementTranslations = {
   // The two member dates (Sprint S6).
   'Guardar': 'Save',
   'Nombres de los módulos': 'Module names',
+  'Evaluación': 'Evaluation',
+  'Autoevaluaciones ejecutivas privadas, recibidas por DIGEN.': 'Private executive self-evaluations received by DIGEN.',
+  'Calendario': 'Calendar',
+  'Calendario preliminar anual de las Direcciones y agencias.': 'Preliminary annual calendar for all units and agencies.',
   'Cambia cómo se llama cada módulo dentro de tu organización. El nombre que elijas reemplaza al predeterminado en el menú y en las pantallas del módulo.': 'Change what each module is called inside your organization. The name you choose replaces the default one in the menu and in the module screens.',
   'módulos configurables': 'configurable modules',
   'Módulo': 'Module',

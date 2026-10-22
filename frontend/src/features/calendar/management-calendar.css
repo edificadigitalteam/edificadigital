@@ -90,3 +90,16 @@
   .calendar-bulk-row{padding:10px}
   .calendar-bulk-row-number>span{width:30px;height:30px}
 }
+
+/* Joint institutional review — editable exclusively by a DIGEN director. */
+.calendar-live-controls{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:12px 14px;border-radius:11px;background:#f4ecf9;border:1px solid #e6d8ef}
+.calendar-live-controls p{margin:0;color:#5f4573;font-size:.82rem;line-height:1.4}
+.calendar-live-controls button,.calendar-list-action button{min-height:44px;padding:9px 14px;border-radius:9px;border:1px solid #6d3795;background:#fff;color:#64318c;font:inherit;font-size:.79rem;font-weight:850;cursor:pointer}
+.calendar-list-head.has-actions,.calendar-list-row.has-actions{grid-template-columns:105px minmax(160px,1.4fr) 95px minmax(170px,1fr) 110px 95px}
+.calendar-list-action button{min-width:82px}
+@media(max-width:1100px){.calendar-list-head.has-actions,.calendar-list-row.has-actions{min-width:900px}}
+@media(max-width:720px){
+ .calendar-list-head.has-actions{display:none}
+ .calendar-list-row.has-actions{min-width:0;grid-template-columns:1fr}
+ .calendar-list-action button{width:100%}
+}

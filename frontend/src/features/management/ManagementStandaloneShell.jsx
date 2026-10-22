@@ -8,7 +8,7 @@ import './management-runtime-enhancements.css'
 import './management-grouped-nav.css'
 import './management-report-editor-modern.css'
 
-const navigationGroups = (calendarLabel = 'Calendario') => [
+const navigationGroups = (calendarLabel = 'Calendario', evaluationLabel = 'Evaluación') => [
   { label: 'Inicio', items: [['Resumen', '/app/management', '/app/management']] },
   { label: 'Planificación', items: [
     ['Estructura', '/app/management/structure', '/app/management/structure'],
@@ -25,6 +25,7 @@ const navigationGroups = (calendarLabel = 'Calendario') => [
   ] },
   { label: 'Control y rendición', items: [
     ['Seguimiento', '/app/management/tracking', '/app/management/tracking'],
+    [evaluationLabel, '/app/management/evaluation', '/app/management/evaluation'],
     ['Asuntos pendientes', '/app/management/pending-issues', '/app/management/pending-issues'],
     ['Informes', '/app/management/reports', '/app/management/reports'],
   ] },
@@ -42,9 +43,9 @@ function Brand() {
   return <a className="management-brand" href="/app"><span><i /><i /><i /></span><b>edifica<span>digital</span></b></a>
 }
 
-function ManagementNavigation({ path, calendarLabel, canAdmin, maintainersOpen, onToggleMaintainers, navigate, onNavigate = () => {}, idPrefix }) {
+function ManagementNavigation({ path, calendarLabel, evaluationLabel, canAdmin, maintainersOpen, onToggleMaintainers, navigate, onNavigate = () => {}, idPrefix }) {
   return <nav className="management-canonical-nav management-grouped-nav" aria-label="Navegación de Gestión Organizacional">
-    {navigationGroups(calendarLabel).map((group) => <div className="management-nav-group" key={group.label}>
+    {navigationGroups(calendarLabel, evaluationLabel).map((group) => <div className="management-nav-group" key={group.label}>
       <p className="management-nav-group-label">{group.label}</p>
       {group.items.map(([label, href, prefix]) => {
         const active = href === '/app/management' ? path === href : path.startsWith(prefix)
@@ -88,13 +89,14 @@ export default function ManagementStandaloneShell({ access, children }) {
   const onMaintainerPage = path.startsWith('/app/management/settings')
   const [maintainersOpen, setMaintainersOpen] = useState(onMaintainerPage)
   const [calendarLabel, setCalendarLabel] = useState('Calendario')
+  const [evaluationLabel, setEvaluationLabel] = useState('Evaluación')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     if (!supabase || access.status !== 'authorized' || !access.organizationId) return undefined
     let cancelled = false
-    supabase.from('organization').select('calendar_module_label').eq('id', access.organizationId).single()
-      .then(({ data }) => { if (!cancelled) setCalendarLabel(String(data?.calendar_module_label || '').trim() || 'Calendario') })
+    supabase.from('organization').select('calendar_module_label,evaluation_module_label').eq('id', access.organizationId).single()
+      .then(({ data }) => { if (!cancelled) { setCalendarLabel(String(data?.calendar_module_label || '').trim() || 'Calendario'); setEvaluationLabel(String(data?.evaluation_module_label || '').trim() || 'Evaluación') } })
     return () => { cancelled = true }
   }, [access.organizationId, access.status])
 
@@ -128,6 +130,7 @@ export default function ManagementStandaloneShell({ access, children }) {
         <ManagementNavigation
           path={path}
           calendarLabel={calendarLabel}
+          evaluationLabel={evaluationLabel}
           canAdmin={canAdmin}
           maintainersOpen={maintainersOpen}
           onToggleMaintainers={() => setMaintainersOpen((current) => !current)}
@@ -154,6 +157,7 @@ export default function ManagementStandaloneShell({ access, children }) {
         <ManagementNavigation
           path={path}
           calendarLabel={calendarLabel}
+          evaluationLabel={evaluationLabel}
           canAdmin={canAdmin}
           maintainersOpen={maintainersOpen}
           onToggleMaintainers={() => setMaintainersOpen((current) => !current)}

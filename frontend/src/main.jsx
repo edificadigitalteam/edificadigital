@@ -8,6 +8,7 @@ import OrganizationalManagementApp from './features/management/OrganizationalMan
 import ManagementStructurePage from './features/management/ManagementStructurePage.jsx'
 import ManagementObjectivesPage from './features/management/ManagementObjectivesPage.jsx'
 import ManagementCalendarPage from './features/calendar/ManagementCalendarPage.jsx'
+import ManagementEvaluationPage from './features/evaluation/ManagementEvaluationPage.jsx'
 import ManagementTrackingPage from './features/management/ManagementTrackingPage.jsx'
 import ManagementPendingIssuesPage from './features/management/ManagementPendingIssuesPage.jsx'
 import ManagementIndicatorFormPage from './features/management/ManagementIndicatorFormPage.jsx'
@@ -50,6 +51,7 @@ const isManagementModuleLabels = pathname.startsWith('/app/management/settings/m
 const isManagementStructure = pathname === '/app/management/structure' || pathname === '/app/management/structure/'
 const isManagementObjectives = pathname.startsWith('/app/management/objectives')
 const isManagementCalendar = pathname.startsWith('/app/management/calendar')
+const isManagementEvaluation = pathname.startsWith('/app/management/evaluation')
 const isManagementIndicatorNew = pathname === '/app/management/tracking/new' || pathname === '/app/management/tracking/new/'
 const isManagementTracking = pathname.startsWith('/app/management/tracking')
 const isManagementPendingIssues = pathname.startsWith('/app/management/pending-issues')
@@ -109,6 +111,7 @@ function RootApplication() {
   else if (isManagementModuleLabels) content = <ManagementModuleLabelsPage />
   else if (isManagementStructure) content = <ManagementStructurePage />
   else if (isManagementCalendar) content = <ManagementCalendarPage />
+  else if (isManagementEvaluation) content = <ManagementEvaluationPage />
   else if (isManagementObjectives) content = <ManagementObjectivesPage />
   else if (isManagementIndicatorNew) content = <ManagementIndicatorFormPage />
   else if (isManagementPendingIssues) content = <ManagementPendingIssuesPage />

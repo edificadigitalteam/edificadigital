@@ -19,6 +19,13 @@ export const renameableModules = [
     description: 'Directorio de organizaciones y personas afiliadas a tu organización.',
   },
   {
+    key: 'evaluation',
+    column: 'evaluation_module_label',
+    rpc: 'admin_set_evaluation_module_label',
+    defaultLabel: 'Evaluación',
+    description: 'Autoevaluaciones ejecutivas privadas, recibidas por DIGEN.',
+  },
+  {
     key: 'calendar',
     column: 'calendar_module_label',
     rpc: 'admin_set_calendar_module_label',

@@ -9,6 +9,7 @@ import {
   canOpenCalendarActivityEntry,
   buildCalendarActivityPayloads,
   selectDefaultCalendarPeriodId,
+  calendarAccessSummaryKey,
 } from './calendar.js'
 
 const activities = [
@@ -54,10 +55,14 @@ test('joint review temporarily exposes the consolidated calendar read-only', () 
   assert.equal(canEditCalendarActivity({ unit_id: 'dime' }, { ownUnitIds: ['diprom'], isDigen: false }), false)
 })
 
-test('DIGEN can edit its own activities but not another unit activity', () => {
-  const access = { ownUnitIds: ['digen'], isDigen: true }
-  assert.equal(canEditCalendarActivity({ unit_id: 'digen' }, access), true)
-  assert.equal(canEditCalendarActivity({ unit_id: 'diprom' }, access), false)
+test('GEN and DIGEN leadership receive cross-unit calendar editing; ordinary admins do not', () => {
+  const gen = { ownUnitIds: ['gen'], canEditConsolidated: true }
+  const digen = { ownUnitIds: ['digen'], canEditConsolidated: true }
+  const admin = { ownUnitIds: [], isAdmin: true, canEditConsolidated: false }
+  assert.equal(canEditCalendarActivity({ unit_id: 'diprom' }, gen), true)
+  assert.equal(canEditCalendarActivity({ unit_id: 'dime' }, digen), true)
+  assert.equal(canEditCalendarActivity({ unit_id: 'diprom' }, admin), false)
+  assert.equal(canEditCalendarActivity({ unit_id: 'diprom' }, { ownUnitIds: ['diprom'] }), true)
 })
 
 test('calendar is registered as a tenant-renamable module', () => {
@@ -99,4 +104,15 @@ test('bulk calendar payloads share defaults and allow an optional objective', ()
   assert.equal(payloads[0].responsible_name, 'Equipo DIPROM')
   assert.equal(payloads[0].modality, 'hybrid')
   assert.equal(payloads[1].description, 'Detalle')
+})
+
+test('calendar access summary names the administrator separately from GEN and DIGEN', () => {
+  assert.equal(calendarAccessSummaryKey('admin', { can_edit_consolidated: true }), 'adminEditView')
+  assert.equal(calendarAccessSummaryKey('super_admin', { can_edit_consolidated: true }), 'adminEditView')
+  assert.equal(calendarAccessSummaryKey('admin', {}), 'adminView')
+  assert.equal(calendarAccessSummaryKey('operator', { can_edit_consolidated: true, is_digen: true }), 'digenEditView')
+  assert.equal(calendarAccessSummaryKey('operator', { is_digen: true }), 'digenView')
+  assert.equal(calendarAccessSummaryKey('operator', { joint_review_enabled: true }), 'jointEnabled')
+  assert.equal(calendarAccessSummaryKey('operator', {}), 'privateView')
+  assert.equal(calendarAccessSummaryKey(undefined, undefined), 'privateView')
 })
