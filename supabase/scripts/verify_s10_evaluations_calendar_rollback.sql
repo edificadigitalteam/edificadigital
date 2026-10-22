@@ -1,7 +1,7 @@
 -- Rollback-safe verification for 20261021142000_private_executive_evaluations_digen_calendar.sql
 -- Run in the Supabase SQL Editor of edifydb (rrqyihsjftlloizsccvi), as a single run.
 --
--- It applies the migration, runs the assertions of tests 022 and 023, and ends with a
+-- It applies the migration, declares a pgTAP plan of 23, runs the assertions of tests 022 and 023, and ends with a
 -- deliberate exception, so the whole transaction is rolled back and nothing is persisted.
 -- Read the result in the error message: every line is "ok N - ..." or "not ok N - ...".
 -- Expected: 23 lines, all "ok". Any "not ok" or an error before ROLLBACK_REPORT means do not apply.
@@ -13,6 +13,7 @@ set local search_path = public, extensions, pg_catalog;
 set local lock_timeout = '10s';
 set local statement_timeout = '45s';
 create temp table t_out(n serial, line text);
+select plan(23);
 
 -- SPRINT S10: private executive self-evaluations and GEN/DIGEN cross-unit calendar controls.
 -- Uses the existing private.current_operator_is_gen_or_digen_leader() membership authorization.
