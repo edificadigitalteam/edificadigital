@@ -96,8 +96,12 @@ export function evaluationsForCollection(rows, periodId, { includeDrafts = false
 }
 
 /** GEN and DIGEN are recipients; only active subordinate unit directors fill forms. */
+export function isEvaluationResultUnit(unit) {
+  return Boolean(unit && !['GEN', 'DIGEN'].includes(String(unit.code || '').trim().toUpperCase()))
+}
+
 export function isEvaluatingUnit(unit) {
-  return Boolean(unit && unit.active !== false && !['GEN', 'DIGEN'].includes(String(unit.code || '').trim().toUpperCase()))
+  return Boolean(unit && unit.active !== false && isEvaluationResultUnit(unit))
 }
 
 export function eligibleEvaluationUnits(units = [], directorUnitIds = [], isSupervisor = false) {
