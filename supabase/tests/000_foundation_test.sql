@@ -109,7 +109,7 @@ select policies_are('public', 'impact_detail', array['Tenant operators manage im
 select policies_are('public', 'impact_event_attachment', array['Tenant operators manage impact attachments'], 'impact attachment has MVP RLS');
 
 select is((select count(*) from public.unit_of_measure), 13::bigint, 'thirteen required units are seeded');
-select is((select count(*) from public.media_type), 15::bigint, 'fifteen required media types are seeded');
+select is((select count(*) from public.media_type), 20::bigint, 'twenty required media types are seeded');
 select is((select count(*) from storage.buckets where id = 'attachments' and public = false), 1::bigint, 'private attachments bucket exists');
 
 select * from finish();

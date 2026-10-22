@@ -191,6 +191,7 @@ Deployed baseline, checked on 2026-10-22 (latest migration `20261022122717`, 74 
 10. **Keep secrets out.** Service-role keys, database passwords, and secrets stay outside source control and client bundles; the client uses publishable credentials only.
 11. **Document in the same change.** Update `docs/DATABASE.md`, architecture, plan status, the PR description, and affected ADRs when the migration is applied.
 12. **Prefer local.** For any real round trip (new migration, RPC behavior change, end-to-end flow that writes data), use a local Supabase stack via Docker (`supabase start`, which applies the repo's migrations). Point the frontend at it with a gitignored `.env.local` (`VITE_SUPABASE_URL=http://127.0.0.1:54321` and the local publishable key `supabase start` prints), use a seed or throwaway operator, then clean up and `supabase stop`. Fall back to `edifydb` only when the local stack cannot reproduce the check, and say so explicitly.
+13. **CI enforces rules 4 and 5.** The `Database checks` workflow (`.github/workflows/database-checks.yml`) runs on every pull request that touches `supabase/**`. It runs `supabase start` (replays all of `supabase/migrations/` on an empty local stack) and then `supabase test db` (runs `supabase/tests/*.sql`). It uses only that local stack and never production credentials. A pull request with a red `Database checks` run is not ready for review. Run the same two commands locally before pushing. Every migration must replay on an empty database, so data-dependent blocks skip with `raise notice …; return;` when the tenant rows they need are absent and never `raise exception`.
 
 ### Applying a migration
 
@@ -213,6 +214,7 @@ PRs #127/#128 shipped a migration that had never been executed. What happened an
 | The verification script lacked `select plan(23);` and failed when the product owner ran it. | "Applying a migration", step 1: run scripts yourself first. |
 | Connector confirmations timed out at 60 s three times; each time the state had to be re-checked. | "Applying a migration", steps 2–3. |
 | The advisor flagged an unindexed foreign key after applying. | Database rule 6. |
+| Nothing in CI executed migrations or `supabase/tests/*.sql`. | Database rule 13: the `Database checks` workflow. |
 | Plan, `docs/DATABASE.md`, and PR description still said "pending" after the migration was live. | Database rule 11. |
 | The admin saw the GEN/DIGEN banner because the permission flag changed meaning. | "UI that reads permission flags" in Interface standards. |
 

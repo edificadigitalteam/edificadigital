@@ -167,22 +167,30 @@ select ok(
 -- Default catalog seed
 -- ---------------------------------------------------------------------------
 
+-- The one-time backfill can only be observed where the cnbv tenant existed
+-- before the migration (edifydb). On an empty database (CI) these two skip.
+select skip('cnbv tenant is absent from this database', 2)
+where not exists (select 1 from public.organization where code = 'cnbv');
 select ok(
   (select count(*) from public.organization_member_category category
     join public.organization organization on organization.id = category.organization_id
     where organization.code = 'cnbv') >= 3,
   'the existing cnbv tenant was backfilled with the default categories'
-);
+) where exists (select 1 from public.organization where code = 'cnbv');
 select ok(
   (select count(*) from public.organization_member_relationship_role role
     join public.organization organization on organization.id = role.organization_id
     where organization.code = 'cnbv') >= 3,
   'the existing cnbv tenant was backfilled with the default relationship roles'
-);
+) where exists (select 1 from public.organization where code = 'cnbv');
 
 -- contact_email is required and unique since organization_admin_provisioning.
 insert into public.organization (code, name, contact_email)
 values ('pgtap-member-seed', 'pgTAP seed organization', 'pgtap-member-seed@example.test');
+
+-- A second tenant, so the cross-tenant check does not depend on existing data.
+insert into public.organization (code, name, contact_email)
+values ('pgtap-member-other', 'pgTAP other organization', 'pgtap-member-other@example.test');
 
 select ok(
   (select count(*) from public.organization_member_category category
@@ -262,7 +270,7 @@ select throws_ok(
     select organization_id, 'person',
       (select category.id from public.organization_member_category category
         join public.organization organization on organization.id = category.organization_id
-        where organization.code = 'cnbv' and category.applies_to = 'person' limit 1),
+        where organization.code = 'pgtap-member-other' and category.applies_to = 'person' limit 1),
       'pgTAP Cross Tenant'
     from member_fixture
   $$,
