@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { EXECUTIVE_COMPETENCIES, blankEvaluation, evaluationIsComplete, evaluationPayload, normalizeEvaluation, evaluationRatingCounts } from './evaluation.js'
+import { EXECUTIVE_COMPETENCIES, blankEvaluation, evaluationIsComplete, evaluationPayload, normalizeEvaluation, evaluationRatingCounts, evaluationsForCollection } from './evaluation.js'
 
 test('evaluation preserves the source Word structure: 4 SWOT groups, 18 skills, 7 achievements', () => {
   const form = blankEvaluation('Directora')
@@ -29,4 +29,16 @@ test('stored evaluations hydrate safely and totals are counts rather than invent
   assert.equal(form.achievements.length, 7)
   assert.deepEqual(evaluationRatingCounts(form.competencies), { strengths: 1, weaknesses: 1, completed: 2 })
   assert.equal(evaluationPayload(form).achievements[0], 'Logro')
+})
+
+test('the evaluation collection lists submitted rows, and drafts too for the tenant admin', () => {
+  const rows = [
+    { id: 'a', management_period_id: 'p1', status: 'submitted' },
+    { id: 'b', management_period_id: 'p1', status: 'draft' },
+    { id: 'c', management_period_id: 'p2', status: 'submitted' },
+  ]
+  assert.deepEqual(evaluationsForCollection(rows, 'p1').map((row) => row.id), ['a'])
+  assert.deepEqual(evaluationsForCollection(rows, 'p1', { includeDrafts: true }).map((row) => row.id), ['a', 'b'])
+  assert.deepEqual(evaluationsForCollection(rows, 'p3', { includeDrafts: true }), [])
+  assert.deepEqual(evaluationsForCollection(null, 'p1'), [])
 })

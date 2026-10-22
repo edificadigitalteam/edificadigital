@@ -30,7 +30,7 @@ select ok(
       and policyname='unit_pending_issue_select'
       and qual ilike '%current_visible_unit_ids%'
       and qual ilike '%digen_instruction%'
-      and qual ilike '%current_operator_is_digen_director%'
+      and qual ilike '%can_issue_digen_instructions%'
   ),
   'ordinary issues keep hierarchy visibility while DIGEN can follow issued instructions'
 );
@@ -41,7 +41,7 @@ select ok(
     where schemaname='public'
       and tablename='unit_pending_issue'
       and policyname='unit_pending_issue_insert'
-      and with_check ilike '%current_operator_is_digen_director%'
+      and with_check ilike '%can_issue_digen_instructions%'
       and with_check ilike '%digen_instruction%'
   ),
   'DIGEN director can insert targeted instructions'
@@ -53,7 +53,7 @@ select ok(
     where schemaname='public'
       and tablename='unit_pending_issue'
       and policyname='unit_pending_issue_update'
-      and qual ilike '%current_operator_is_digen_director%'
+      and qual ilike '%can_issue_digen_instructions%'
   ),
   'DIGEN director can update issued instructions'
 );
@@ -65,9 +65,9 @@ select ok(
       and tablename='unit_pending_issue'
       and policyname='unit_pending_issue_delete'
       and qual ilike '%digen_instruction%'
-      and qual ilike '%current_operator_is_digen_director%'
+      and qual ilike '%can_issue_digen_instructions%'
   ),
-  'only DIGEN manages deletion of DIGEN instructions'
+  'only the DIGEN director or the tenant admin (20261022150000) manages deletion of DIGEN instructions'
 );
 
 select ok(

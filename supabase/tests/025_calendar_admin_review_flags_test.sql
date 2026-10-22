@@ -1,6 +1,7 @@
--- SPRINT S10.1 (#136): calendar_access_overview flags match what the review RPCs allow.
--- The tenant admin edits every unit but does not review; GEN/DIGEN leaders and
--- supervising units keep reviewing. Behavioral test with throwaway fixtures, rolled back.
+-- SPRINT S10.1/S10.2 (#136): calendar_access_overview flags match what the review RPCs allow.
+-- Since 20261022150000 the tenant admin edits, reviews and controls the shared view of every
+-- unit; GEN/DIGEN leaders and supervising units keep reviewing; a leaf-unit director does not.
+-- Behavioral test with throwaway fixtures, rolled back.
 begin;
 set local search_path = public, extensions, pg_catalog;
 
@@ -127,11 +128,11 @@ create function pg_temp.flag(p_who text, p_k text) returns text language sql as 
 
 select is(pg_temp.flag('admin','can_edit_consolidated'), 'true', 'admin keeps cross-unit calendar editing');
 select is(pg_temp.flag('admin','can_view_consolidated'), 'true', 'admin keeps the consolidated view');
-select is(pg_temp.flag('admin','can_review'), 'false', 'admin without supervision is not offered review');
-select is(pg_temp.flag('admin','can_manage_joint_review'), 'false', 'admin is not offered the shared-view switch');
-select is(pg_temp.flag('admin','can_review_consolidated'), 'false', 'admin is not an institutional reviewer');
-select is(pg_temp.flag('admin','review'), '42501', 'review_calendar_activity still rejects the admin');
-select is(pg_temp.flag('admin','joint'), '42501', 'set_calendar_joint_review still rejects the admin');
+select is(pg_temp.flag('admin','can_review'), 'true', 'admin without unit membership is offered review');
+select is(pg_temp.flag('admin','can_manage_joint_review'), 'true', 'admin is offered the shared-view switch');
+select is(pg_temp.flag('admin','can_review_consolidated'), 'true', 'admin reviews every unit');
+select is(pg_temp.flag('admin','review'), 'ok', 'review_calendar_activity accepts the admin');
+select is(pg_temp.flag('admin','joint'), 'ok', 'set_calendar_joint_review accepts the admin');
 select is((select title from public.unit_work_activity where id = (select act_fbcc from pg_temp.v_ids)),
   'Editada por admin', 'admin still edits another unit''s activity (20261008145936 preserved)');
 

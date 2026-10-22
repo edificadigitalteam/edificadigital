@@ -16,7 +16,8 @@ select ok(pg_get_functiondef('private.can_manage_calendar_plan(uuid)'::regproced
   ilike '%can_manage_organization(p.organization_id)%','Tenant admin keeps cross-unit calendar editing');
 select ok((select qual::text from pg_policies
   where schemaname='public' and tablename='executive_self_evaluation' and policyname='executive_evaluation_read')
-  ilike '%''submitted''%can_manage_organization(organization_id)%','Admin and GEN/DIGEN read submitted evaluations only');
+  ilike '%can_manage_organization(organization_id)%''submitted''%current_operator_is_gen_or_digen_leader(organization_id)%',
+  'GEN/DIGEN read submitted evaluations only; the tenant admin also reads drafts (20261022150000)');
 select ok(pg_get_functiondef('private.guard_executive_evaluation()'::regprocedure)
   ilike '%Submitted evaluations are final%','Submitted records are immutable');
 select ok(pg_get_functiondef('private.can_self_evaluate_unit(uuid,uuid)'::regprocedure)

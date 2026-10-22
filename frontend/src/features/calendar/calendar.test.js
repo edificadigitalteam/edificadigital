@@ -10,6 +10,7 @@ import {
   buildCalendarActivityPayloads,
   selectDefaultCalendarPeriodId,
   calendarAccessSummaryKey,
+  canClearUnitCalendar,
 } from './calendar.js'
 
 const activities = [
@@ -115,4 +116,12 @@ test('calendar access summary names the administrator separately from GEN and DI
   assert.equal(calendarAccessSummaryKey('operator', { joint_review_enabled: true }), 'jointEnabled')
   assert.equal(calendarAccessSummaryKey('operator', {}), 'privateView')
   assert.equal(calendarAccessSummaryKey(undefined, undefined), 'privateView')
+})
+
+test('clearing a unit calendar needs unit membership or tenant-admin deletion rights', () => {
+  assert.equal(canClearUnitCalendar('dime', { unit_ids: ['dime'] }), true)
+  assert.equal(canClearUnitCalendar('fbcc', { unit_ids: ['dime'] }), false)
+  assert.equal(canClearUnitCalendar('fbcc', { unit_ids: [], can_delete_consolidated: true }), true)
+  assert.equal(canClearUnitCalendar('fbcc', { unit_ids: ['digen'], can_edit_consolidated: true, can_review_consolidated: true }), false)
+  assert.equal(canClearUnitCalendar('', { can_delete_consolidated: true }), false)
 })
