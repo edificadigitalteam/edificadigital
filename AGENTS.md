@@ -151,14 +151,15 @@ Database work must follow these rules:
 1. Inspect the selected project and current schema before DDL.
 2. Put every DDL change in a timestamped repository migration.
 3. Add pgTAP coverage before the migration.
-4. Apply DDL through Supabase migration history, never as an untracked ad hoc statement.
-5. Keep applied migration files immutable; corrective work gets a later migration.
+4. Apply DDL through Supabase migration history, never as an untracked ad hoc statement. Execute every new or changed migration before requesting review: it must replay cleanly from an empty database.
+5. Keep applied migration files immutable; corrective work gets a later migration. Execute every new or changed pgTAP file before requesting review.
 6. Use generated IDs and conflict-safe catalog inserts.
 7. Exercise writes inside a transaction and roll them back when validating production structure.
 8. Run security and performance advisors after schema or policy changes.
 9. Keep service-role keys, database passwords, and secrets outside source control and client bundles.
 10. Document the resulting schema and application integration boundary.
 11. Prioritize local testing over the live project. When a change needs a real round trip against the database — a new migration, an RPC behavior change, an end-to-end flow that writes data — run it first against a local Supabase stack via Docker (`supabase start`, which applies the repo's migrations to a local Postgres instance) rather than `edifydb`. Point the frontend at the local stack with a gitignored `.env.local` (`VITE_SUPABASE_URL=http://127.0.0.1:54321` and the local publishable key `supabase start` prints), use an existing local seed operator or a throwaway one, and clean up test data and stop the stack (`supabase stop`) afterward. Only fall back to the live project when the local stack cannot reproduce what's being verified, and say so explicitly.
+12. The `Database checks` GitHub Actions workflow (`.github/workflows/database-checks.yml`) enforces rules 4 and 5 on every pull request that touches `supabase/**`: it runs `supabase start` (replays all of `supabase/migrations/` on an empty local stack) and `supabase test db` (runs `supabase/tests/*.sql`). It uses only that local stack and never production credentials. A pull request with a red `Database checks` run is not ready for review. Run the same two commands locally before pushing.
 
 The detailed reference is `docs/DATABASE.md`. The in-kind frontend uses allow-listed Magic Link access, deterministic private uploads, and the idempotent `submit_in_kind_shipment` RPC. The continuous monetary frontend uses the same access and evidence boundary with `submit_monetary_donation`. The protected `register_beneficiary` RPC and private tables are deployed; their dedicated interface follows as a separately reviewed module. Inventory receipt remains a distinct later workflow because accepted, damaged, warehouse, and verification quantities require physical inspection.
 

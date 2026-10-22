@@ -238,6 +238,17 @@ The deployment was verified on 2026-07-19 with:
 
 The repository pgTAP specifications are in `supabase/tests/`. Run them against an isolated database or inside a rollback-safe transaction.
 
+### Continuous integration: `Database checks`
+
+`.github/workflows/database-checks.yml` runs on every pull request that touches `supabase/**` (and on manual `workflow_dispatch`). The job:
+
+1. installs a pinned Supabase CLI with `supabase/setup-cli`;
+2. runs `supabase start`, which creates an empty Postgres from `supabase/config.toml` and replays every file in `supabase/migrations/` in order — a migration that fails to replay fails the job;
+3. runs `supabase test db`, which executes every `supabase/tests/*.sql` pgTAP file against that fresh database;
+4. stops the stack (and prints the database container log when a step failed).
+
+The job uses only the throwaway local stack inside the runner. It reads no repository secret, project reference, access token, service-role key, or database password, and it never connects to `edifydb`. Reproduce it locally with the same two commands (`supabase start`, then `supabase test db`). A red `Database checks` run blocks review of the pull request; fix the migration or the test, or add a corrective migration when the failing file is already applied.
+
 ## Authenticated submission
 
 `donation.submission_key` and `donation.created_by` provide retry identity and submission audit data. The unique `(created_by, submission_key)` index prevents repeated client attempts from creating duplicate donations.
