@@ -125,7 +125,7 @@ grant select, insert, update on public.executive_self_evaluation to authenticate
 -- Roles must be active on the exact organization: user-editable metadata is ignored.
 create or replace function private.current_operator_is_gen_or_digen_leader(target_organization_id uuid)
 returns boolean language sql stable security definer set search_path = ''
-as $
+as $$
   select private.is_authorized_operator()
     and private.can_access_organization(target_organization_id)
     and (
@@ -140,13 +140,15 @@ as $
           and m.unit_role in ('director','manager','operator','reviewer')
       )
     );
-$;
+$$;
 
 create policy executive_evaluation_read
 on public.executive_self_evaluation for select to authenticated
 using (
-  (private.current_operator_is_gen_or_digen_leader(organization_id)
-    and private.can_access_organization(organization_id))
+  (status = 'submitted'
+    and private.can_access_organization(organization_id)
+    and (private.current_operator_is_gen_or_digen_leader(organization_id)
+      or private.can_manage_organization(organization_id)))
   or (evaluator_user_id = (select auth.uid())
     and private.can_self_evaluate_unit(organization_id, unit_id))
 );
@@ -222,7 +224,7 @@ end;
 $$;
 
 -- Reserve cross-unit changes in the institutional calendar for GEN and DIGEN leadership.
--- The previous broad tenant-admin override is intentionally removed.
+-- Tenant administrators keep the cross-unit edit access introduced in 20261008145936.
 create or replace function private.can_manage_calendar_plan(target_plan_id uuid)
 returns boolean language sql stable security definer set search_path = ''
 as $$
@@ -232,7 +234,8 @@ as $$
       where p.id = target_plan_id
         and private.can_access_organization(p.organization_id)
         and (
-          private.current_operator_is_gen_or_digen_leader(p.organization_id)
+          private.can_manage_organization(p.organization_id)
+          or private.current_operator_is_gen_or_digen_leader(p.organization_id)
           or exists (
             select 1 from public.organization_unit_member m
             where m.unit_id = p.unit_id
@@ -276,7 +279,8 @@ begin
 
   has_oversight := private.current_operator_has_oversight(org_id);
   sees_all := private.can_manage_organization(org_id);
-  can_edit_all := private.current_operator_is_gen_or_digen_leader(org_id);
+  can_edit_all := private.can_manage_organization(org_id)
+    or private.current_operator_is_gen_or_digen_leader(org_id);
   if target_period_id is not null then
     select mp.calendar_joint_review_enabled into joint_enabled
     from public.management_period mp
@@ -304,7 +308,7 @@ $$;
 -- Administrators retain their previously existing read access.
 create or replace function private.can_view_calendar_plan(target_plan_id uuid)
 returns boolean language sql stable security definer set search_path = ''
-as $
+as $$
   select exists (
     select 1
     from public.unit_work_plan p
@@ -327,7 +331,7 @@ as $
         )
       )
   );
-$;
+$$;
 
 alter policy unit_work_plan_select on public.unit_work_plan
 using (
