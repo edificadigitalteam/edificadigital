@@ -23,7 +23,7 @@ export const renameableModules = [
     column: 'evaluation_module_label',
     rpc: 'admin_set_evaluation_module_label',
     defaultLabel: 'Evaluación',
-    description: 'Autoevaluaciones ejecutivas privadas, recibidas por DIGEN.',
+    description: 'Autoevaluaciones de las Direcciones, recibidas por GEN y DIGEN.',
   },
   {
     key: 'calendar',
