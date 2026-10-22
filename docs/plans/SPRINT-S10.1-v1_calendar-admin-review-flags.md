@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-22
 **Issue:** #136
-**Estado:** En revisión. Migración pendiente de aplicar en `edifydb`.
+**Estado:** Migración aplicada en `edifydb` (`rrqyihsjftlloizsccvi`) el 22/10/2026 como versión `20261022135016`. PR pendiente de merge.
 
 ## Resultado
 
@@ -42,7 +42,7 @@ No cambian tablas, políticas, triggers ni las RPC de revisión.
 
 - Stack local de Supabase (`supabase start`, solo la base) con todas las migraciones. pgTAP 022, 023 y 025.
 - `pnpm test`, `pnpm lint`, `pnpm build` en `frontend/`.
-- Antes de aplicar en `edifydb`: autorización explícita del product owner, prueba en una transacción revertida, aplicar con `apply_migration`, renombrar el archivo a la versión registrada y correr los advisors.
+- `edifydb`: el product owner lo autorizó por chat el 22/10/2026. La migración y las 24 aserciones de 025 corrieron primero en una transacción revertida (24/24 ok, sin datos persistidos). Se aplicó con `apply_migration` (versión `20261022135016`, 75 entradas en el historial) y el archivo se renombró a esa versión. Advisors iguales antes y después: seguridad 3/50/1 y rendimiento 51/3/124, sin hallazgos nuevos.
 
 ## Riesgos y reversión
 
