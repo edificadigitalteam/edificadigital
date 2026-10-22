@@ -6,7 +6,7 @@ import ManagementStandaloneShell from '../management/ManagementStandaloneShell.j
 import {
   EXECUTIVE_COMPETENCIES, SWOT_GROUPS, COMPETENCY_RATINGS,
   blankEvaluation, normalizeEvaluation, evaluationIsComplete,
-  evaluationPayload, evaluationRatingCounts, evaluationsForCollection } from './evaluation.js'
+  evaluationPayload, evaluationRatingCounts, evaluationsForCollection, eligibleEvaluationUnits, isEvaluatingUnit } from './evaluation.js'
 import './management-evaluation.css'
 
 const competencyEn = [
@@ -20,8 +20,8 @@ const competencyEn = [
 ]
 const messages = {
   es: {
-    eyebrow: 'CONTROL Y RENDICIÓN', title: 'Evaluación', intro: 'Autoevaluación ejecutiva institucional. Cada director completa su formulario personal y GEN y DIGEN reciben las evaluaciones enviadas.',
-    period: 'Gestión', unit: 'Dirección / agencia', personal: 'Mi autoevaluación', collection: 'Evaluaciones recibidas',
+    eyebrow: 'CONTROL Y RENDICIÓN', title: 'Evaluación', intro: 'Autoevaluación ejecutiva institucional. Cada Dirección completa su autoevaluación institucional; GEN y DIGEN reciben los resultados enviados.',
+    period: 'Gestión', unit: 'Dirección / agencia', personal: 'Autoevaluación de la Dirección', collection: 'Evaluaciones recibidas',
     director: 'Director(a)', joined: 'Año de ingreso', number: 'Nº de período', date: 'Fecha', location: 'Lugar',
     swot: 'Matriz DOFA', groups: { strengths: 'Fortalezas', opportunities: 'Oportunidades', weaknesses: 'Debilidades', threats: 'Amenazas' },
     profile: 'Perfil ocupacional', skill: 'Talento humano', rating: 'Autoevaluación',
@@ -34,15 +34,15 @@ const messages = {
     received: 'Enviadas', drafts: 'Borradores', ownSubmitted: 'Esta autoevaluación fue enviada a GEN y DIGEN y quedó cerrada.',
     ownDraft: 'Puedes guardar y continuar tu autoevaluación cuando lo necesites.',
     listEmpty: 'Todavía no hay evaluaciones registradas para esta gestión.',
-    onlyDirectors: 'La autoevaluación está habilitada para directores con una asignación activa. GEN, DIGEN y la administración pueden consultar el consolidado.',
+    onlyDirectors: 'Los directores de cada Dirección pueden completar su evaluación. GEN y DIGEN reciben los resultados enviados; la administración conserva su acceso de supervisión.',
     open: 'Ver evaluación', close: 'Cerrar detalle', completed: 'Valoraciones completadas', strengths: 'Fortalezas', weaknesses: 'Debilidades',
     status: 'Estado', submittedStatus: 'Enviada', draftStatus: 'Borrador', readOnly: 'Consulta reservada a GEN, DIGEN y la administración', adminKicker: 'Administración',
     privacy: 'Acceso privado. Los resultados individuales quedan disponibles para su autor y para los responsables autorizados de GEN y DIGEN.',
     loading: 'Cargando evaluaciones…', noPeriod: 'Aún no hay gestiones registradas.', failed: 'Se produjo un error. Revisa el mensaje e inténtalo nuevamente.',
   },
   en: {
-    eyebrow: 'ACCOUNTABILITY', title: 'Evaluation', intro: 'Institutional executive self-evaluation. Each director completes their individual form; GEN and DIGEN receive submitted evaluations.',
-    period: 'Management period', unit: 'Unit / agency', personal: 'My self-evaluation', collection: 'Received evaluations',
+    eyebrow: 'ACCOUNTABILITY', title: 'Evaluation', intro: 'Each directorate completes its institutional self-evaluation; GEN and DIGEN receive submitted results.',
+    period: 'Management period', unit: 'Unit / agency', personal: 'Directorate self-evaluation', collection: 'Received evaluations',
     director: 'Director', joined: 'Year joined', number: 'Term number', date: 'Date', location: 'Location',
     swot: 'SWOT matrix', groups: { strengths: 'Strengths', opportunities: 'Opportunities', weaknesses: 'Weaknesses', threats: 'Threats' },
     profile: 'Occupational profile', skill: 'Competency', rating: 'Self-rating',
@@ -55,7 +55,7 @@ const messages = {
     received: 'Submitted', drafts: 'Drafts', ownSubmitted: 'This evaluation has been submitted to GEN and DIGEN and is final.',
     ownDraft: 'You can save and return to your self-evaluation as needed.',
     listEmpty: 'There are no evaluations for this period yet.',
-    onlyDirectors: 'Evaluations are available to active directors. GEN, DIGEN and administration may view the consolidated records.',
+    onlyDirectors: 'Active directorate directors complete evaluations. GEN and DIGEN receive submitted results; administration retains oversight.',
     open: 'View evaluation', close: 'Close details', completed: 'Rated competencies', strengths: 'Strengths', weaknesses: 'Weaknesses',
     status: 'Status', submittedStatus: 'Submitted', draftStatus: 'Draft', readOnly: 'Review reserved to GEN, DIGEN and administration', adminKicker: 'Administration',
     privacy: 'Private access. Individual responses are available to their author and authorized GEN and DIGEN leaders.',
@@ -109,7 +109,7 @@ export default function ManagementEvaluationPage() {
   const [organization, setOrganization] = useState(null)
   const [periods, setPeriods] = useState([])
   const [units, setUnits] = useState([])
-  const [overview, setOverview] = useState({ director_unit_ids: [], can_review_all_evaluations: false })
+  const [overview, setOverview] = useState({ director_unit_ids: [], can_review_all_evaluations: false, is_evaluation_supervisor: false })
   const [rows, setRows] = useState([])
   const [periodId, setPeriodId] = useState('')
   const [unitId, setUnitId] = useState('')
@@ -138,7 +138,7 @@ export default function ManagementEvaluationPage() {
     ])
     const failed = results.find((result) => result.error)
     if (failed) { setError(failed.error.message); setLoading(false); return }
-    setOverview(results[0].data || { director_unit_ids: [], can_review_all_evaluations: false })
+    setOverview(results[0].data || { director_unit_ids: [], can_review_all_evaluations: false, is_evaluation_supervisor: false })
     setOrganization(results[1].data)
     const periodRows = results[2].data || []
     setPeriods(periodRows); setUnits(results[3].data || []); setRows(results[4].data || [])
@@ -148,7 +148,7 @@ export default function ManagementEvaluationPage() {
 
   useEffect(() => { load() }, [load])
   const directorUnitIds = useMemo(() => new Set(overview.director_unit_ids || []), [overview.director_unit_ids])
-  const directorUnits = useMemo(() => units.filter((unit) => directorUnitIds.has(unit.id)), [units, directorUnitIds])
+  const directorUnits = useMemo(() => eligibleEvaluationUnits(units, [...directorUnitIds], Boolean(overview.is_evaluation_supervisor)), [units, directorUnitIds, overview.is_evaluation_supervisor])
   useEffect(() => {
     setUnitId((current) => directorUnits.some((unit) => unit.id === current) ? current : (directorUnits[0]?.id || ''))
   }, [directorUnits])
@@ -157,15 +157,16 @@ export default function ManagementEvaluationPage() {
     setForm(normalizeEvaluation(ownRow, access.displayName || ''))
   }, [ownRow, periodId, unitId, access.displayName])
   const canReviewAll = Boolean(overview.can_review_all_evaluations)
-  const periodRows = rows.filter((row) => row.management_period_id === periodId)
+  const evaluableUnitIds = new Set(units.filter(isEvaluatingUnit).map((unit) => unit.id))
+  const periodRows = rows.filter((row) => row.management_period_id === periodId && evaluableUnitIds.has(row.unit_id))
   const submittedRows = periodRows.filter((row) => row.status === 'submitted')
   const currentPeriod = periods.find((period) => period.id === periodId)
   const includeDrafts = Boolean(overview.can_read_draft_evaluations)
-  const collectionRows = evaluationsForCollection(rows, periodId, { includeDrafts })
+  const collectionRows = evaluationsForCollection(periodRows, periodId, { includeDrafts })
   const detail = canReviewAll ? collectionRows.find((row) => row.id === selectedDetail) : null
 
   const save = async (status) => {
-    if (saving || !directorUnitIds.has(unitId) || !periodId || ownRow?.status === 'submitted') return
+    if (saving || !directorUnits.some((unit) => unit.id === unitId) || !periodId || ownRow?.status === 'submitted') return
     if (status === 'submitted') {
       if (!evaluationIsComplete(form)) { setError(t.complete); return }
       if (!window.confirm(t.confirm)) return
