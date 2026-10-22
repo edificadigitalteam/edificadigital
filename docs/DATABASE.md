@@ -2,7 +2,7 @@
 
 ## Current state
 
-The Edifica Digital operational database is deployed in Supabase project `edifydb` (`rrqyihsjftlloizsccvi`). The schema currently contains 18 public operational tables, 2 protected private beneficiary tables, one security-invoker balance view, protected catalog data, and a private attachment bucket.
+The Edifica Digital operational database is deployed in Supabase project `edifydb` (`rrqyihsjftlloizsccvi`). Checked live on 2026-10-22 (74 entries in migration history, latest `20261022122717`), the schema contains 57 `public` tables, every one with RLS enabled, and the security-invoker view `inventory_lot_balance`. The `private` schema, which the API does not expose, holds `beneficiary` and `beneficiary_event` (forced RLS), `operator_access`, and `record_change_log`. Storage has two private buckets: `attachments` (20 MB) and `project-evidence` (50 MB).
 
 All database identifiers and stored enum-like values use English `snake_case`. Spanish and English belong in interface content, catalog display names, exports, and reports.
 
@@ -46,8 +46,13 @@ All database identifiers and stored enum-like values use English `snake_case`. S
 | — | `20260928160000_unit_calendar_privacy_and_module_label.sql` | `unit_calendar_privacy_and_module_label` | Records the later calendar privacy hardening that was applied to `edifydb` during production integration. It is retained verbatim for migration-history reproducibility; its SELECT policy temporarily superseded joint-review visibility. |
 | — | `20260928200500_restore_calendar_joint_review_flow.sql` | `restore_calendar_joint_review_flow` | Corrective migration applied immediately after integration: restores the approved `can_view_calendar_plan` / `can_manage_calendar_plan` RLS model, the 60-character module-label constraint, and removes the three superseded helper functions introduced by the hardening migration. Final behavior is own-unit editing, DIGEN consolidated oversight, and DIGEN-authorized temporary joint review. |
 | — | `20261001120000_tenant_admin_resend_activation.sql` | `20261001160000` (`tenant_admin_resend_activation`) | `resend_operator_activation(uuid)` now accepts tenant `admin` callers for unconfirmed people in their own organization (super_admin keeps cross-tenant resend; operators and cross-organization targets are rejected with `42501`); `admin_list_operator_access()` returns `can_resend_invitation = true` for exactly those rows. Same signatures, grants unchanged. Tested by `supabase/tests/018_tenant_admin_resend_activation_test.sql` |
+| — | `20261001155518_pending_issues_tracking.sql` | `20261001155518` (`pending_issues_tracking`) | Adds `public.unit_pending_issue` (organization, management period, unit, title, description, `status`, `urgency`, optional `due_date`, automatic `completed_at`), the `private.can_access_pending_issue_unit` helper, the `guard_pending_issue_scope` trigger, unit-scoped RLS, and `public.pending_issue_access_overview(uuid)`. Tested by `supabase/tests/018_pending_issues_test.sql` |
+| — | `20261001155746_pending_issues_rpc_security_invoker.sql` | `20261001155746` (`pending_issues_rpc_security_invoker`) | Runs `pending_issue_access_overview` with caller privileges (`security invoker`) instead of adding a public `SECURITY DEFINER` endpoint |
+| — | `20261001155943_index_pending_issue_foreign_keys.sql` | `20261001155943` (`index_pending_issue_foreign_keys`) | Covering indexes for the `unit_pending_issue` period and unit foreign keys |
 | — | `20261001214651_cnbv_general_level_unit.sql` | `20261001214651` (`cnbv_general_level_unit`) | Data-only, CNBV only. With the `GEN` unit created from the structure screen by the product owner, places every other active top-level CNBV unit (DIGEN, FBCC, STBV, UNJB, UFBMV, UNVBMV, UPBV) under `GEN` and renumbers `organization_unit.sort_order` in tree preorder (GEN 10 … UPBV 140) so flat unit lists match the organization chart. No schema, policy, function, or grant change; unit visibility is unchanged. Skips when `cnbv` is absent and fails when `GEN` is missing or duplicated. Tested by `supabase/tests/019_cnbv_general_level_unit_test.sql` (red 5/5 before, green 5/5 after); rehearsed in a rolled-back transaction before applying |
 | — | `20261002193537_unit_hierarchy_visibility.sql` | `20261002193537` (`unit_hierarchy_visibility`) | Unit visibility follows the organization chart: a person sees their own units and every unit below them (`private.current_visible_unit_ids()`); tenant `admin` keeps organization-wide visibility; DIAF keeps its finance and management-report review exception (including reading indicators, plans and objectives). Alters the SELECT policies of `management_indicator`, `indicator_progress`, `unit_work_plan`, `objective_unit_assignment`, `institutional_objective`, `unit_management_report(_item)` and `unit_pending_issue`; moves `can_view_calendar_plan`, `can_access_finance_unit`, `can_view_all_management_reports`, `current_operator_is_digen`, the calendar review trigger, `review_calendar_activity`, `set_calendar_joint_review` and the three `*_access_overview` RPCs from the DIGEN-by-code rule to the hierarchy. Calendar review belongs to the units above the activity's unit; the joint calendar review is controlled by whoever sees every unit through membership. Adds `organization_unit_parent_unit_id_idx`. Write policies unchanged. Tested by `supabase/tests/020_unit_hierarchy_visibility_test.sql` (25/25 after applying) |
+| — | `20261007182032_digen_pending_instructions.sql` | `20261007182032` (`digen_pending_instructions`) | DIGEN instructions in Pending issues: adds `unit_pending_issue.origin` (`unit` or `digen_instruction`) and `issued_by_unit_id` (indexed), `private.current_operator_is_digen_director(uuid)`, and `private.pending_instruction_target_unit_ids_json(uuid)` (every active unit except GEN and DIGEN). Only the active DIGEN director issues, rewrites, or deletes an instruction; the assigned unit can change only its status; a unit issue cannot become an instruction. Tested by `supabase/tests/021_digen_pending_instruction_test.sql` |
+| — | `20261007182445_digen_pending_instruction_visibility_scope.sql` | `20261007182445` (`digen_pending_instruction_visibility_scope`) | Replaces `unit_pending_issue_select`: ordinary issues keep hierarchy-scoped visibility, the tenant `admin` reads every issue, and the DIGEN director reads every DIGEN instruction |
 
 | — | `20260917190000_member_celebration_and_membership_dates.sql` | `20260917185229` (`member_celebration_and_membership_dates`) | Two optional dates on a member. `organization_member.celebration_date` is one column with one meaning, "the date this member celebrates": a founding date when `member_type` is `organization`, a birthday when it is `person` — only the visible label changes, the schema does not branch. `organization_member.membership_since` records since when the member is part of the tenant, and belongs to the member rather than to a person↔organization relationship. Both `date`, nullable, complete dates or absent: partial dates were considered and dropped, so there is no precision column. No RLS change (the table's organization-scoped policies already cover every column) and no backfill. **No check constraint guards "not in the future"**, deliberately: a check expression must be immutable so it cannot read `current_date`, and a future date is a data-entry mistake rather than corrupt data — a tenant registering an affiliation that takes effect next month is reasonable — so that rule lives in the member form (`members.js`), not the database. This is the opposite call from the S5 category trigger, where a member pointing at another tenant's catalog is corrupt whoever wrote it. For a person the celebration date is a complete date of birth in `public`; see the scope-boundary section added to `docs/adr/ADR-004-protected-beneficiary-identity.md`. Applied to `edifydb` on 2026-09-17 with zero existing member rows. Verified with the 13 pgTAP assertions in `supabase/tests/015_member_dates_test.sql`, all passing. Advisors after applying are identical to the previous baseline: no new security finding, and on performance the same 53 INFO `unindexed_foreign_keys` and 3 WARN `auth_rls_initplan` as before — two plain columns add no index or policy finding |
 | — | `20261008145936_admin_unit_edit_access.sql` | `20261008145936` (`admin_unit_edit_access`) | Tenant `admin` (and `super_admin`) writes to every unit of its organization without unit membership: `private.can_manage_calendar_plan` and `private.can_access_pending_issue_unit` now also accept `private.can_manage_organization(organization_id)`. Calendar activity INSERT/UPDATE/DELETE and pending issue INSERT/UPDATE/DELETE policies inherit this through the helpers; admins can also update the status of a DIGEN instruction assigned to any unit. Issuing or rewriting DIGEN instructions stays with the DIGEN Director General (`guard_pending_issue_scope` unchanged), and calendar review stays with supervising units. Tested by `supabase/tests/022_admin_unit_edit_access_test.sql` (4/4 after applying); verified on `edifydb` with an admin without unit membership: true for every plan/unit of its organization, false for other organizations; `anon` cannot execute either helper. Advisors report no new findings. |
@@ -180,7 +185,7 @@ Reports for international organizations must present cash received, in-kind refe
 
 ## Security model
 
-- RLS is enabled on all 18 public operational tables and both private beneficiary tables. RLS is forced on the private tables.
+- RLS is enabled on all 57 `public` tables and on both private beneficiary tables, where it is forced.
 - Every operational policy requires an authenticated identity whose email appears as active **and email-confirmed** in `private.operator_access`.
 - Operator identities are provisioned directly in the protected Supabase environment; personal addresses stay outside Git history. The exception is an organization's own admin: creating an organization (`public.admin_save_organization`, super_admin only) auto-provisions an `operator_access` row for that organization's `contact_email` with `role = 'admin'`, `active = true`, and `email_confirmed_at = null` until the operator redeems a one-time activation token via `public.confirm_operator_activation(token)` (a `security definer` RPC granted to `anon`, since the operator has no session yet at that point).
 - `private.is_authorized_operator()` is a protected security-definer function in a non-exposed schema and begins with an authenticated-user check, and now also requires `email_confirmed_at is not null`.
@@ -194,7 +199,7 @@ Reports for international organizations must present cash received, in-kind refe
 - The `attachments` bucket is private, limited to 20 MB per object, and accepts JPEG, PNG, WebP, and PDF files.
 - Storage access requires an authenticated session and the `attachments` bucket identifier.
 - Nominal beneficiary tables revoke access from `public` and `anon`; active operator authorization applies to every permitted operation.
-- The MVP grants authenticated team members operational access. Granular role permissions remain a later security milestone.
+- Inside a tenant, access is further scoped by organizational unit membership, the unit hierarchy, and the GEN/DIGEN supervisor roles. See "Unit hierarchy visibility", "Institutional supervisors: GEN and DIGEN", and the module sections below.
 
 Client code may use the Supabase project URL and publishable client key. Service-role credentials and database secrets belong only in protected server environments.
 
@@ -209,9 +214,19 @@ Since `20261001214651`, CNBV has one active top-level unit, `GEN` (Dirección Ge
 - Tenant `admin` and `super_admin` see every unit through `private.can_manage_organization`.
 - DIAF (`private.can_manage_finance` / `can_review_management_reports`) keeps reading finance, management reports, indicators, indicator progress, work plans and objectives of every unit.
 - Pending issues and calendar activities have no DIAF exception.
-- Seeing a unit never grants editing it: the INSERT/UPDATE/DELETE policies remain own-unit.
-- `set_calendar_joint_review` requires `private.current_operator_oversees_organization` (membership covers every active unit).
+- Seeing a unit never grants editing it: INSERT/UPDATE/DELETE policies stay own-unit, with two explicit exceptions. Since `20261008145936`, the tenant `admin` writes to every unit's calendar and pending issues. Since `20261021142000`, GEN and DIGEN leaders edit every unit's calendar.
+- `set_calendar_joint_review` requires `private.current_operator_oversees_organization` (membership covers every active unit) or, since `20261021142000`, a GEN/DIGEN leader.
 - Access overview RPCs keep their previous keys and add `visible_unit_ids`, `supervised_unit_ids`, `can_review` and `can_manage_joint_review`. `digen_unit_id` now holds the caller's highest own unit.
+
+### Institutional supervisors: GEN and DIGEN
+
+`private.current_operator_is_gen_or_digen_leader(uuid)` (since `20261021142000`) returns true for an active `director`, `manager`, `operator`, or `reviewer` of the active `GEN` unit, and for the active DIGEN director (`private.current_operator_is_digen_director`). Both checks use active memberships in the exact organization. These leaders:
+
+- read every submitted executive self-evaluation;
+- read, edit, and validate every unit's calendar activities, and turn the shared calendar view on or off;
+- delete calendar activities only in units where they hold an active membership.
+
+Issuing DIGEN instructions in Pending issues is reserved to the DIGEN director alone.
 
 ### Organizational unit leader access
 
@@ -288,13 +303,16 @@ The Calendar module reuses the Annual Work Plan domain instead of introducing a 
 
 Calendar access is deliberately narrower than general tenant access:
 
-- An active unit member with role `director`, `manager`, `operator`, or `reviewer` can read, create, update, and delete activities only for that unit's work plan.
-- Since `20261002193537`, a person reads the activities of their own units and of every unit below them, and reviews (`pending`, `validated`, `observed`) only the units below them. Tenant admins read every activity. Ordinary edits remain limited to the person's own units. (Before that migration, any DIGEN member read and reviewed every unit.)
-- Whoever sees every active unit through membership (GEN in CNBV) may enable `management_period.calendar_joint_review_enabled` for one management period. While enabled, active unit members may read the consolidated calendar for that period; write policies remain unit-scoped.
+- An active unit member with role `director`, `manager`, `operator`, or `reviewer` can read, create, update, and delete activities for that unit's work plan.
+- Since `20261002193537`, a person reads the activities of their own units and of every unit below them, and reviews (`pending`, `validated`, `observed`) only the units below them. Tenant admins read every activity. (Before that migration, any DIGEN member read and reviewed every unit.)
+- Since `20261008145936`, the tenant `admin` also creates and updates activities in every unit of its organization (`private.can_manage_calendar_plan`).
+- Since `20261021142000`, GEN and DIGEN leaders read, create, update, and review activities in every unit (`can_view_calendar_plan`, `can_manage_calendar_plan`, `review_calendar_activity`, and the review guard trigger). `calendar_access_overview` reports this as `can_edit_consolidated`, which is also true for the tenant `admin`.
+- Deleting an activity (`unit_work_activity_delete`) requires an active `director`, `manager`, `operator`, or `reviewer` membership in the activity's own unit, for everyone.
+- Whoever sees every active unit through membership (GEN in CNBV), and since `20261021142000` any GEN/DIGEN leader, may enable `management_period.calendar_joint_review_enabled` for one management period. While enabled, active unit members may read the consolidated calendar for that period; their write access stays unchanged.
 - A substantive edit by the owning unit clears a prior review and returns the activity to `pending`.
 - The browser never relies on hiding another unit's rows. `unit_work_activity` RLS enforces the same boundary for direct API access.
 - Calendar creation supports bulk entry: shared responsible/modality/status/objective context is applied to multiple activity rows in one insert request.
-- The production “Vaciar calendario” action deletes rows only from the selected work plan, so a unit cannot clear another unit's calendar.
+- The production “Vaciar calendario” action deletes rows only from the selected work plan, and the delete policy above prevents clearing a unit's calendar without an active membership in that unit.
 
 
 ### Pending issues by organizational unit
@@ -310,8 +328,19 @@ Tracking is intentionally separated into two dimensions:
 
 Access is enforced in PostgreSQL rather than by browser filtering:
 
-- Active unit members with role `director`, `manager`, `operator`, or `reviewer` can select and mutate issues only for units where they hold an explicit membership.
+- Active unit members with role `director`, `manager`, `operator`, or `reviewer` can select and mutate issues for units where they hold an explicit membership.
 - Since `20261002193537`, members can additionally read the issues of every unit below their own units, and tenant admins read every issue. (Before that migration, active DIGEN members read every unit's issues.)
 - Consolidated visibility does not grant write access to other units.
-- Organization administrators without an explicit unit membership do not gain cross-unit issue access through their admin role.
+- Since `20261008145936`, the tenant `admin` creates, updates, and deletes issues in every unit of its organization without a unit membership (`private.can_access_pending_issue_unit`).
+- Since `20261007182032`, an issue has an `origin`: `unit` or `digen_instruction`. Only the active DIGEN director issues an instruction, to any active unit except GEN and DIGEN, and only the DIGEN director rewrites or deletes it. Members of the assigned unit, and the tenant `admin`, change only its status. Since `20261007182445`, the DIGEN director reads every instruction.
 - `public.pending_issue_access_overview(uuid)` exposes the caller's own unit ids, visible unit ids, highest own unit id (`digen_unit_id`, kept for compatibility), and whether consolidated access applies.
+
+### Executive self-evaluations
+
+Since `20261021142000`, `public.executive_self_evaluation` stores director self-evaluations for the Evaluación module (Control y rendición). Each row belongs to one organization, management period, unit, and author (`evaluator_user_id`, indexed since `20261022122717`), and is unique per author, period, and unit. It holds general data, up to 3 SWOT entries per category, 18 competency ratings, and up to 7 achievements.
+
+- `status` is `draft` or `submitted`. `private.guard_executive_evaluation` validates the content, sets `submitted_at`, and rejects any change to a submitted row, so a submission is final.
+- Insert and draft updates (`executive_evaluation_insert`, `executive_evaluation_update_draft`) require the author to be an active `director` of the unit (`private.can_self_evaluate_unit`).
+- Read (`executive_evaluation_read`): authors read their own rows, drafts included. GEN/DIGEN leaders and the tenant `admin` read submitted rows only, inside their organization.
+- No delete privilege is granted. `anon` has no access to the table or the RPCs.
+- `public.evaluation_access_overview(uuid)` returns the caller's evaluation permissions, and `public.admin_set_evaluation_module_label(uuid, text)` lets the organization admin rename the module (`organization.evaluation_module_label`).
