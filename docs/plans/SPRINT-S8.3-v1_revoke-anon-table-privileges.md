@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-23
 **Issue:** #141
-**Estado:** Migración `20261023170000_revoke_anon_table_privileges.sql` **pendiente** en `edifydb`. Requiere autorización explícita para aplicarla.
+**Estado:** Migración aplicada en `edifydb` el 2026-10-23 como versión `20261023163219` (78 entradas en el historial). El product owner autorizó por chat aplicarla y fusionar el #142.
 
 ## Resultado
 
@@ -25,7 +25,7 @@ En 14 tablas, `anon` conservaba los privilegios automáticos del Data API, porqu
 
 ## Cambio de base de datos
 
-Migración `20261023170000_revoke_anon_table_privileges.sql`, solo `grant`/`revoke`:
+Migración `20261023163219_revoke_anon_table_privileges.sql` (escrita como `20261023170000_…` y renombrada a la versión registrada al aplicarla), solo `grant`/`revoke`:
 
 1. `revoke all … from public, anon, authenticated` en las 14 tablas.
 2. `grant select, insert, update, delete … to authenticated` en las 10 tablas de gestión.
@@ -45,13 +45,21 @@ Migración `20261023170000_revoke_anon_table_privileges.sql`, solo `grant`/`revo
 - **Verde:** suite completa en local, 464/464, con los privilegios automáticos actuales y también con el cambio del 2026-10-30 simulado.
 - **Prueba revertida en `edifydb`:** la migración con las 29 aserciones, 29/29, sin dejar cambios.
 
-## Pendiente
+## Estado
 
 - [x] Plan
 - [x] Prueba pgTAP (rojo antes de la migración)
 - [x] Migración y verificación local
 - [x] Prueba revertida en `edifydb`
-- [ ] Aplicar en `edifydb` (requiere autorización), renombrar el archivo a la versión registrada y correr advisors
+- [x] Aplicada en `edifydb` (2026-10-23), archivo renombrado a la versión registrada y advisors sin hallazgos nuevos
+
+### Aplicación en `edifydb` (2026-10-23)
+
+- Autorizada por el product owner por chat: «Te autorizo, aplícala en edifydb y fusiona el #142».
+- Antes de aplicar se confirmó el mismo estado de la prueba revertida: 77 entradas y `anon` con permisos en 14 tablas.
+- Aplicada con `apply_migration`; versión `20261023163219`.
+- Revisión en vivo: `anon` no tiene permisos en ninguna tabla de `public`. `authenticated` tiene `SELECT, INSERT, UPDATE, DELETE` en las 10 tablas de gestión y solo `SELECT` en las otras 4.
+- Advisors iguales antes y después: seguridad 3/50/1, rendimiento 51/3/122.
 
 ## Fuera de alcance
 
