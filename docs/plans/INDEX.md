@@ -46,6 +46,7 @@ All project plans are stored in `/docs/plans/` with a consistent naming conventi
 | S6-DATES | [SPRINT-S6-v1_member-dates-and-tenure.md](SPRINT-S6-v1_member-dates-and-tenure.md) | ✅ Implemented | Two optional complete dates on a member — celebration (founding or birthday) and affiliation — with elapsed time shown beside each |
 
 | S10-EVAL | [SPRINT-S10-v1_private-evaluations-and-digen-calendar.md](SPRINT-S10-v1_private-evaluations-and-digen-calendar.md) | 🧪 In Review | Self-evaluations privately restricted to DIGEN and cross-unit calendar editing; database activation pending |
+| S11-PERM | [SPRINT-S11-v1_permission-based-supervision.md](SPRINT-S11-v1_permission-based-supervision.md) | 📋 Draft (decisions approved) | Supervision through permissions assigned to people instead of the GEN/DIGEN unit codes (#147) |
 
 ### Legend
 
