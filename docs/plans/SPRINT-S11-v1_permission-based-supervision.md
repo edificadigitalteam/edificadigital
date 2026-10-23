@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-23
 **Issue:** #147
-**Estado:** ✍️ En curso. Plan aprobado (#149). Etapa 1 aplicada en `edifydb` el 2026-10-23 (#150). Etapa 2 en revisión, **pendiente** de aplicar en `edifydb`.
+**Estado:** ✍️ En curso. Plan aprobado (#149). Etapa 1 aplicada en `edifydb` el 2026-10-23 (#150). Etapa 2 aplicada en `edifydb` el 2026-10-23 (#151).
 
 
 ### Etapa 1: aplicación en `edifydb` (2026-10-23)
@@ -31,9 +31,9 @@
   - la carga inicial creó 7 filas: 2 personas con supervisión, de las cuales 1 dirige DIGEN.
   - Esta prueba se corrió sin las cláusulas `on delete` ni el disparador de auditoría, porque la palabra `delete` dispara la confirmación del conector y la primera vez se agotaron los 60 s. Lo comparado no depende de ellas, y se verificó que el intento cortado no dejó nada.
 
-### Etapa 2: Calendario y Evaluación (2026-10-23, pendiente de aplicar)
+### Etapa 2: Calendario y Evaluación (2026-10-23)
 
-Migración `20261023210000_supervision_permissions_calendar_evaluation.sql`:
+Migración `20261023203607_supervision_permissions_calendar_evaluation.sql`:
 
 - vuelve a correr `private.backfill_supervision_permissions()` justo antes de cambiar las reglas, por si cambiaron las membresías desde la etapa 1;
 - agrega `public.organization.evaluation_reviewers_can_self_evaluate` (por defecto `true`) y la deja en `false` para las organizaciones con unidad GEN o DIGEN activa (CNBV, decisión 8);
@@ -43,6 +43,20 @@ Migración `20261023210000_supervision_permissions_calendar_evaluation.sql`:
 - Gestión: las políticas de lectura de `institutional_objective`, `management_indicator` y `unit_work_plan` usan `management.read_all` o `calendar.manage_all`.
 
 Las reglas de Asuntos pendientes siguen igual (etapa 3).
+
+### Etapa 2: aplicación en `edifydb` (2026-10-23)
+
+- Autorizada por el product owner por chat: «Te autorizo, aplícala en edifydb y fusiona el #151».
+- Se aplicó con `apply_migration`, sin cortes. El historial la registró como `20261023203607`, y el archivo se renombró a esa versión.
+- **Revisión en vivo:**
+  - 82 entradas en el historial;
+  - CNBV quedó con `evaluation_reviewers_can_self_evaluate = false` y las demás organizaciones con `true`;
+  - 7 permisos;
+  - ninguna función ni política llama a `current_operator_is_gen_or_digen_leader`;
+  - `anon` no ejecuta la RPC nueva y `authenticated` sí.
+- **Advisors:**
+  - rendimiento 51/3/121 (un índice sin uso menos);
+  - seguridad: solo aparece la RPC nueva del admin en `authenticated_security_definer_function_executable` (53). Es intencional, porque valida el acceso por dentro.
 
 ### Etapa 2: verificación (2026-10-23)
 
@@ -198,7 +212,7 @@ Las funciones de supervisión de Calendario, Evaluación y Asuntos pendientes de
 | Etapa | Contenido | Riesgo |
 |---|---|---|
 | 1 | Tabla, función de permisos, RPC de admin y carga inicial. Las reglas viejas siguen sin cambios. Migración `20261023200000_supervision_permissions_foundation.sql`, prueba `031`. **Aplicada en `edifydb` (2026-10-23).** | Bajo: nada lee los permisos todavía |
-| 2 | Reemplazo de las reglas de Calendario y Evaluación, y ajuste por tenant. Migración `20261023210000_supervision_permissions_calendar_evaluation.sql`, prueba `032`. **Pendiente de aplicar.** | Medio: cambia la RLS |
+| 2 | Reemplazo de las reglas de Calendario y Evaluación, y ajuste por tenant. Migración `20261023203607_supervision_permissions_calendar_evaluation.sql`, prueba `032`. **Aplicada en `edifydb` (2026-10-23).** | Medio: cambia la RLS |
 | 3 | Reemplazo de las reglas de Asuntos pendientes: destinos, `issued_by_unit_id`, columna `issued_by_name` y la pantalla «Unidad · Persona» | Medio |
 | 4 | Interfaz: «Usuarios y accesos», ajuste en Mantenedores y textos neutros | Bajo |
 | 5 | Limpieza: renombres, `origin` → `institutional_instruction`, actualización de `AGENTS.md` («Access model») | Bajo |
