@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-23
 **Issue:** #144
-**Estado:** Migración `20261023190000_default_privileges_without_anon.sql` **pendiente** en `edifydb`. Requiere autorización explícita para aplicarla.
+**Estado:** Migración aplicada en `edifydb` el 2026-10-23 como versión `20261023165913` (80 entradas en el historial). El product owner autorizó por chat aplicarla y fusionar el #146.
 
 ## Resultado
 
@@ -32,7 +32,7 @@
 
 ## Cambio de base de datos
 
-Migración `20261023190000_default_privileges_without_anon.sql`:
+Migración `20261023165913_default_privileges_without_anon.sql` (escrita como `20261023190000_…` y renombrada a la versión registrada al aplicarla):
 
 1. `alter default privileges for role postgres in schema public`:
    - `revoke all on tables from anon`;
@@ -62,7 +62,19 @@ No cambian tablas, columnas, políticas ni funciones. `authenticated` y `service
 - [x] Pruebas pgTAP (rojo antes de la migración)
 - [x] Migración y verificación local
 - [x] Prueba revertida en `edifydb`
-- [ ] Aplicar en `edifydb` (requiere autorización), renombrar el archivo a la versión registrada y correr advisors
+- [x] Aplicada en `edifydb` (2026-10-23), archivo renombrado a la versión registrada y advisors sin hallazgos nuevos
+
+### Aplicación en `edifydb` (2026-10-23)
+
+- Autorizada por el product owner por chat. Ante el pedido de autorizar la aplicación y la fusión del #146, respondió «te autorizo».
+- Justo antes de aplicar se confirmó el mismo estado de la prueba revertida (79 entradas, permisos por defecto con `anon`), y el CI estaba en verde en `632f332`.
+- Aplicada con `apply_migration`; versión `20261023165913`.
+- Revisión en vivo:
+  - Los permisos por defecto de `postgres` en `public` ya no incluyen a `anon`.
+  - En tablas nuevas, `authenticated` recibe `arwd`.
+  - Ningún objeto da `MAINTAIN` a `authenticated`.
+  - `anon` solo ejecuta las 3 RPC públicas.
+- Advisors iguales antes y después: seguridad 3/50/1, rendimiento 51/3/122.
 
 ## Riesgos y reversión
 
