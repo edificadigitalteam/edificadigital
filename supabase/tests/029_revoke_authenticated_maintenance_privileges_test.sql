@@ -1,4 +1,5 @@
--- #143: authenticated holds no TRUNCATE, REFERENCES or TRIGGER privilege on any table or view in public.
+-- #143/#144: authenticated holds no TRUNCATE, REFERENCES, TRIGGER or MAINTAIN privilege on any table or
+-- view in public (MAINTAIN, new in Postgres 17, was added to the guard by #144).
 -- edifydb still carried these automatic privileges on 35 tables and the view inventory_lot_balance.
 -- PostgREST never exposes them, the app never uses them, and TRUNCATE bypasses RLS.
 -- authenticated keeps the DML its creating migration declared (regression). Four objects
@@ -59,11 +60,12 @@ select is(
         has_table_privilege('authenticated', c.oid, 'TRUNCATE')
         or has_table_privilege('authenticated', c.oid, 'REFERENCES')
         or has_table_privilege('authenticated', c.oid, 'TRIGGER')
+        or has_table_privilege('authenticated', c.oid, 'MAINTAIN')
       )
     order by 1
   ),
   array[]::text[],
-  'no public table or view grants TRUNCATE, REFERENCES or TRIGGER to authenticated'
+  'no public table or view grants TRUNCATE, REFERENCES, TRIGGER or MAINTAIN to authenticated'
 );
 
 select * from finish();
