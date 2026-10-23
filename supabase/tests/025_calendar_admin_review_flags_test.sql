@@ -54,6 +54,11 @@ select org, u_digen, (select id from t_ids where k='a_digen'), 'director', true 
 union all select org, u_gen, (select id from t_ids where k='a_gen'), 'reviewer', true from v_ids
 union all select org, u_dime, (select id from t_ids where k='a_dime'), 'director', true from v_ids;
 
+-- Since S11 stage 2 (#147) supervision comes from permissions assigned to people, not from the
+-- GEN/DIGEN unit codes. Grant this scenario's GEN and DIGEN leaders the permissions the initial
+-- load grants in edifydb, so the scenario keeps testing the same behavior.
+select private.backfill_supervision_permissions();
+
 insert into public.management_period (id, organization_id, name, start_date, end_date)
 select period, org, 'Gestión test', date '2026-01-01', date '2026-12-31' from v_ids;
 

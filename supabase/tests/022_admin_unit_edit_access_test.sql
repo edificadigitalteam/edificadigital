@@ -4,8 +4,8 @@ set local search_path = public, extensions, pg_catalog;
 select plan(4);
 
 select ok(
-  pg_get_functiondef('private.can_manage_calendar_plan(uuid)'::regprocedure) ilike '%current_operator_is_gen_or_digen_leader(p.organization_id)%',
-  'GEN and DIGEN can manage other units calendar plans'
+  pg_get_functiondef('private.can_manage_calendar_plan(uuid)'::regprocedure) ilike '%current_operator_has_permission(p.organization_id, ''calendar.manage_all'')%',
+  'people with calendar.manage_all (formerly GEN and DIGEN, S11 #147) can manage other units calendar plans'
 );
 
 select ok(
