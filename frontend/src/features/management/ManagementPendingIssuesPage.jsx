@@ -10,6 +10,7 @@ import {
   pendingIssueStatusMeta,
   pendingIssueSummary,
   pendingIssueUrgencyMeta,
+  pendingInstructionIssuerLabel,
   sortPendingIssues,
 } from './pendingIssues.js'
 import { visibleUnits, canViewAllUnits, defaultSelectableUnitId, editableUnitIds, selectableUnits } from './unitScope.js'
@@ -37,6 +38,7 @@ const copy = {
     instructionHelp: 'La unidad seleccionada verá esta instrucción en sus asuntos pendientes y actualizará su cumplimiento.',
     instructionBadge: 'Instrucción DIGEN',
     instructionFor: 'Asignada a',
+    issuedBy: 'Emitida por',
     response: 'Respuesta de la Dirección',
     responseHelp: 'Actualiza el estado para informar a DIGEN cómo avanza esta instrucción.',
     close: 'Cerrar',
@@ -95,6 +97,7 @@ const copy = {
     instructionHelp: 'The selected unit will see this instruction in its pending issues and report its progress.',
     instructionBadge: 'DIGEN instruction',
     instructionFor: 'Assigned to',
+    issuedBy: 'Issued by',
     response: 'Unit response',
     responseHelp: 'Update the status so DIGEN can see the progress of this instruction.',
     close: 'Close',
@@ -577,6 +580,7 @@ export default function ManagementPendingIssuesPage() {
                     const urgency = pendingIssueUrgencyMeta(issue.urgency, language)
                     const unit = units.find((item) => item.id === issue.unit_id)
                     const instruction = isDigenInstruction(issue)
+                    const issuer = pendingInstructionIssuerLabel(issue, units)
                     const permission = { ownUnitIds: [...editableUnits], canIssueInstructions }
                     const manageable = canManagePendingIssueContent(issue, permission)
                     const respondable = canRespondToPendingInstruction(issue, permission)
@@ -596,6 +600,7 @@ export default function ManagementPendingIssuesPage() {
                         </div>
                         <div className="pending-issue-meta">
                           {instruction && <span><small>{t.instructionFor}</small><strong>{unit ? `${unit.code} · ${unit.name}` : '—'}</strong></span>}
+                          {instruction && issuer && <span><small>{t.issuedBy}</small><strong>{issuer}</strong></span>}
                           <span><small>{t.due}</small><strong>{issue.due_date ? dateLabel(issue.due_date, language) : t.withoutDue}</strong></span>
                           <span><small>{t.updated}</small><strong>{timestampLabel(issue.updated_at, language)}</strong></span>
                         </div>

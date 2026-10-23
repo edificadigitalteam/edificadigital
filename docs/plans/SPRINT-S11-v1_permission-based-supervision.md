@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-23
 **Issue:** #147
-**Estado:** ✍️ En curso. Plan aprobado (#149). Etapa 1 aplicada en `edifydb` el 2026-10-23 (#150). Etapa 2 aplicada en `edifydb` el 2026-10-23 (#151).
+**Estado:** ✍️ En curso. Plan aprobado (#149). Etapa 1 aplicada en `edifydb` el 2026-10-23 (#150). Etapa 2 aplicada en `edifydb` el 2026-10-23 (#151). Etapa 3 en revisión, **pendiente** de aplicar en `edifydb`.
 
 
 ### Etapa 1: aplicación en `edifydb` (2026-10-23)
@@ -30,6 +30,40 @@
   - para todos, `calendar.manage_all`, `evaluations.review` y `management.read_all` coinciden con `current_operator_is_gen_or_digen_leader`, e `instructions.issue` con `current_operator_is_digen_director`: **0 diferencias**;
   - la carga inicial creó 7 filas: 2 personas con supervisión, de las cuales 1 dirige DIGEN.
   - Esta prueba se corrió sin las cláusulas `on delete` ni el disparador de auditoría, porque la palabra `delete` dispara la confirmación del conector y la primera vez se agotaron los 60 s. Lo comparado no depende de ellas, y se verificó que el intento cortado no dejó nada.
+
+### Etapa 3: Asuntos pendientes (2026-10-23, pendiente de aplicar)
+
+Migración `20261023220000_supervision_permissions_pending_issues.sql`:
+
+- vuelve a correr la carga inicial de permisos;
+- `can_issue_digen_instructions` y `current_operator_is_digen_director` leen `instructions.issue`. Conservan su nombre hasta la etapa 5. El admin del tenant sigue emitiendo sin el permiso (#136);
+- **destinos:** todas las unidades activas, menos las unidades a las que pertenece quien emite. Para la persona que dirige DIGEN en CNBV queda la misma lista de hoy;
+- **unidad emisora:** la unidad principal más específica de quien emite, es decir, la que está más abajo en la jerarquía (decisión 9). Si la persona no pertenece a ninguna unidad, queda vacía;
+- columna nueva `unit_pending_issue.issued_by_name`, con una copia del nombre de quien emite. La escribe la base de datos y no se puede sobrescribir: ni quien emite ni la unidad asignada la cambian, y se conserva aunque la persona cambie de nombre. La instrucción existente se completó con el nombre de quien la creó;
+- el disparador rechaza una instrucción dirigida a una unidad propia de quien emite, al crearla y al moverla;
+- **pantalla:** la tarjeta de una instrucción muestra «Emitida por: Unidad · Persona» (ES/EN). Los textos que nombran a DIGEN se cambian en la etapa 4.
+
+### Etapa 3: verificación (2026-10-23)
+
+- **Rojo** (pruebas nuevas sin la migración):
+  - `033` no llega a ejecutarse porque faltan la columna y las funciones;
+  - en `026` falla la aserción de los destinos del admin;
+  - en el frontend fallan las 2 pruebas nuevas.
+- **Verde:** `033_supervision_permissions_pending_issues_test.sql` tiene 27 aserciones de comportamiento sobre un tenant **sin** unidades GEN ni DIGEN. Comprueban que:
+  - sin permiso nadie emite;
+  - con `instructions.issue` se emite a las unidades ajenas y nunca a las propias;
+  - la unidad emisora es la más específica;
+  - el nombre de quien emite no se puede falsificar y se conserva si la persona cambia de nombre;
+  - la unidad asignada solo cambia el estado;
+  - el admin sin unidades emite a todas;
+  - al quitar el permiso se pierde el derecho a reescribir.
+- `026` corre la carga inicial y espera que el admin pueda enviar instrucciones a todas las unidades.
+- **Suite de base de datos en local:** 601/601, con los privilegios automáticos y con el cambio del 2026-10-30 simulado.
+- **Frontend:** las pruebas de Asuntos pendientes pasan, junto con `pnpm lint` y `pnpm build`. Las 8 pruebas que fallan en `pnpm test` fallan igual en `main`: SEO de la página pública y el encabezado móvil antiguo.
+- **«Foto» en `edifydb`**, en una transacción revertida. Para los 18 operadores activos se compararon `pending_issue_access_overview`, `evaluation_access_overview` y los asuntos e instrucciones que cada uno ve:
+  - los 14 operadores que no son admin quedan igual; la persona que dirige DIGEN conserva sus 12 destinos;
+  - solo cambian los destinos de los 4 admins de tenant, que ahora son todas las unidades activas salvo las propias. En CNBV, el admin sin unidades pasa de 12 a 14 (suma GEN y DIGEN), y los 2 admins de DIPROM pasan de 12 a 13 (suman GEN y DIGEN, quitan DIPROM). En ALFA, el admin que dirige MUJERES pasa de 4 a 3;
+  - la instrucción existente queda como «DIGEN · Elier Romero».
 
 ### Etapa 2: Calendario y Evaluación (2026-10-23)
 
@@ -95,6 +129,7 @@ Las funciones de supervisión de Calendario, Evaluación y Asuntos pendientes de
 6. Las lecturas de objetivos, indicadores y planes de todas las unidades tienen **un permiso propio**, `management.read_all`.
 7. Los nombres visibles de los roles son **textos fijos** por ahora.
 8. **CNBV** queda con `evaluation_reviewers_can_self_evaluate = false` desde la carga inicial: GEN y DIGEN reciben las evaluaciones y no llenan la suya (pedido del 22/10).
+9. **Unidad emisora** (2026-10-23): cuando quien emite una instrucción tiene varias unidades principales, se usa la más específica, es decir, la que está más abajo en la jerarquía. En CNBV, quien dirige GEN y DIGEN emite como DIGEN.
 
 ## Inventario (consulta en vivo en `edifydb`, 2026-10-23)
 
@@ -213,7 +248,7 @@ Las funciones de supervisión de Calendario, Evaluación y Asuntos pendientes de
 |---|---|---|
 | 1 | Tabla, función de permisos, RPC de admin y carga inicial. Las reglas viejas siguen sin cambios. Migración `20261023200000_supervision_permissions_foundation.sql`, prueba `031`. **Aplicada en `edifydb` (2026-10-23).** | Bajo: nada lee los permisos todavía |
 | 2 | Reemplazo de las reglas de Calendario y Evaluación, y ajuste por tenant. Migración `20261023203607_supervision_permissions_calendar_evaluation.sql`, prueba `032`. **Aplicada en `edifydb` (2026-10-23).** | Medio: cambia la RLS |
-| 3 | Reemplazo de las reglas de Asuntos pendientes: destinos, `issued_by_unit_id`, columna `issued_by_name` y la pantalla «Unidad · Persona» | Medio |
+| 3 | Reemplazo de las reglas de Asuntos pendientes: destinos, `issued_by_unit_id`, columna `issued_by_name` y la pantalla «Unidad · Persona». Migración `20261023220000_supervision_permissions_pending_issues.sql`, prueba `033`. **Pendiente de aplicar.** | Medio |
 | 4 | Interfaz: «Usuarios y accesos», ajuste en Mantenedores y textos neutros | Bajo |
 | 5 | Limpieza: renombres, `origin` → `institutional_instruction`, actualización de `AGENTS.md` («Access model») | Bajo |
 
