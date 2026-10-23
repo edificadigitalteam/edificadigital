@@ -65,7 +65,7 @@ No cambian tablas, columnas, políticas ni funciones. `anon` y `service_role` no
 
 ## Fuera de alcance
 
-- **Corrección posterior (#144):** esta migración no quitó `MAINTAIN` (nuevo en Postgres 17), porque `information_schema` no lo lista. `authenticated` lo conservó en los mismos 36 objetos hasta `20261023190000`, que lo revoca y lo agrega a la guarda de 029.
+- **Corrección posterior (#144):** esta migración no quitó `MAINTAIN` (nuevo en Postgres 17), porque `information_schema` no lo lista. `authenticated` lo conservó en los mismos 36 objetos hasta `20261023165913`, que lo revoca y lo agrega a la guarda de 029.
 
 - Los privilegios por defecto de `public` siguen dando `TRUNCATE`, `REFERENCES` y `TRIGGER` a `authenticated` en tablas nuevas. Lo cubre #144; mientras tanto, la guarda de 029 falla en CI si una migración no los revoca.
 - Otras escrituras directas que podrían ir solo por RPC. Necesitan una revisión por módulo.
