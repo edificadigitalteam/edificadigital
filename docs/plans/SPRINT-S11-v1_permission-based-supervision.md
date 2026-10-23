@@ -2,7 +2,24 @@
 
 **Fecha:** 2026-10-23
 **Issue:** #147
-**Estado:** ✍️ En curso. Plan aprobado (#149). Etapa 1 en revisión; migración pendiente en `edifydb`.
+**Estado:** ✍️ En curso. Plan aprobado (#149). Etapa 1 aplicada en `edifydb` el 2026-10-23 (#150).
+
+
+### Etapa 1: aplicación en `edifydb` (2026-10-23)
+
+- Autorizada por el product owner por chat: «Te autorizo, aplícala en edifydb y fusiona el #150».
+- `apply_migration` se cortó dos veces a los 60 s; después de cada intento se verificó que no quedó nada aplicado.
+- Se aplicó desde el SQL Editor de Supabase con un script que envuelve la migración en `begin; … commit;` y registra la versión `20261023200000`. El script se probó antes en local. La carga inicial devolvió 7 filas.
+- **Revisión en vivo:**
+  - 81 entradas en el historial;
+  - RLS activa y sin permisos para `anon` ni `authenticated`;
+  - 4 índices;
+  - 7 permisos para 2 personas, con 7 filas de auditoría;
+  - `anon` no ejecuta las funciones nuevas.
+- **«Foto» después de aplicar:** 18 operadores activos, 0 diferencias.
+- **Advisors:**
+  - rendimiento sin cambios (51/3/122);
+  - en seguridad aparecen las 2 RPC del admin en `authenticated_security_definer_function_executable` (52) y `rls_enabled_no_policy` (INFO) para `private.operator_permission`. Las dos son intencionales: las RPC validan el acceso por dentro, y la tabla solo se toca desde funciones `security definer`, como `private.operator_access`.
 
 ### Etapa 1: verificación (2026-10-23)
 
@@ -147,7 +164,7 @@ Las funciones de supervisión de Calendario, Evaluación y Asuntos pendientes de
 
 | Etapa | Contenido | Riesgo |
 |---|---|---|
-| 1 | Tabla, función de permisos, RPC de admin y carga inicial. Las reglas viejas siguen sin cambios. Migración `20261023200000_supervision_permissions_foundation.sql`, prueba `031`. **Pendiente en `edifydb`.** | Bajo: nada lee los permisos todavía |
+| 1 | Tabla, función de permisos, RPC de admin y carga inicial. Las reglas viejas siguen sin cambios. Migración `20261023200000_supervision_permissions_foundation.sql`, prueba `031`. **Aplicada en `edifydb` (2026-10-23).** | Bajo: nada lee los permisos todavía |
 | 2 | Reemplazo de las reglas de Calendario y Evaluación, y ajuste por tenant | Medio: cambia la RLS |
 | 3 | Reemplazo de las reglas de Asuntos pendientes: destinos, `issued_by_unit_id`, columna `issued_by_name` y la pantalla «Unidad · Persona» | Medio |
 | 4 | Interfaz: «Usuarios y accesos», ajuste en Mantenedores y textos neutros | Bajo |
