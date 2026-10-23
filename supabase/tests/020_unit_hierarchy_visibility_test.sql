@@ -38,6 +38,11 @@ values
   ('00000000-0000-4000-8000-000000002000', '00000000-0000-4000-8000-000000002004', '00000000-0000-4000-8000-000000002014', 'director', true),
   ('00000000-0000-4000-8000-000000002000', '00000000-0000-4000-8000-000000002005', '00000000-0000-4000-8000-000000002015', 'director', true);
 
+-- Since S11 stage 2 (#147) supervision comes from permissions assigned to people, not from the
+-- GEN/DIGEN unit codes. Grant this scenario's GEN and DIGEN leaders the permissions the initial
+-- load grants in edifydb, so the scenario keeps testing the same behavior.
+select private.backfill_supervision_permissions();
+
 insert into public.management_period (id, organization_id, name, start_date, end_date)
 values ('00000000-0000-4000-8000-000000002020', '00000000-0000-4000-8000-000000002000', 'Periodo prueba', '2026-01-01', '2026-12-31');
 

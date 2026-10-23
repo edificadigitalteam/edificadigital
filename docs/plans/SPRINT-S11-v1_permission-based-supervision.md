@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-23
 **Issue:** #147
-**Estado:** ✍️ En curso. Plan aprobado (#149). Etapa 1 aplicada en `edifydb` el 2026-10-23 (#150).
+**Estado:** ✍️ En curso. Plan aprobado (#149). Etapa 1 aplicada en `edifydb` el 2026-10-23 (#150). Etapa 2 aplicada en `edifydb` el 2026-10-23 (#151).
 
 
 ### Etapa 1: aplicación en `edifydb` (2026-10-23)
@@ -30,6 +30,53 @@
   - para todos, `calendar.manage_all`, `evaluations.review` y `management.read_all` coinciden con `current_operator_is_gen_or_digen_leader`, e `instructions.issue` con `current_operator_is_digen_director`: **0 diferencias**;
   - la carga inicial creó 7 filas: 2 personas con supervisión, de las cuales 1 dirige DIGEN.
   - Esta prueba se corrió sin las cláusulas `on delete` ni el disparador de auditoría, porque la palabra `delete` dispara la confirmación del conector y la primera vez se agotaron los 60 s. Lo comparado no depende de ellas, y se verificó que el intento cortado no dejó nada.
+
+### Etapa 2: Calendario y Evaluación (2026-10-23)
+
+Migración `20261023203607_supervision_permissions_calendar_evaluation.sql`:
+
+- vuelve a correr `private.backfill_supervision_permissions()` justo antes de cambiar las reglas, por si cambiaron las membresías desde la etapa 1;
+- agrega `public.organization.evaluation_reviewers_can_self_evaluate` (por defecto `true`) y la deja en `false` para las organizaciones con unidad GEN o DIGEN activa (CNBV, decisión 8);
+- agrega la RPC `public.admin_set_evaluation_reviewers_can_self_evaluate(org, enabled)`, solo para el admin del tenant;
+- Calendario: `can_manage_calendar_plan`, `can_view_calendar_plan`, `guard_calendar_activity_review`, `calendar_access_overview`, `review_calendar_activity` y `set_calendar_joint_review` usan `calendar.manage_all` en lugar de `current_operator_is_gen_or_digen_leader`. Cada función se recreó desde su definición en vivo y conserva los permisos del admin del tenant (#125, #136);
+- Evaluación: la política `executive_evaluation_read` y `evaluation_access_overview` usan `evaluations.review`. `can_self_evaluate_unit` respeta el ajuste del tenant: si está apagado, quien tiene `evaluations.review` no llena su propia evaluación. `evaluation_access_overview` agrega `is_evaluation_reviewer` y `reviewers_can_self_evaluate` y mantiene las claves que ya lee la interfaz;
+- Gestión: las políticas de lectura de `institutional_objective`, `management_indicator` y `unit_work_plan` usan `management.read_all` o `calendar.manage_all`.
+
+Las reglas de Asuntos pendientes siguen igual (etapa 3).
+
+### Etapa 2: aplicación en `edifydb` (2026-10-23)
+
+- Autorizada por el product owner por chat: «Te autorizo, aplícala en edifydb y fusiona el #151».
+- Se aplicó con `apply_migration`, sin cortes. El historial la registró como `20261023203607`, y el archivo se renombró a esa versión.
+- **Revisión en vivo:**
+  - 82 entradas en el historial;
+  - CNBV quedó con `evaluation_reviewers_can_self_evaluate = false` y las demás organizaciones con `true`;
+  - 7 permisos;
+  - ninguna función ni política llama a `current_operator_is_gen_or_digen_leader`;
+  - `anon` no ejecuta la RPC nueva y `authenticated` sí.
+- **Advisors:**
+  - rendimiento 51/3/121 (un índice sin uso menos);
+  - seguridad: solo aparece la RPC nueva del admin en `authenticated_security_definer_function_executable` (53). Es intencional, porque valida el acceso por dentro.
+
+### Etapa 2: verificación (2026-10-23)
+
+- **Rojo** (pruebas nuevas sin la migración): `032` no llega a ejecutarse porque faltan la columna y la RPC; `022` (1) y `023` (6) fallan porque todavía buscan el helper GEN/DIGEN.
+- **Verde:** `032_supervision_permissions_calendar_evaluation_test.sql` (33 aserciones de comportamiento) usa un tenant sin unidades GEN ni DIGEN y comprueba que:
+  - sin permisos nadie supervisa;
+  - `calendar.manage_all` da edición, validación y vista conjunta del calendario;
+  - `management.read_all` da lectura de gestión;
+  - `evaluations.review` da lectura de evaluaciones enviadas, pero no de borradores;
+  - el ajuste vale `true` por defecto y solo el admin lo cambia;
+  - con el ajuste apagado, el revisor deja de ver unidades para autoevaluarse y su borrador, y quien no es revisor sigue igual;
+  - al quitar el permiso se pierde el acceso.
+- `020` y `025` corren la carga inicial después de crear sus membresías GEN/DIGEN; `022` y `023` buscan el permiso nuevo.
+- Suite completa en local: 574/574, con los privilegios automáticos y con el cambio del 2026-10-30 simulado.
+- **«Foto» en `edifydb`**, en una transacción revertida: se aplicó la migración y se compararon, antes y después, para los 18 operadores activos:
+  - `calendar_access_overview` del último período;
+  - `evaluation_access_overview`;
+  - los planes que cada uno puede editar y ver;
+  - las filas que ve como `authenticated` en planes, objetivos, indicadores y evaluaciones.
+- **Resultado:** 1 diferencia esperada. A la persona que dirige DIGEN y GEN ya no se le ofrecen esas unidades para autoevaluarse (decisión 8). Esa persona no tiene evaluaciones, así que no pierde ningún borrador. El resto, igual. CNBV quedó con el ajuste en `false`; 7 permisos.
 
 ## Resultado
 
@@ -165,7 +212,7 @@ Las funciones de supervisión de Calendario, Evaluación y Asuntos pendientes de
 | Etapa | Contenido | Riesgo |
 |---|---|---|
 | 1 | Tabla, función de permisos, RPC de admin y carga inicial. Las reglas viejas siguen sin cambios. Migración `20261023200000_supervision_permissions_foundation.sql`, prueba `031`. **Aplicada en `edifydb` (2026-10-23).** | Bajo: nada lee los permisos todavía |
-| 2 | Reemplazo de las reglas de Calendario y Evaluación, y ajuste por tenant | Medio: cambia la RLS |
+| 2 | Reemplazo de las reglas de Calendario y Evaluación, y ajuste por tenant. Migración `20261023203607_supervision_permissions_calendar_evaluation.sql`, prueba `032`. **Aplicada en `edifydb` (2026-10-23).** | Medio: cambia la RLS |
 | 3 | Reemplazo de las reglas de Asuntos pendientes: destinos, `issued_by_unit_id`, columna `issued_by_name` y la pantalla «Unidad · Persona» | Medio |
 | 4 | Interfaz: «Usuarios y accesos», ajuste en Mantenedores y textos neutros | Bajo |
 | 5 | Limpieza: renombres, `origin` → `institutional_instruction`, actualización de `AGENTS.md` («Access model») | Bajo |

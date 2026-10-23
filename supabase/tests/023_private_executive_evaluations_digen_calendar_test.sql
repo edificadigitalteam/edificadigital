@@ -11,13 +11,13 @@ select ok(exists(select 1 from pg_policies where schemaname='public' and tablena
 select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='executive_self_evaluation' and policyname='executive_evaluation_insert'),'Evaluation creation is scoped');
 select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='executive_self_evaluation' and policyname='executive_evaluation_update_draft'),'Draft changes are scoped');
 select ok(pg_get_functiondef('private.can_manage_calendar_plan(uuid)'::regprocedure)
-  ilike '%current_operator_is_gen_or_digen_leader(p.organization_id)%','GEN and DIGEN leaders may edit every unit calendar');
+  ilike '%current_operator_has_permission(p.organization_id, ''calendar.manage_all'')%','People with calendar.manage_all (formerly GEN/DIGEN, S11 #147) may edit every unit calendar');
 select ok(pg_get_functiondef('private.can_manage_calendar_plan(uuid)'::regprocedure)
   ilike '%can_manage_organization(p.organization_id)%','Tenant admin keeps cross-unit calendar editing');
 select ok((select qual::text from pg_policies
   where schemaname='public' and tablename='executive_self_evaluation' and policyname='executive_evaluation_read')
-  ilike '%can_manage_organization(organization_id)%''submitted''%current_operator_is_gen_or_digen_leader(organization_id)%',
-  'GEN/DIGEN read submitted evaluations only; the tenant admin also reads drafts (20261022142118)');
+  ilike '%can_manage_organization(organization_id)%''submitted''%current_operator_has_permission(organization_id, ''evaluations.review''%',
+  'Reviewers (formerly GEN/DIGEN) read submitted evaluations only; the tenant admin also reads drafts (20261022142118)');
 select ok(pg_get_functiondef('private.guard_executive_evaluation()'::regprocedure)
   ilike '%Submitted evaluations are final%','Submitted records are immutable');
 select ok(pg_get_functiondef('private.can_self_evaluate_unit(uuid,uuid)'::regprocedure)
@@ -32,12 +32,12 @@ select ok(pg_get_functiondef('private.current_operator_is_gen_or_digen_leader(uu
   ilike '%current_operator_is_digen_director(target_organization_id)%','DIGEN director remains an authorized institutional reviewer');
 select ok((select qual::text from pg_policies
   where schemaname='public' and tablename='executive_self_evaluation' and policyname='executive_evaluation_read')
-  ilike '%current_operator_is_gen_or_digen_leader(organization_id)%','GEN and DIGEN can read protected evaluations');
+  ilike '%current_operator_has_permission(organization_id, ''evaluations.review''%','People with evaluations.review can read submitted evaluations');
 select ok(pg_get_functiondef('private.guard_calendar_activity_review()'::regprocedure)
-  ilike '%current_operator_is_gen_or_digen_leader(new.organization_id)%','GEN and DIGEN may set review fields');
+  ilike '%current_operator_has_permission(new.organization_id, ''calendar.manage_all'')%','People with calendar.manage_all may set review fields');
 select ok(pg_get_functiondef('public.review_calendar_activity(uuid,text,text)'::regprocedure)
-  ilike '%current_operator_is_gen_or_digen_leader(org_id)%','GEN and DIGEN may validate and observe activities');
+  ilike '%current_operator_has_permission(org_id, ''calendar.manage_all'')%','People with calendar.manage_all may validate and observe activities');
 select ok(pg_get_functiondef('public.set_calendar_joint_review(uuid,boolean)'::regprocedure)
-  ilike '%current_operator_is_gen_or_digen_leader(org_id)%','GEN and DIGEN may enable shared meeting mode');
+  ilike '%current_operator_has_permission(org_id, ''calendar.manage_all'')%','People with calendar.manage_all may enable shared meeting mode');
 select * from finish();
 rollback;
