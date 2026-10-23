@@ -21,15 +21,19 @@ export default function ManagementOperationalFixes() {
   const [financeNoticeTarget, setFinanceNoticeTarget] = useState(null)
   const [maintainersOpen, setMaintainersOpen] = useState(window.location.pathname.startsWith('/app/management/settings'))
   const [calendarOverride, setCalendarOverride] = useState('')
+  const [evaluationOverride, setEvaluationOverride] = useState('')
   const isManagement = window.location.pathname.startsWith('/app/management') || window.location.pathname.startsWith('/app/church')
   const canAdmin = access.role === 'admin' || access.role === 'super_admin'
 
   useEffect(() => {
     if (!supabase || access.status !== 'authorized' || !access.organizationId) return undefined
     let cancelled = false
-    supabase.from('organization').select('calendar_module_label').eq('id', access.organizationId).single()
+    supabase.from('organization').select('calendar_module_label,evaluation_module_label').eq('id', access.organizationId).single()
       .then(({ data }) => {
-        if (!cancelled) setCalendarOverride(String(data?.calendar_module_label || '').trim())
+        if (!cancelled) {
+          setCalendarOverride(String(data?.calendar_module_label || '').trim())
+          setEvaluationOverride(String(data?.evaluation_module_label || '').trim())
+        }
       })
     return () => { cancelled = true }
   }, [access.organizationId, access.status])
@@ -171,12 +175,12 @@ export default function ManagementOperationalFixes() {
   const path = window.location.pathname.replace(/\/$/, '') || '/app/management'
   const labels = language === 'en' ? {
     start: 'Start', planning: 'Planning', operation: 'Resources and operations', control: 'Control and reporting', administration: 'Administration',
-    overview: 'Overview', structure: 'Structure', objectives: 'Annual plan', calendar: calendarOverride || 'Calendar', projects: 'Projects', resources: 'Contributions and resources', allies: 'Partners and donors', members: 'Members', volunteers: 'Volunteers', finance: 'Finance', tracking: 'Tracking', pendingIssues: 'Pending issues', reports: 'Reports', users: 'Users and access',
+    overview: 'Overview', structure: 'Structure', objectives: 'Annual plan', calendar: calendarOverride || 'Calendar', projects: 'Projects', resources: 'Contributions and resources', allies: 'Partners and donors', members: 'Members', volunteers: 'Volunteers', finance: 'Finance', tracking: 'Tracking', evaluation: evaluationOverride || 'Evaluation', pendingIssues: 'Pending issues', reports: 'Reports', users: 'Users and access',
     maintainers: 'Catalogs', memberCategories: 'Member categories', relationshipRoles: 'Relationship roles', moduleLabels: 'Module names',
     showMaintainers: 'Show the catalogs', hideMaintainers: 'Hide the catalogs',
   } : {
     start: 'Inicio', planning: 'Planificación', operation: 'Recursos y operación', control: 'Control y rendición', administration: 'Administración',
-    overview: 'Resumen', structure: 'Estructura', objectives: 'Plan anual', calendar: calendarOverride || 'Calendario', projects: 'Proyectos', resources: 'Aportes y recursos', allies: 'Aliados y donantes', members: 'Miembros', volunteers: 'Voluntariado', finance: 'Finanzas', tracking: 'Seguimiento', pendingIssues: 'Asuntos pendientes', reports: 'Informes', users: 'Usuarios y accesos',
+    overview: 'Resumen', structure: 'Estructura', objectives: 'Plan anual', calendar: calendarOverride || 'Calendario', projects: 'Proyectos', resources: 'Aportes y recursos', allies: 'Aliados y donantes', members: 'Miembros', volunteers: 'Voluntariado', finance: 'Finanzas', tracking: 'Seguimiento', evaluation: evaluationOverride || 'Evaluación', pendingIssues: 'Asuntos pendientes', reports: 'Informes', users: 'Usuarios y accesos',
     maintainers: 'Mantenedores', memberCategories: 'Categorías de miembros', relationshipRoles: 'Roles de relación', moduleLabels: 'Nombres de los módulos',
     showMaintainers: 'Mostrar los mantenedores', hideMaintainers: 'Ocultar los mantenedores',
   }
@@ -184,7 +188,7 @@ export default function ManagementOperationalFixes() {
     [labels.start, [[labels.overview, '/app/management']]],
     [labels.planning, [[labels.structure, '/app/management/structure'], [labels.objectives, '/app/management/objectives'], [labels.calendar, '/app/management/calendar'], [labels.projects, '/app/management/projects']]],
     [labels.operation, [[labels.resources, '/app/management/resources'], [labels.allies, '/app/management/allies'], [labels.members, '/app/management/members'], [labels.volunteers, '/app/management/volunteers'], [labels.finance, '/app/management/finance']]],
-    [labels.control, [[labels.tracking, '/app/management/tracking'], [labels.pendingIssues, '/app/management/pending-issues'], [labels.reports, '/app/management/reports']]],
+    [labels.control, [[labels.tracking, '/app/management/tracking'], [labels.evaluation, '/app/management/evaluation'], [labels.pendingIssues, '/app/management/pending-issues'], [labels.reports, '/app/management/reports']]],
   ]
   const isActive = (href) => href === '/app/management' ? path === href : path.startsWith(href)
 
