@@ -36,3 +36,10 @@ test('DIGEN can assign an instruction to a target unit and target units get quic
   assert.match(css, /\.pending-status-actions button\{[^}]*min-height:44px/)
   assert.match(css, /@media\(max-width:720px\)[\s\S]*\.pending-status-actions\{grid-template-columns:1fr/)
 })
+
+test('instruction cards show who issued them as unit and person in both languages', async () => {
+  const page = await read('./ManagementPendingIssuesPage.jsx')
+  assert.match(page, /pendingInstructionIssuerLabel/)
+  assert.match(page, /issuedBy: 'Emitida por'/)
+  assert.match(page, /issuedBy: 'Issued by'/)
+})
