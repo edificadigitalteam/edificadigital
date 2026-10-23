@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-23
 **Issue:** #143
-**Estado:** Migración `20261023180000_revoke_authenticated_maintenance_privileges.sql` **pendiente** en `edifydb`. Requiere autorización explícita para aplicarla.
+**Estado:** Migración aplicada en `edifydb` el 2026-10-23 como versión `20261023164700` (79 entradas en el historial). El product owner autorizó por chat aplicarla y fusionar el #145.
 
 ## Resultado
 
@@ -28,7 +28,7 @@ Ningún objeto de `public` da `TRUNCATE`, `REFERENCES` ni `TRIGGER` a `authentic
 
 ## Cambio de base de datos
 
-Migración `20261023180000_revoke_authenticated_maintenance_privileges.sql`, solo `revoke`:
+Migración `20261023164700_revoke_authenticated_maintenance_privileges.sql` (escrita como `20261023180000_…` y renombrada a la versión registrada al aplicarla), solo `revoke`:
 
 1. `revoke truncate, references, trigger on all tables in schema public from authenticated`.
 2. `revoke delete` en `executive_self_evaluation`.
@@ -53,7 +53,15 @@ No cambian tablas, columnas, políticas ni funciones. `anon` y `service_role` no
 - [x] Prueba pgTAP (rojo antes de la migración)
 - [x] Migración y verificación local
 - [x] Prueba revertida en `edifydb`
-- [ ] Aplicar en `edifydb` (requiere autorización), renombrar el archivo a la versión registrada y correr advisors
+- [x] Aplicada en `edifydb` (2026-10-23), archivo renombrado a la versión registrada y advisors sin hallazgos nuevos
+
+### Aplicación en `edifydb` (2026-10-23)
+
+- Autorizada por el product owner por chat: «Te autorizo, aplícala en edifydb y fusiona el #145».
+- Justo antes de aplicar se confirmó el mismo estado de la prueba revertida: 78 entradas, 36 objetos con esos privilegios.
+- Aplicada con `apply_migration`; versión `20261023164700`.
+- Revisión en vivo: ningún objeto de `public` da `TRUNCATE`, `REFERENCES` ni `TRIGGER` a `authenticated`. Los 4 objetos quedaron con lo declarado. `anon` sigue sin permisos.
+- Advisors iguales antes y después: seguridad 3/50/1, rendimiento 51/3/122.
 
 ## Fuera de alcance
 
