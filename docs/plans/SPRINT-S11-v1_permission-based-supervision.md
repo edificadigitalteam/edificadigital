@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-23
 **Issue:** #147
-**Estado:** 📋 Plan. Las decisiones abiertas al final necesitan respuesta del product owner antes de las pruebas y las migraciones.
+**Estado:** 📋 Plan aprobado en sus decisiones (2026-10-23). Falta revisar el PR del plan antes de la etapa 1.
 
 ## Resultado
 
@@ -16,6 +16,11 @@ Las funciones de supervisión de Calendario, Evaluación y Asuntos pendientes de
 1. Los permisos se asignan **a personas**, no a unidades.
 2. **Cada tenant decide** si quien revisa evaluaciones puede llenar la autoevaluación de su propia unidad.
 3. El #138 queda en pausa. Su arreglo del menú ya está en `main` (#148).
+4. El valor `origin = 'digen_instruction'` se migra a **`institutional_instruction`**.
+5. Una instrucción muestra **la unidad y la persona** que la emitió.
+6. Las lecturas de objetivos, indicadores y planes de todas las unidades tienen **un permiso propio**, `management.read_all`.
+7. Los nombres visibles de los roles son **textos fijos** por ahora.
+8. **CNBV** queda con `evaluation_reviewers_can_self_evaluate = false` desde la carga inicial: GEN y DIGEN reciben las evaluaciones y no llenan la suya (pedido del 22/10).
 
 ## Inventario (consulta en vivo en `edifydb`, 2026-10-23)
 
@@ -74,12 +79,11 @@ Las funciones de supervisión de Calendario, Evaluación y Asuntos pendientes de
 |---|---|---|
 | `calendar.manage_all` | Ver, editar y validar u observar el calendario de todas las unidades, y controlar la vista consolidada. Para borrar sigue haciendo falta ser miembro de la unidad o admin. | Líderes de GEN y director de DIGEN |
 | `evaluations.review` | Leer las autoevaluaciones **enviadas** de toda la organización. | Líderes de GEN y director de DIGEN |
-| `management.read_all` (propuesta, decisión abierta 3) | Leer objetivos, indicadores y planes de todas las unidades. | Líderes de GEN y director de DIGEN |
+| `management.read_all` | Leer objetivos, indicadores y planes de todas las unidades. | Líderes de GEN y director de DIGEN |
 | `instructions.issue` | Emitir, reescribir y borrar instrucciones institucionales a cualquier unidad activa. | Director de DIGEN |
 
 - Las claves son valores estables en `snake_case` con punto. Los nombres y descripciones visibles van en ES/EN en el frontend.
 - El admin del tenant (`private.can_manage_organization`) conserva todo lo que hoy tiene (#136). No necesita permisos asignados.
-- Si la decisión abierta 3 descarta `management.read_all`, esas lecturas quedan atadas a `calendar.manage_all` **o** a `evaluations.review`, para que nadie pierda acceso.
 
 ### Base de datos
 
@@ -103,16 +107,20 @@ Las funciones de supervisión de Calendario, Evaluación y Asuntos pendientes de
    - `can_issue_digen_instructions(org)` pasa a ser `has_permission(org,'instructions.issue') or can_manage_organization(org)`.
    - `pending_instruction_target_unit_ids_json`: destinos = todas las unidades activas.
    - `guard_pending_issue_scope`:
-     - `issued_by_unit_id` = la unidad primaria de quien emite, o `null` si no tiene;
+     - `issued_by_unit_id` = la unidad primaria de quien emite (membresía activa con `is_primary`), o `null` si no tiene;
+     - columna nueva `unit_pending_issue.issued_by_name text`: el disparador guarda una copia de `operator_access.display_name` de quien emite. La pantalla muestra «Unidad · Persona» sin leer `private`, y el nombre se conserva aunque la persona cambie de cargo o salga. La instrucción existente se completa con el nombre de quien la creó (`created_by`);
      - ya no excluye unidades por código;
      - quien emite no puede asignarse una instrucción a su propia unidad.
    - `can_self_evaluate_unit`: si `evaluation_reviewers_can_self_evaluate` es falso, excluye a quien tenga `evaluations.review`.
    - `evaluation_access_overview` suma `is_evaluation_reviewer` y `reviewers_can_self_evaluate`.
-6. **Carga inicial:** asigna a las 3 personas de CNBV los permisos que hoy ejercen. Después de aplicar, ninguna bandera de `calendar_access_overview`, `evaluation_access_overview` ni `pending_issue_access_overview` cambia para ninguna persona.
+6. **Carga inicial:**
+   - asigna a las 3 personas de CNBV los permisos que hoy ejercen: `calendar.manage_all`, `evaluations.review` y `management.read_all` a las 3, e `instructions.issue` a la dirección de DIGEN;
+   - deja `evaluation_reviewers_can_self_evaluate = false` en CNBV (decisión 8) y `true` en las demás organizaciones;
+   - después de aplicar, ninguna bandera de `calendar_access_overview`, `evaluation_access_overview` ni `pending_issue_access_overview` cambia para ninguna persona, salvo que las 3 personas de CNBV dejan de poder llenar su autoevaluación.
 7. **Limpieza (etapa final):**
    - renombrar las funciones `*_digen_*` y `*gen_or_digen*`;
    - borrar `private.current_operator_is_digen`;
-   - decidir el valor de `origin` (decisión abierta 1).
+   - migrar `origin = 'digen_instruction'` a `institutional_instruction`, con el `CHECK`, las políticas y el frontend en el mismo cambio (decisión 4).
 
 ### Interfaz
 
@@ -131,9 +139,9 @@ Las funciones de supervisión de Calendario, Evaluación y Asuntos pendientes de
 |---|---|---|
 | 1 | Tabla, función de permisos, RPC de admin y carga inicial. Las reglas viejas siguen sin cambios. | Bajo: nada lee los permisos todavía |
 | 2 | Reemplazo de las reglas de Calendario y Evaluación, y ajuste por tenant | Medio: cambia la RLS |
-| 3 | Reemplazo de las reglas de Asuntos pendientes (destinos, `issued_by_unit_id`) | Medio |
+| 3 | Reemplazo de las reglas de Asuntos pendientes: destinos, `issued_by_unit_id`, columna `issued_by_name` y la pantalla «Unidad · Persona» | Medio |
 | 4 | Interfaz: «Usuarios y accesos», ajuste en Mantenedores y textos neutros | Bajo |
-| 5 | Limpieza: renombres, `origin`, actualización de `AGENTS.md` («Access model») | Bajo |
+| 5 | Limpieza: renombres, `origin` → `institutional_instruction`, actualización de `AGENTS.md` («Access model») | Bajo |
 
 Cada etapa es un PR con:
 
@@ -159,10 +167,6 @@ Cada etapa es un PR con:
 - **Diferencia con hoy:** cualquier rol de la unidad `GEN` (incluidos `operator` y `reviewer`) cuenta hoy como líder. Hoy solo hay `director` y `manager`, así que la carga inicial cubre a todas las personas reales. Si después se agrega a alguien a GEN, ya no obtiene el permiso automáticamente: hay que asignárselo.
 - **Reversión:** cada etapa es una migración correctiva que restaura las definiciones anteriores. La tabla de permisos puede quedarse sin uso.
 
-## Decisiones abiertas
+## Decisiones resueltas (2026-10-23)
 
-1. **Valor de `origin`:** ¿se mantiene `digen_instruction` como valor interno, o se migra a `institutional_instruction`? Recomendación: migrarlo en la etapa 5, porque es un solo registro hoy.
-2. **`issued_by_unit_id`:** ¿se guarda la unidad primaria de quien emite, o se deja vacío y se muestra la persona (`created_by`)? Recomendación: la unidad primaria si existe y, si no, vacío.
-3. **Lecturas de objetivos, indicadores y planes:** ¿las da `calendar.manage_all`, `evaluations.review` o un permiso propio (`management.read_all`)? Recomendación: un permiso propio, `management.read_all`, asignado en la carga inicial a las mismas 3 personas.
-4. **Nombre visible del rol:** ¿«Personas evaluadoras» y «Supervisión institucional» como textos fijos, o configurables por tenant como los nombres de módulo? Recomendación: textos fijos por ahora.
-5. **CNBV y la autoevaluación:** el pedido del 22/10 era que GEN/DIGEN no llenen autoevaluaciones. ¿Se deja `evaluation_reviewers_can_self_evaluate = false` para CNBV en la carga inicial?
+Las 5 decisiones abiertas de la primera versión del plan quedaron resueltas por el product owner. Ver los puntos 4 a 8 de «Decisiones del product owner».
