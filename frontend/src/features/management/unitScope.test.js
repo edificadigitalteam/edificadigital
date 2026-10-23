@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { visibleUnits, supervisedUnits, defaultOwnUnitId, canReviewUnitActivity } from './unitScope.js'
+import { visibleUnits, supervisedUnits, defaultOwnUnitId, canReviewUnitActivity, selectableUnits, defaultSelectableUnitId, canViewAllUnits, editableUnitIds } from './unitScope.js'
 
 const units = [
   { id: 'gen', code: 'GEN', unit_type: 'directorate' },
@@ -52,4 +52,45 @@ test('calendar review is allowed only on units below the reviewer', () => {
   assert.equal(canReviewUnitActivity({ unit_id: 'fbcc' }, digenDirector), false)
   assert.equal(canReviewUnitActivity({ unit_id: 'digen' }, digenDirector), false)
   assert.equal(canReviewUnitActivity({ unit_id: 'dime' }, dimeDirector), false)
+})
+
+test('GEN and DIGEN leaders can review activities outside their hierarchy', () => {
+  const leader = { unit_ids: ['digen'], supervised_unit_ids: [], can_edit_consolidated: true, can_review_consolidated: true }
+  assert.equal(canReviewUnitActivity({ unit_id: 'diaf' }, leader), true)
+  assert.equal(canReviewUnitActivity({ unit_id: 'fbcc' }, leader), true)
+  assert.equal(canReviewUnitActivity({ unit_id: 'diaf' }, { unit_ids: ['digen'], supervised_unit_ids: [] }), false)
+})
+
+test('tenant admins edit every unit but review only through a supervising membership', () => {
+  const admin = { unit_ids: [], supervised_unit_ids: [], can_edit_consolidated: true, can_review_consolidated: false }
+  assert.equal(canReviewUnitActivity({ unit_id: 'diaf' }, admin), false)
+  assert.equal(canReviewUnitActivity({ unit_id: 'fbcc' }, admin), false)
+  const supervisingAdmin = { ...admin, supervised_unit_ids: ['dime'] }
+  assert.equal(canReviewUnitActivity({ unit_id: 'dime' }, supervisingAdmin), true)
+})
+
+test('tenant admins see every unit without belonging to one', () => {
+  assert.equal(canViewAllUnits('admin'), true)
+  assert.equal(canViewAllUnits('super_admin'), true)
+  assert.equal(canViewAllUnits('operator'), false)
+  assert.equal(canViewAllUnits(undefined), false)
+})
+
+test('selectable units are every unit for an admin and only own units for everyone else', () => {
+  const adminWithoutUnit = { unit_ids: [], visible_unit_ids: ['gen', 'digen', 'diaf', 'dime', 'fbcc'] }
+  assert.deepEqual(selectableUnits(units, adminWithoutUnit, { viewAll: true }).map((unit) => unit.code), ['GEN', 'DIGEN', 'DIAF', 'DIME', 'FBCC'])
+  assert.deepEqual(selectableUnits(units, digenDirector).map((unit) => unit.code), ['DIGEN'])
+  assert.deepEqual(selectableUnits(units, { unit_ids: [] }), [])
+})
+
+test('the default selectable unit prefers an own unit and falls back to the first unit for an admin', () => {
+  assert.equal(defaultSelectableUnitId(units, { unit_ids: [] }, { viewAll: true }), 'gen')
+  assert.equal(defaultSelectableUnitId(units, { unit_ids: ['dime'], digen_unit_id: 'dime' }, { viewAll: true }), 'dime')
+  assert.equal(defaultSelectableUnitId(units, { unit_ids: [] }), '')
+})
+
+test('editable units are every unit for an admin and only own units for everyone else', () => {
+  assert.deepEqual([...editableUnitIds(units, { unit_ids: [] }, { viewAll: true })], ['gen', 'digen', 'diaf', 'dime', 'fbcc'])
+  assert.deepEqual([...editableUnitIds(units, digenDirector)], ['digen'])
+  assert.deepEqual([...editableUnitIds(units, { unit_ids: [] })], [])
 })

@@ -57,6 +57,29 @@
 .pending-issue-actions button{min-height:40px;padding:0 12px;border:1px solid var(--mg-purple);border-radius:8px;background:#fff;color:var(--mg-purple);font:inherit;font-size:.75rem;font-weight:850;cursor:pointer}
 .pending-issues-empty{margin:0;padding:28px 22px;color:var(--mg-muted);text-align:center}
 
+.pending-heading-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:9px}
+.pending-heading-actions button{min-height:46px;padding:0 17px;border:0;border-radius:9px;background:var(--mg-orange);color:#fff;font:inherit;font-weight:900;cursor:pointer}
+.pending-heading-actions button.instruction{background:var(--mg-purple)}
+.pending-heading-actions button:disabled{opacity:.55;cursor:not-allowed}
+.pending-instruction-form{border-top:4px solid var(--mg-purple)}
+.pending-instruction-form .management-form-title p{margin:6px 0 0;max-width:720px;color:var(--mg-muted);font-size:.78rem;line-height:1.45}
+.pending-instruction-target small{color:var(--mg-purple);font-size:.7rem;font-weight:800}
+.digen-instruction-card{box-shadow:0 10px 24px rgba(49,18,79,.06)}
+.pending-instruction-badge{display:inline-flex;align-items:center;width:fit-content;padding:5px 8px;border-radius:999px;background:#ede4f5;color:var(--mg-purple);font-size:.67rem;font-weight:950}
+.pending-instruction-response{display:grid;gap:10px;padding:12px;border:1px solid #e1d7e8;border-radius:11px;background:#fbf8fd}
+.pending-instruction-response>div:first-child{display:grid;gap:3px}
+.pending-instruction-response strong{color:var(--mg-purple-dark);font-size:.78rem}
+.pending-instruction-response small{color:var(--mg-muted);font-size:.68rem;line-height:1.4}
+.pending-status-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.pending-status-actions button{min-height:44px;padding:7px 9px;border:1px solid var(--mg-line);border-radius:9px;background:#fff;color:var(--mg-text);font:inherit;font-size:.7rem;font-weight:850;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
+.pending-status-actions button.red{border-color:#e5b5b5;color:#8d2d2d}
+.pending-status-actions button.yellow{border-color:#ead28b;color:#6c5400}
+.pending-status-actions button.green{border-color:#acd2bd;color:#236b46}
+.pending-status-actions button.active,.pending-status-actions button:disabled{font-weight:950;cursor:default}
+.pending-status-actions button.red.active,.pending-status-actions button.red:disabled{background:#fff0ef}
+.pending-status-actions button.yellow.active,.pending-status-actions button.yellow:disabled{background:#fff6d9}
+.pending-status-actions button.green.active,.pending-status-actions button.green:disabled{background:#eaf6ef}
+
 @media(max-width:1100px){
   .pending-issues-context{grid-template-columns:1fr 1fr}
   .pending-issues-access-copy{grid-column:1/-1;text-align:left}
@@ -68,7 +91,8 @@
 @media(max-width:720px){
   .management-pending-issues-page{gap:16px;padding-bottom:36px}
   .pending-issues-heading{display:grid;gap:16px}
-  .pending-issues-heading>button{width:100%;min-height:46px}
+  .pending-heading-actions{display:grid;grid-template-columns:1fr;width:100%}
+  .pending-heading-actions button{width:100%;min-height:46px}
   .management-pending-issues-page .management-panel-heading h1{font-size:clamp(2rem,11vw,2.55rem);line-height:1}
   .pending-issues-context{grid-template-columns:1fr;gap:11px;padding:14px}
   .pending-issues-access-copy{grid-column:auto;text-align:left}
@@ -88,6 +112,7 @@
   .pending-issue-form .management-form-grid .wide{grid-column:auto}
   .pending-issue-form .management-form-actions{display:grid;grid-template-columns:1fr}
   .pending-issue-form .management-form-actions button{width:100%;min-height:44px}
+  .pending-status-actions{grid-template-columns:1fr}
 }
 
 @media(max-width:420px){

@@ -1,0 +1,55 @@
+name: Database checks
+
+# Replays every migration in supabase/migrations/ on an empty local Supabase
+# stack and runs the pgTAP suite in supabase/tests/. Uses only the throwaway
+# local stack started inside the runner: no project ref, access token,
+# service-role key, or database password is read here.
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/database-checks.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: database-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  migrations-and-pgtap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.121.0
+
+      # `supabase start` creates an empty Postgres from supabase/config.toml and
+      # applies every file in supabase/migrations/ in order. Any migration that
+      # fails to replay fails this step. Services the tests never touch are
+      # excluded to keep the job fast.
+      - name: Start local stack and replay migrations
+        run: |
+          supabase start \
+            --exclude studio,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+
+      - name: Run pgTAP tests
+        run: supabase test db
+
+      - name: Show database logs on failure
+        if: failure()
+        run: docker logs "supabase_db_edificadigital" 2>&1 | tail -200 || true
+
+      - name: Stop local stack
+        if: always()
+        run: supabase stop --no-backup

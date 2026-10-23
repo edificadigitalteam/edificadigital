@@ -30,7 +30,7 @@ El cambio sí afecta a toda base creada desde migraciones: `supabase db reset` o
 
 ## Impacto en base de datos
 
-Migración `supabase/migrations/20261005170000_explicit_data_api_grants.sql`. Solo `grant`/`revoke`; sin cambios de tablas, columnas, políticas ni funciones.
+Migración `supabase/migrations/20261023160000_explicit_data_api_grants.sql`. Solo `grant`/`revoke`; sin cambios de tablas, columnas, políticas ni funciones.
 
 Efecto en `edifydb`: quita privilegios automáticos que la aplicación no usa (acceso de `anon`, `TRUNCATE`/`REFERENCES`/`TRIGGER`, escritura directa en tablas `finance_*`). El comportamiento de la aplicación no cambia.
 
@@ -41,20 +41,31 @@ Efecto en `edifydb`: quita privilegios automáticos que la aplicación no usa (a
 
 ## Verification
 
-- pgTAP `supabase/tests/021_explicit_data_api_grants_test.sql` (20 aserciones): permisos exactos por tabla, guardas para que toda tabla/vista de `public` tenga permisos de `authenticated` y `service_role`, y lectura real como `authenticated`.
-- Stack local con el comportamiento posterior al 2026-10-30 simulado (migración temporal, no versionada, que revoca los privilegios por defecto de `postgres` en `public` antes de las demás): 021 en rojo antes de la migración y en verde después.
-- Stack local con los privilegios automáticos actuales (como `edifydb`): la migración se aplica encima y 021 pasa.
+- pgTAP `supabase/tests/027_explicit_data_api_grants_test.sql` (20 aserciones): permisos exactos por tabla, guardas para que toda tabla/vista de `public` tenga permisos de `authenticated` y `service_role`, y lectura real como `authenticated`.
+- Stack local con el comportamiento posterior al 2026-10-30 simulado (migración temporal, no versionada, que revoca los privilegios por defecto de `postgres` en `public` antes de las demás): 027 en rojo antes de la migración y en verde después.
+- Stack local con los privilegios automáticos actuales (como `edifydb`): la migración se aplica encima y 027 pasa.
 - PostgREST local: `anon` recibe `42501` en `unit_work_plan`; `service_role` lee.
 - Suite pgTAP completa: los mismos 7 fallos con y sin este cambio (000 #36, 003 #12, 013 #6–7, 019 #2–4); son anteriores y ajenos a los permisos.
 
-## Hallazgo fuera de alcance
+### Actualización 2026-10-23 (merge de `main`)
 
-Las migraciones no se pueden reproducir desde cero: `20260917031741_add_digen_and_management_report_oversight.sql` lanza error si no existe la organización `cnbv`, y `20261001214651_cnbv_general_level_unit.sql` lanza error si `cnbv` existe sin una unidad `GEN`. La verificación local usó fixtures temporales no versionados. Esto bloquea igualmente preview branches y `db reset`, y requiere un cambio aparte.
+- **Renombres.**
+  - La migración pasó de `20261005170000_…` a `20261023160000_…`. Con la fecha anterior corría antes de 9 migraciones ya aplicadas, y en una base nueva el `grant … to service_role` no cubría las tablas creadas después, como `unit_pending_issue` o `executive_self_evaluation`. No se había aplicado en ningún lado, así que se podía renombrar.
+  - El test pasó de `021` a `027`, porque `021` ya era `021_digen_pending_instruction_test.sql`.
+- **Ninguna tabla nueva sin permisos.** Las tablas creadas desde el 2026-10-05 (`unit_pending_issue`, `executive_self_evaluation`) ya declaran sus permisos para `authenticated`.
+- **Base local reconstruida desde cero con las 75 migraciones** (imagen `supabase/postgres:17.11.0.004`):
+  - Con los privilegios automáticos actuales: suite pgTAP completa, 435/435.
+  - Con el 2026-10-30 simulado (`alter default privileges for role postgres in schema public revoke all on tables from anon, authenticated, service_role` antes de las migraciones): 435/435.
+  - Sin la migración, con el cambio simulado, 027 falla 12 de 20. Las mismas 8 tablas quedan sin `select` para `authenticated`, y 58 tablas y vistas sin acceso para `service_role`.
+- **Los fallos anteriores de la suite ya no existen.** `main` corrigió la reproducción desde cero (regla 13 de `AGENTS.md`, workflow `Database checks`, #131), así que el hallazgo fuera de alcance de abajo quedó resuelto.
+- **`edifydb`, solo lectura:** las 8 tablas tienen hoy todos los privilegios automáticos, incluido `anon`, y `service_role` ya lee las 58 tablas y vistas. La migración solo quita privilegios. El frontend solo hace `select` en `finance_*`.
+- **`CLAUDE.md`:** ahora solo apunta a `AGENTS.md`, así que la regla vive únicamente en `AGENTS.md` (regla 14).
 
 ## Status
 
 - [x] Plan
 - [x] Prueba pgTAP (rojo antes de la migración)
 - [x] Migración y verificación local
-- [x] Documentación (`AGENTS.md`, `CLAUDE.md`, `docs/DATABASE.md`)
+- [x] Documentación (`AGENTS.md` regla 14, `docs/DATABASE.md`)
+- [x] Actualizado con `main` (2026-10-23) y verificado en local
 - [ ] Aplicar en `edifydb` (este entorno no tiene acceso al proyecto) y correr advisors

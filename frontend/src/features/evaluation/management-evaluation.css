@@ -1,0 +1,60 @@
+
+.management-evaluation-page{min-width:0;max-width:100%}
+.management-evaluation-page *{box-sizing:border-box}
+.evaluation-private-hint,.evaluation-info{color:#61576c;font-size:.88rem;line-height:1.55}
+.evaluation-private-hint{margin:4px 0 16px;padding:13px 16px;border-radius:12px;background:#f7f2fb;border-left:4px solid #7140a1}
+.evaluation-toolbar{display:flex;flex-wrap:wrap;gap:12px;margin:18px 0}
+.evaluation-toolbar label,.evaluation-form-grid label{display:grid;gap:7px;min-width:0}
+.evaluation-toolbar label>span,.evaluation-form-grid label>span{font-size:.77rem;font-weight:800;color:#554361}
+.evaluation-toolbar select,.evaluation-form-grid input,.evaluation-skill-list select,.evaluation-dofa-grid textarea,.evaluation-achievement-inputs textarea{font:inherit;color:#2d2440;width:100%;max-width:100%;min-height:44px;border:1px solid #dad1e2;border-radius:9px;background:#fff;padding:10px 12px}
+.evaluation-form-panel,.evaluation-consolidated{min-width:0;margin:20px 0;padding:22px;border:1px solid #e9e2ee;border-radius:18px;background:#fff;box-shadow:0 3px 18px rgba(46,26,64,.035)}
+.evaluation-section-header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;margin:0 0 18px}
+.evaluation-section-header small{display:block;margin-bottom:5px;font-size:.72rem;letter-spacing:.1em;font-weight:900;color:#8651a6}
+.evaluation-section-header h2{font-size:1.4rem;margin:0;color:#30243a}
+.evaluation-status{font-size:.78rem;padding:7px 12px;border-radius:99px;font-weight:800;background:#f5eff9;color:#704093}
+.evaluation-status.submitted{background:#ebf5ec;color:#27623d}
+.evaluation-form-grid,.evaluation-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:25px}
+.evaluation-summary-grid>div{display:grid;gap:5px;background:#faf8fc;padding:12px;border-radius:10px;min-width:0}
+.evaluation-summary-grid span{font-size:.73rem;color:#6a5a71}
+.evaluation-summary-grid strong{overflow-wrap:anywhere;font-size:.88rem}
+.management-evaluation-page h3{font-size:1.05rem;color:#3a2650;margin:27px 0 14px}
+.evaluation-dofa-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.evaluation-dofa-grid fieldset,.evaluation-dofa-grid>div{min-width:0;margin:0;border:1px solid #e8e0ec;border-radius:12px;padding:14px;background:#fcfafd}
+.evaluation-dofa-grid legend,.evaluation-dofa-grid h4{color:#60307f;font-weight:850;font-size:.9rem;margin:0 0 10px;padding:0 5px}
+.evaluation-dofa-grid fieldset label,.evaluation-achievement-inputs label{display:grid;grid-template-columns:23px minmax(0,1fr);gap:9px;align-items:start;margin:8px 0}
+.evaluation-dofa-grid fieldset label span,.evaluation-achievement-inputs label span{margin-top:11px;font-size:.75rem;font-weight:850;color:#87619a}
+.evaluation-dofa-grid textarea,.evaluation-achievement-inputs textarea{resize:vertical;min-height:60px;line-height:1.4}
+.evaluation-dofa-grid ol,.evaluation-achievements{padding-left:20px;color:#3b3243;line-height:1.55}
+.evaluation-dofa-grid li,.evaluation-achievements li{padding:3px}
+.evaluation-skill-list{border:1px solid #e9e3ed;border-radius:12px;overflow:hidden}
+.evaluation-skill-list>label,.evaluation-skill-list>div{display:grid;grid-template-columns:minmax(0,1fr) minmax(210px,.5fr);align-items:center;gap:15px;min-width:0;padding:12px 14px;border-bottom:1px solid #ede7ef}
+.evaluation-skill-list>label:last-child,.evaluation-skill-list>div:last-child{border-bottom:0}
+.evaluation-skill-list>label:nth-child(odd),.evaluation-skill-list>div:nth-child(odd){background:#fcfafc}
+.evaluation-skill-list span{font-size:.85rem;line-height:1.45;overflow-wrap:anywhere}
+.evaluation-skill-list strong{font-size:.78rem;color:#5a3676}
+.evaluation-skill-list select{font-size:.83rem}
+.evaluation-achievement-inputs{display:grid;gap:7px}
+.evaluation-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:12px;margin-top:22px}
+.evaluation-actions button,.evaluation-submission button{min-height:44px;border:1px solid #704097;border-radius:10px;padding:10px 18px;background:#623487;color:#fff;font:inherit;font-size:.84rem;font-weight:850;cursor:pointer}
+.evaluation-actions button.secondary{background:#fff;color:#673b8b}
+.evaluation-actions button:disabled{opacity:.5;cursor:wait}
+.evaluation-counts{display:flex;flex-wrap:wrap;gap:9px}
+.evaluation-counts span{padding:9px 11px;background:#f8f4fa;border-radius:10px;font-size:.78rem;color:#61496f}
+.evaluation-submission{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;border-bottom:1px solid #eee5f0;padding:13px 0}
+.evaluation-submission>div{display:grid;gap:5px;min-width:0}
+.evaluation-submission strong{font-size:.94rem}
+.evaluation-submission span{font-size:.8rem;color:#796a7f;overflow-wrap:anywhere}
+.evaluation-details{margin-top:20px;border:1px solid #e2d4ed;border-radius:13px;background:#fff;padding:18px;min-width:0}
+.evaluation-readonly{min-width:0}
+.evaluation-readonly .evaluation-skill-list>div{grid-template-columns:minmax(0,1fr) minmax(135px,.3fr)}
+@media(max-width:800px){.evaluation-form-grid,.evaluation-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){
+ .evaluation-form-panel,.evaluation-consolidated{padding:14px;border-radius:13px}
+ .evaluation-toolbar{display:grid;grid-template-columns:1fr}
+ .evaluation-form-grid,.evaluation-summary-grid,.evaluation-dofa-grid{grid-template-columns:1fr}
+ .evaluation-skill-list>label,.evaluation-skill-list>div,.evaluation-readonly .evaluation-skill-list>div{grid-template-columns:1fr;gap:7px}
+ .evaluation-actions{display:grid;grid-template-columns:1fr}
+ .evaluation-actions button{width:100%}
+ .evaluation-details{padding:11px}
+ .evaluation-section-header h2{font-size:1.18rem}
+}

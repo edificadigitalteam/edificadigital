@@ -116,11 +116,14 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000
 select is((select codes from scope_indicators), array['FBCC'], 'FBCC sees only FBCC indicators');
 select is((select codes from scope_activities), array['FBCC'], 'FBCC sees only FBCC calendar activities');
 
--- DIGEN: DIGEN and the units below it, never FBCC or GEN.
+-- DIGEN: pending issues and reports stay scoped to DIGEN and the units below it.
+-- Since S10 (20261021142000) DIGEN is an institutional supervisor: it reads every
+-- unit's indicators and calendar, validates any unit's activities, and controls
+-- the shared calendar review (docs/plans/SPRINT-S10-v1_private-evaluations-and-digen-calendar.md).
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000002012","email":"pgtap-scope-digen@example.com","role":"authenticated"}', true);
-select is((select codes from scope_indicators), array['DIGEN','DIAF','DIME'], 'DIGEN sees DIGEN and its directorates indicators');
+select is((select codes from scope_indicators), array['GEN','DIGEN','DIAF','DIME','FBCC'], 'DIGEN reads every unit indicators (S10 institutional supervision)');
 select is((select codes from scope_issues), array['DIGEN','DIAF','DIME'], 'DIGEN sees DIGEN and its directorates pending issues');
-select is((select codes from scope_activities), array['DIGEN','DIAF','DIME'], 'DIGEN sees DIGEN and its directorates calendar');
+select is((select codes from scope_activities), array['GEN','DIGEN','DIAF','DIME','FBCC'], 'DIGEN reads every unit calendar (S10 institutional supervision)');
 select is((select codes from scope_reports), array['DIGEN','DIAF','DIME'], 'DIGEN sees DIGEN and its directorates reports');
 select is(
   (select count(*)::int from public.unit_pending_issue
@@ -137,13 +140,13 @@ select lives_ok(
   $$select public.review_calendar_activity('00000000-0000-4000-8000-000000002064', 'validated', null)$$,
   'DIGEN can review a DIME calendar activity'
 );
-select throws_ok(
+select lives_ok(
   $$select public.review_calendar_activity('00000000-0000-4000-8000-000000002065', 'validated', null)$$,
-  '42501', null, 'DIGEN cannot review an FBCC calendar activity'
+  'DIGEN can review an FBCC calendar activity (S10 institutional supervision)'
 );
-select throws_ok(
+select lives_ok(
   $$select public.set_calendar_joint_review('00000000-0000-4000-8000-000000002020', true)$$,
-  '42501', null, 'DIGEN cannot open the organization-wide joint calendar review'
+  'DIGEN can open the organization-wide joint calendar review (S10)'
 );
 select is(
   (public.pending_issue_access_overview('00000000-0000-4000-8000-000000002000') -> 'visible_unit_ids') @>

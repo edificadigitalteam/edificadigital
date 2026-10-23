@@ -21,3 +21,18 @@ test('pending issues mobile layout stacks filters and cards with touch-sized act
   assert.match(css, /\.pending-issue-actions button\{[^}]*min-height:44px/)
   assert.match(css, /\.pending-issues-grid\{grid-template-columns:1fr/)
 })
+
+test('DIGEN can assign an instruction to a target unit and target units get quick status actions', async () => {
+  const [page, css] = await Promise.all([
+    read('./ManagementPendingIssuesPage.jsx'),
+    read('./management-pending-issues.css'),
+  ])
+  assert.match(page, /can_issue_instructions/)
+  assert.match(page, /instruction_target_unit_ids/)
+  assert.match(page, /Asignar instrucción/)
+  assert.match(page, /Asignar a Dirección \/ organización/)
+  assert.match(page, /updateInstructionStatus/)
+  assert.match(page, /pending-status-actions/)
+  assert.match(css, /\.pending-status-actions button\{[^}]*min-height:44px/)
+  assert.match(css, /@media\(max-width:720px\)[\s\S]*\.pending-status-actions\{grid-template-columns:1fr/)
+})

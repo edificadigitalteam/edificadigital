@@ -6,6 +6,9 @@ import {
   sortPendingIssues,
   pendingIssueSummary,
   canEditPendingIssue,
+  isDigenInstruction,
+  canRespondToPendingInstruction,
+  canManagePendingIssueContent,
 } from './pendingIssues.js'
 
 test('status metadata exposes the requested red yellow green tracking states', () => {
@@ -49,4 +52,24 @@ test('editing stays scoped to the user own units even for DIGEN consolidated acc
   assert.equal(canEditPendingIssue({unit_id:'dime'},{ownUnitIds:['diprom'],isDigen:false}),false)
   assert.equal(canEditPendingIssue({unit_id:'diprom'},{ownUnitIds:['digen'],isDigen:true}),false)
   assert.equal(canEditPendingIssue({unit_id:'digen'},{ownUnitIds:['digen'],isDigen:true}),true)
+})
+
+test('DIGEN instructions are distinguished from unit-created matters', () => {
+  assert.equal(isDigenInstruction({ origin:'digen_instruction' }), true)
+  assert.equal(isDigenInstruction({ origin:'unit' }), false)
+  assert.equal(isDigenInstruction({}), false)
+})
+
+test('target unit can respond to a DIGEN instruction but another unit cannot', () => {
+  const instruction = { origin:'digen_instruction', unit_id:'diprom' }
+  assert.equal(canRespondToPendingInstruction(instruction,{ ownUnitIds:['diprom'], canIssueInstructions:false }), true)
+  assert.equal(canRespondToPendingInstruction(instruction,{ ownUnitIds:['dime'], canIssueInstructions:false }), false)
+  assert.equal(canRespondToPendingInstruction(instruction,{ ownUnitIds:['digen'], canIssueInstructions:true }), false)
+})
+
+test('DIGEN manages instruction content while a target unit only responds by status', () => {
+  const instruction = { origin:'digen_instruction', unit_id:'diprom' }
+  assert.equal(canManagePendingIssueContent(instruction,{ ownUnitIds:['diprom'], canIssueInstructions:false }), false)
+  assert.equal(canManagePendingIssueContent(instruction,{ ownUnitIds:['digen'], canIssueInstructions:true }), true)
+  assert.equal(canManagePendingIssueContent({ origin:'unit', unit_id:'diprom' },{ ownUnitIds:['diprom'], canIssueInstructions:false }), true)
 })

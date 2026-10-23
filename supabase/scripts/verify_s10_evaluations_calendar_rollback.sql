@@ -1,0 +1,612 @@
+-- Rollback-safe verification for 20261021142000_private_executive_evaluations_digen_calendar.sql
+-- Run in the Supabase SQL Editor of edifydb (rrqyihsjftlloizsccvi), as a single run.
+--
+-- It applies the migration, declares a pgTAP plan of 23, runs the assertions of tests 022 and 023, and ends with a
+-- deliberate exception, so the whole transaction is rolled back and nothing is persisted.
+-- Read the result in the error message: every line is "ok N - ..." or "not ok N - ...".
+-- Expected: 23 lines, all "ok". Any "not ok" or an error before ROLLBACK_REPORT means do not apply.
+--
+-- Keep in sync with the migration and tests 022/023; regenerate when either changes.
+
+begin;
+set local search_path = public, extensions, pg_catalog;
+set local lock_timeout = '10s';
+set local statement_timeout = '45s';
+create temp table t_out(n serial, line text);
+select plan(23);
+
+-- SPRINT S10: private executive self-evaluations and GEN/DIGEN cross-unit calendar controls.
+-- Uses the existing private.current_operator_is_gen_or_digen_leader() membership authorization.
+alter table public.organization
+  add column if not exists evaluation_module_label text
+  check (evaluation_module_label is null or char_length(trim(evaluation_module_label)) between 1 and 60);
+
+create table if not exists public.executive_self_evaluation (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organization(id) on delete cascade,
+  management_period_id uuid not null references public.management_period(id) on delete cascade,
+  unit_id uuid not null references public.organization_unit(id) on delete cascade,
+  evaluator_user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  director_name text not null default '',
+  year_joined integer,
+  period_number integer,
+  evaluation_date date not null default current_date,
+  location text not null default '',
+  swot jsonb not null default '{"strengths":[],"opportunities":[],"weaknesses":[],"threats":[]}'::jsonb,
+  competencies jsonb not null default '{}'::jsonb,
+  achievements jsonb not null default '[]'::jsonb,
+  status text not null default 'draft' check(status in ('draft','submitted')),
+  submitted_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(management_period_id, unit_id, evaluator_user_id),
+  check(year_joined is null or year_joined between 1900 and 2100),
+  check(period_number is null or period_number between 1 and 100),
+  check(jsonb_typeof(swot) = 'object'),
+  check(jsonb_typeof(competencies) = 'object'),
+  check(jsonb_typeof(achievements) = 'array'),
+  check(jsonb_array_length(achievements) <= 7)
+);
+create index if not exists executive_evaluation_org_period_idx
+  on public.executive_self_evaluation(organization_id, management_period_id, status);
+create index if not exists executive_evaluation_unit_idx
+  on public.executive_self_evaluation(unit_id, evaluator_user_id);
+
+create or replace function private.can_self_evaluate_unit(target_organization_id uuid, target_unit_id uuid)
+returns boolean language sql stable security definer set search_path = ''
+as $$
+  select private.is_authorized_operator()
+    and private.can_access_organization(target_organization_id)
+    and exists(
+      select 1 from public.organization_unit_member m
+      join public.organization_unit u on u.id = m.unit_id and u.organization_id = m.organization_id
+      where m.organization_id = target_organization_id
+        and m.unit_id = target_unit_id
+        and m.operator_access_id = private.current_operator_access_id()
+        and m.unit_role = 'director'
+        and m.active and u.active
+    );
+$$;
+
+create or replace function private.guard_executive_evaluation()
+returns trigger language plpgsql security definer set search_path = ''
+as $$
+declare
+  key text;
+  entries integer;
+begin
+  if not exists (
+    select 1 from public.management_period p
+    join public.organization_unit u on u.organization_id = p.organization_id
+    where p.id = new.management_period_id
+      and u.id = new.unit_id
+      and p.organization_id = new.organization_id
+      and u.active
+  ) then
+    raise exception using errcode='23514', message='The unit and management period must belong to the same organization.';
+  end if;
+
+  if tg_op = 'UPDATE' then
+    if old.status = 'submitted' then
+      raise exception using errcode='42501', message='Submitted evaluations are final.';
+    end if;
+    if new.organization_id is distinct from old.organization_id
+      or new.management_period_id is distinct from old.management_period_id
+      or new.unit_id is distinct from old.unit_id
+      or new.evaluator_user_id is distinct from old.evaluator_user_id
+      or new.created_at is distinct from old.created_at then
+      raise exception using errcode='42501', message='Evaluation identity cannot be changed.';
+    end if;
+  end if;
+
+  foreach key in array array['strengths','opportunities','weaknesses','threats'] loop
+    if jsonb_typeof(new.swot -> key) is distinct from 'array'
+      or jsonb_array_length(new.swot -> key) > 3 then
+      raise exception using errcode='23514', message='Each SWOT category allows up to three statements.';
+    end if;
+  end loop;
+
+  if new.status = 'submitted' then
+    if trim(new.director_name) = '' or trim(new.location) = ''
+      or new.year_joined is null or new.period_number is null then
+      raise exception using errcode='23514', message='Complete director information before submitting.';
+    end if;
+    select count(*) into entries
+    from jsonb_each_text(new.competencies) c
+    where c.key ~ '^([1-9]|1[0-8])$'
+      and c.value in ('strength_high','strength_medium','strength_low',
+                      'weakness_high','weakness_medium','weakness_low');
+    if entries <> 18 or
+       (select count(*) from jsonb_each(new.competencies)) <> 18 then
+      raise exception using errcode='23514', message='All 18 competencies must be evaluated.';
+    end if;
+    new.submitted_at := now();
+  else
+    new.submitted_at := null;
+  end if;
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists executive_evaluation_guard on public.executive_self_evaluation;
+create trigger executive_evaluation_guard
+before insert or update on public.executive_self_evaluation
+for each row execute function private.guard_executive_evaluation();
+
+alter table public.executive_self_evaluation enable row level security;
+revoke all on public.executive_self_evaluation from public, anon;
+grant select, insert, update on public.executive_self_evaluation to authenticated;
+
+-- GEN leadership (general management) and DIGEN director share oversight.
+-- Roles must be active on the exact organization: user-editable metadata is ignored.
+create or replace function private.current_operator_is_gen_or_digen_leader(target_organization_id uuid)
+returns boolean language sql stable security definer set search_path = ''
+as $$
+  select private.is_authorized_operator()
+    and private.can_access_organization(target_organization_id)
+    and (
+      private.current_operator_is_digen_director(target_organization_id)
+      or exists (
+        select 1 from public.organization_unit_member m
+        join public.organization_unit u
+          on u.id=m.unit_id and u.organization_id=m.organization_id
+        where m.organization_id=target_organization_id
+          and m.operator_access_id=private.current_operator_access_id()
+          and m.active and u.active and upper(trim(u.code))='GEN'
+          and m.unit_role in ('director','manager','operator','reviewer')
+      )
+    );
+$$;
+
+create policy executive_evaluation_read
+on public.executive_self_evaluation for select to authenticated
+using (
+  (status = 'submitted'
+    and private.can_access_organization(organization_id)
+    and (private.current_operator_is_gen_or_digen_leader(organization_id)
+      or private.can_manage_organization(organization_id)))
+  or (evaluator_user_id = (select auth.uid())
+    and private.can_self_evaluate_unit(organization_id, unit_id))
+);
+
+create policy executive_evaluation_insert
+on public.executive_self_evaluation for insert to authenticated
+with check (
+  evaluator_user_id = (select auth.uid())
+  and private.can_self_evaluate_unit(organization_id, unit_id)
+);
+
+create policy executive_evaluation_update_draft
+on public.executive_self_evaluation for update to authenticated
+using (
+  status = 'draft'
+  and evaluator_user_id = (select auth.uid())
+  and private.can_self_evaluate_unit(organization_id, unit_id)
+)
+with check (
+  evaluator_user_id = (select auth.uid())
+  and private.can_self_evaluate_unit(organization_id, unit_id)
+);
+
+create or replace function public.evaluation_access_overview(target_organization_id uuid default null)
+returns jsonb language plpgsql security definer set search_path = ''
+as $$
+declare
+  org_id uuid;
+  director_units jsonb;
+begin
+  if not private.is_authorized_operator() then
+    raise exception using errcode='42501', message='Unauthorized';
+  end if;
+  org_id := case when private.is_super_admin() and target_organization_id is not null
+    then target_organization_id else private.current_operator_organization_id() end;
+  if org_id is null or not private.can_access_organization(org_id) then
+    raise exception using errcode='42501', message='Organization access denied';
+  end if;
+  select coalesce(jsonb_agg(u.id order by u.sort_order, u.name), '[]'::jsonb)
+    into director_units
+  from public.organization_unit_member m
+  join public.organization_unit u on u.id=m.unit_id and u.organization_id=m.organization_id
+  where m.organization_id=org_id
+    and m.operator_access_id=private.current_operator_access_id()
+    and m.unit_role='director' and m.active and u.active;
+  return jsonb_build_object(
+    'organization_id', org_id,
+    'director_unit_ids', director_units,
+    'is_digen_director', private.current_operator_is_digen_director(org_id),
+    'can_review_all_evaluations', private.current_operator_is_gen_or_digen_leader(org_id)
+  );
+end;
+$$;
+
+create or replace function public.admin_set_evaluation_module_label(
+  target_organization_id uuid, new_label text
+) returns text language plpgsql security definer set search_path = ''
+as $$
+declare cleaned_label text;
+begin
+  if not private.can_manage_organization(target_organization_id) then
+    raise exception using errcode='42501', message='Only organization administrators can rename modules.';
+  end if;
+  cleaned_label := nullif(trim(coalesce(new_label,'')), '');
+  if cleaned_label is not null and char_length(cleaned_label)>60 then
+    raise exception using errcode='22001', message='The module label may contain at most 60 characters.';
+  end if;
+  update public.organization set evaluation_module_label=cleaned_label
+   where id=target_organization_id;
+  if not found then raise exception using errcode='P0002', message='Organization not found'; end if;
+  return cleaned_label;
+end;
+$$;
+
+-- Reserve cross-unit changes in the institutional calendar for GEN and DIGEN leadership.
+-- Tenant administrators keep the cross-unit edit access introduced in 20261008145936.
+create or replace function private.can_manage_calendar_plan(target_plan_id uuid)
+returns boolean language sql stable security definer set search_path = ''
+as $$
+  select private.is_authorized_operator()
+    and exists (
+      select 1 from public.unit_work_plan p
+      where p.id = target_plan_id
+        and private.can_access_organization(p.organization_id)
+        and (
+          private.can_manage_organization(p.organization_id)
+          or private.current_operator_is_gen_or_digen_leader(p.organization_id)
+          or exists (
+            select 1 from public.organization_unit_member m
+            where m.unit_id = p.unit_id
+              and m.organization_id = p.organization_id
+              and m.active
+              and m.operator_access_id = private.current_operator_access_id()
+              and m.unit_role in ('director','manager','operator','reviewer')
+          )
+        )
+    );
+$$;
+
+create or replace function public.calendar_access_overview(
+  target_organization_id uuid default null, target_period_id uuid default null
+) returns jsonb language plpgsql security definer set search_path = ''
+as $$
+declare
+  org_id uuid;
+  membership_unit_ids jsonb;
+  has_oversight boolean := false;
+  sees_all boolean := false;
+  joint_enabled boolean := false;
+  can_edit_all boolean := false;
+begin
+  if not private.is_authorized_operator() then
+    raise exception using errcode='42501', message='Unauthorized';
+  end if;
+  org_id := case
+    when private.is_super_admin() and target_organization_id is not null then target_organization_id
+    else private.current_operator_organization_id()
+  end;
+  if org_id is null or not private.can_access_organization(org_id) then
+    raise exception using errcode='42501', message='Organization access denied';
+  end if;
+  select coalesce(jsonb_agg(m.unit_id order by m.created_at), '[]'::jsonb)
+  into membership_unit_ids
+  from public.organization_unit_member m
+  where m.organization_id = org_id
+    and m.operator_access_id = private.current_operator_access_id()
+    and m.active and m.unit_role in ('director','manager','operator','reviewer');
+
+  has_oversight := private.current_operator_has_oversight(org_id);
+  sees_all := private.can_manage_organization(org_id);
+  can_edit_all := private.can_manage_organization(org_id)
+    or private.current_operator_is_gen_or_digen_leader(org_id);
+  if target_period_id is not null then
+    select mp.calendar_joint_review_enabled into joint_enabled
+    from public.management_period mp
+    where mp.id=target_period_id and mp.organization_id=org_id;
+    joint_enabled := coalesce(joint_enabled,false);
+  end if;
+
+  return jsonb_build_object(
+    'organization_id',org_id,
+    'digen_unit_id',private.current_top_unit_id(org_id),
+    'is_digen',has_oversight,
+    'unit_ids',membership_unit_ids,
+    'visible_unit_ids',private.visible_unit_ids_json(org_id),
+    'supervised_unit_ids',private.supervised_unit_ids_json(org_id),
+    'can_review',has_oversight or can_edit_all,
+    'can_manage_joint_review',private.current_operator_oversees_organization(org_id) or can_edit_all,
+    'joint_review_enabled',joint_enabled,
+    'can_view_consolidated',has_oversight or sees_all or joint_enabled or can_edit_all,
+    'can_edit_consolidated',can_edit_all
+  );
+end;
+$$;
+
+-- Cross-unit editing also needs unrestricted GEN/DIGEN calendar reading.
+-- Administrators retain their previously existing read access.
+create or replace function private.can_view_calendar_plan(target_plan_id uuid)
+returns boolean language sql stable security definer set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.unit_work_plan p
+    join public.management_period mp on mp.id = p.management_period_id
+    where p.id = target_plan_id
+      and private.can_access_organization(p.organization_id)
+      and (
+        private.can_manage_organization(p.organization_id)
+        or private.current_operator_is_gen_or_digen_leader(p.organization_id)
+        or p.unit_id = any(private.current_visible_unit_ids())
+        or (
+          mp.calendar_joint_review_enabled
+          and exists (
+            select 1 from public.organization_unit_member m
+            where m.organization_id = p.organization_id
+              and m.operator_access_id = private.current_operator_access_id()
+              and m.active
+              and m.unit_role in ('director','manager','operator','reviewer')
+          )
+        )
+      )
+  );
+$$;
+
+alter policy unit_work_plan_select on public.unit_work_plan
+using (
+  private.can_access_organization(organization_id)
+  and (
+    private.can_manage_organization(organization_id)
+    or private.can_review_management_reports(organization_id)
+    or private.current_operator_is_gen_or_digen_leader(organization_id)
+    or unit_id = any((select private.current_visible_unit_ids())::uuid[])
+  )
+);
+
+alter policy institutional_objective_select on public.institutional_objective
+using (
+  private.can_access_organization(organization_id)
+  and (
+    work_plan_id is null
+    or private.can_manage_organization(organization_id)
+    or private.can_review_management_reports(organization_id)
+    or private.current_operator_is_gen_or_digen_leader(organization_id)
+    or exists (
+      select 1 from public.unit_work_plan p
+      where p.id = institutional_objective.work_plan_id
+        and p.unit_id = any((select private.current_visible_unit_ids())::uuid[])
+    )
+  )
+);
+
+alter policy management_indicator_select on public.management_indicator
+using (
+  private.can_access_organization(organization_id)
+  and (
+    private.can_manage_organization(organization_id)
+    or private.can_review_management_reports(organization_id)
+    or private.current_operator_is_gen_or_digen_leader(organization_id)
+    or unit_id = any((select private.current_visible_unit_ids())::uuid[])
+  )
+);
+
+-- GEN and DIGEN may edit other units' activities, while clearing an entire calendar
+-- stays limited to a unit's active members.
+alter policy unit_work_activity_delete on public.unit_work_activity
+using (
+  private.can_access_organization(organization_id)
+  and exists (
+    select 1 from public.unit_work_plan p
+    join public.organization_unit_member m
+      on m.unit_id = p.unit_id
+     and m.organization_id = p.organization_id
+    where p.id = unit_work_activity.work_plan_id
+      and m.operator_access_id = private.current_operator_access_id()
+      and m.active
+      and m.unit_role in ('director','manager','operator','reviewer')
+  )
+);
+
+revoke all on function private.current_operator_is_gen_or_digen_leader(uuid) from public, anon;
+grant execute on function private.current_operator_is_gen_or_digen_leader(uuid) to authenticated;
+revoke all on function private.can_self_evaluate_unit(uuid,uuid) from public, anon;
+revoke all on function private.guard_executive_evaluation() from public, anon, authenticated;
+revoke all on function public.evaluation_access_overview(uuid) from public, anon;
+revoke all on function public.admin_set_evaluation_module_label(uuid,text) from public, anon;
+grant execute on function private.can_self_evaluate_unit(uuid,uuid) to authenticated;
+grant execute on function public.evaluation_access_overview(uuid) to authenticated;
+grant execute on function public.admin_set_evaluation_module_label(uuid,text) to authenticated;
+
+-- GEN/DIGEN cross-unit review and shared meeting visibility.
+create or replace function private.guard_calendar_activity_review()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  caller_can_review boolean;
+begin
+  caller_can_review := private.can_supervise_unit(
+    (select p.unit_id from public.unit_work_plan p where p.id = new.work_plan_id)
+  ) or private.current_operator_is_gen_or_digen_leader(new.organization_id);
+
+  if tg_op = 'INSERT' then
+    if not caller_can_review then
+      new.review_status := 'pending';
+      new.review_note := null;
+      new.reviewed_by := null;
+      new.reviewed_at := null;
+    end if;
+    return new;
+  end if;
+
+  if not caller_can_review and (
+    new.review_status is distinct from old.review_status
+    or new.review_note is distinct from old.review_note
+    or new.reviewed_by is distinct from old.reviewed_by
+    or new.reviewed_at is distinct from old.reviewed_at
+  ) then
+    raise exception using errcode = '42501', message = 'Only a supervising unit can change calendar review fields.';
+  end if;
+
+  if not caller_can_review and (
+    new.work_plan_id is distinct from old.work_plan_id
+    or new.objective_id is distinct from old.objective_id
+    or new.indicator_id is distinct from old.indicator_id
+    or new.title is distinct from old.title
+    or new.description is distinct from old.description
+    or new.start_date is distinct from old.start_date
+    or new.end_date is distinct from old.end_date
+    or new.status is distinct from old.status
+    or new.responsible_name is distinct from old.responsible_name
+    or new.modality is distinct from old.modality
+  ) then
+    new.review_status := 'pending';
+    new.review_note := null;
+    new.reviewed_by := null;
+    new.reviewed_at := null;
+  end if;
+
+  return new;
+end;
+$$;
+
+create or replace function public.review_calendar_activity(target_activity_id uuid, target_status text, target_note text default null)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  activity_unit_id uuid;
+  org_id uuid;
+begin
+  if not private.is_authorized_operator() then
+    raise exception using errcode='42501', message='Unauthorized';
+  end if;
+
+  if target_status not in ('pending','validated','observed') then
+    raise exception using errcode='23514', message='Invalid calendar review status';
+  end if;
+
+  select p.unit_id, p.organization_id into activity_unit_id, org_id
+  from public.unit_work_activity a
+  join public.unit_work_plan p on p.id = a.work_plan_id
+  where a.id = target_activity_id;
+
+  if activity_unit_id is null then
+    raise exception using errcode='P0002', message='Calendar activity not found';
+  end if;
+
+  if not (private.can_supervise_unit(activity_unit_id) or private.current_operator_is_gen_or_digen_leader(org_id)) then
+    raise exception using errcode='42501', message='Only a supervising unit can review this calendar activity';
+  end if;
+
+  update public.unit_work_activity
+  set review_status = target_status,
+      review_note = nullif(trim(coalesce(target_note,'')), ''),
+      reviewed_by = case when target_status = 'pending' then null else auth.uid() end,
+      reviewed_at = case when target_status = 'pending' then null else now() end,
+      updated_by = auth.uid(),
+      updated_at = now()
+  where id = target_activity_id;
+
+  return target_activity_id;
+end;
+$$;
+
+create or replace function public.set_calendar_joint_review(target_period_id uuid, enabled boolean)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  org_id uuid;
+begin
+  if not private.is_authorized_operator() then
+    raise exception using errcode='42501', message='Unauthorized';
+  end if;
+
+  select mp.organization_id into org_id
+  from public.management_period mp
+  where mp.id = target_period_id;
+
+  if org_id is null then
+    raise exception using errcode='P0002', message='Management period not found';
+  end if;
+
+  if not (private.current_operator_oversees_organization(org_id) or private.current_operator_is_gen_or_digen_leader(org_id)) then
+    raise exception using errcode='42501', message='Only the organization top unit can change joint calendar visibility';
+  end if;
+
+  update public.management_period
+  set calendar_joint_review_enabled = enabled,
+      calendar_joint_review_enabled_by = case when enabled then auth.uid() else null end,
+      calendar_joint_review_enabled_at = case when enabled then now() else null end,
+      updated_by = auth.uid(),
+      updated_at = now()
+  where id = target_period_id;
+
+  return enabled;
+end;
+$$;
+
+insert into pg_temp.t_out(line) select has_table('public','executive_self_evaluation','Evaluation data is persisted');
+insert into pg_temp.t_out(line) select has_column('public','organization','evaluation_module_label','Evaluations can be renamed');
+insert into pg_temp.t_out(line) select ok(
+  (select relrowsecurity from pg_class where oid='public.executive_self_evaluation'::regclass),
+  'RLS protects the evaluation table'
+);
+insert into pg_temp.t_out(line) select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='executive_self_evaluation' and policyname='executive_evaluation_read'),'Evaluation reading is scoped');
+insert into pg_temp.t_out(line) select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='executive_self_evaluation' and policyname='executive_evaluation_insert'),'Evaluation creation is scoped');
+insert into pg_temp.t_out(line) select ok(exists(select 1 from pg_policies where schemaname='public' and tablename='executive_self_evaluation' and policyname='executive_evaluation_update_draft'),'Draft changes are scoped');
+insert into pg_temp.t_out(line) select ok(pg_get_functiondef('private.can_manage_calendar_plan(uuid)'::regprocedure)
+  ilike '%current_operator_is_gen_or_digen_leader(p.organization_id)%','GEN and DIGEN leaders may edit every unit calendar');
+insert into pg_temp.t_out(line) select ok(pg_get_functiondef('private.can_manage_calendar_plan(uuid)'::regprocedure)
+  ilike '%can_manage_organization(p.organization_id)%','Tenant admin keeps cross-unit calendar editing');
+insert into pg_temp.t_out(line) select ok((select qual::text from pg_policies
+  where schemaname='public' and tablename='executive_self_evaluation' and policyname='executive_evaluation_read')
+  ilike '%''submitted''%can_manage_organization(organization_id)%','Admin and GEN/DIGEN read submitted evaluations only');
+insert into pg_temp.t_out(line) select ok(pg_get_functiondef('private.guard_executive_evaluation()'::regprocedure)
+  ilike '%Submitted evaluations are final%','Submitted records are immutable');
+insert into pg_temp.t_out(line) select ok(pg_get_functiondef('private.can_self_evaluate_unit(uuid,uuid)'::regprocedure)
+  ilike '%m.unit_role = ''director''%','Only active directors submit evaluations');
+insert into pg_temp.t_out(line) select ok(pg_get_functiondef('public.evaluation_access_overview(uuid)'::regprocedure)
+  ilike '%can_review_all_evaluations%','GEN and DIGEN can receive institutional evaluations');
+insert into pg_temp.t_out(line) select ok(pg_get_functiondef('public.calendar_access_overview(uuid,uuid)'::regprocedure)
+  ilike '%can_edit_consolidated%','Calendar overview explicitly flags cross-unit editing');
+insert into pg_temp.t_out(line) select ok(pg_get_functiondef('private.current_operator_is_gen_or_digen_leader(uuid)'::regprocedure)
+  ilike '%upper(trim(u.code))=''GEN''%','GEN authorization requires explicit active GEN membership');
+insert into pg_temp.t_out(line) select ok(pg_get_functiondef('private.current_operator_is_gen_or_digen_leader(uuid)'::regprocedure)
+  ilike '%current_operator_is_digen_director(target_organization_id)%','DIGEN director remains an authorized institutional reviewer');
+insert into pg_temp.t_out(line) select ok((select qual::text from pg_policies
+  where schemaname='public' and tablename='executive_self_evaluation' and policyname='executive_evaluation_read')
+  ilike '%current_operator_is_gen_or_digen_leader(organization_id)%','GEN and DIGEN can read protected evaluations');
+insert into pg_temp.t_out(line) select ok(pg_get_functiondef('private.guard_calendar_activity_review()'::regprocedure)
+  ilike '%current_operator_is_gen_or_digen_leader(new.organization_id)%','GEN and DIGEN may set review fields');
+insert into pg_temp.t_out(line) select ok(pg_get_functiondef('public.review_calendar_activity(uuid,text,text)'::regprocedure)
+  ilike '%current_operator_is_gen_or_digen_leader(org_id)%','GEN and DIGEN may validate and observe activities');
+insert into pg_temp.t_out(line) select ok(pg_get_functiondef('public.set_calendar_joint_review(uuid,boolean)'::regprocedure)
+  ilike '%current_operator_is_gen_or_digen_leader(org_id)%','GEN and DIGEN may enable shared meeting mode');
+
+insert into pg_temp.t_out(line) select ok(
+  pg_get_functiondef('private.can_manage_calendar_plan(uuid)'::regprocedure) ilike '%current_operator_is_gen_or_digen_leader(p.organization_id)%',
+  'GEN and DIGEN can manage other units calendar plans'
+);
+
+insert into pg_temp.t_out(line) select ok(
+  pg_get_functiondef('private.can_manage_calendar_plan(uuid)'::regprocedure) ilike '%unit_role in (''director'',''manager'',''operator'',''reviewer'')%',
+  'unit members keep managing their own calendar plan'
+);
+
+insert into pg_temp.t_out(line) select ok(
+  pg_get_functiondef('private.can_access_pending_issue_unit(uuid)'::regprocedure) ilike '%can_manage_organization(u.organization_id)%',
+  'tenant admins can manage pending issues of any active unit of their organization'
+);
+
+insert into pg_temp.t_out(line) select ok(
+  pg_get_functiondef('private.guard_pending_issue_scope()'::regprocedure) ilike '%Only the DIGEN Director General can issue instructions.%',
+  'issuing DIGEN instructions stays reserved to the DIGEN Director General'
+);
+
+do $x$ begin raise exception E'ROLLBACK_REPORT\n%', (select string_agg(line, E'\n' order by n) from pg_temp.t_out); end $x$;
