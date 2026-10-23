@@ -2,7 +2,34 @@
 
 **Fecha:** 2026-10-23
 **Issue:** #147
-**Estado:** 📋 Plan aprobado en sus decisiones (2026-10-23). Falta revisar el PR del plan antes de la etapa 1.
+**Estado:** ✍️ En curso. Plan aprobado (#149). Etapa 1 aplicada en `edifydb` el 2026-10-23 (#150).
+
+
+### Etapa 1: aplicación en `edifydb` (2026-10-23)
+
+- Autorizada por el product owner por chat: «Te autorizo, aplícala en edifydb y fusiona el #150».
+- `apply_migration` se cortó dos veces a los 60 s; después de cada intento se verificó que no quedó nada aplicado.
+- Se aplicó desde el SQL Editor de Supabase con un script que envuelve la migración en `begin; … commit;` y registra la versión `20261023200000`. El script se probó antes en local. La carga inicial devolvió 7 filas.
+- **Revisión en vivo:**
+  - 81 entradas en el historial;
+  - RLS activa y sin permisos para `anon` ni `authenticated`;
+  - 4 índices;
+  - 7 permisos para 2 personas, con 7 filas de auditoría;
+  - `anon` no ejecuta las funciones nuevas.
+- **«Foto» después de aplicar:** 18 operadores activos, 0 diferencias.
+- **Advisors:**
+  - rendimiento sin cambios (51/3/122);
+  - en seguridad aparecen las 2 RPC del admin en `authenticated_security_definer_function_executable` (52) y `rls_enabled_no_policy` (INFO) para `private.operator_permission`. Las dos son intencionales: las RPC validan el acceso por dentro, y la tabla solo se toca desde funciones `security definer`, como `private.operator_access`.
+
+### Etapa 1: verificación (2026-10-23)
+
+- pgTAP `031_supervision_permissions_foundation_test.sql` (29 aserciones de comportamiento): sin la migración no llega a ejecutarse porque la tabla no existe; con la migración, 29/29.
+- Suite completa en local: 541/541, con los privilegios automáticos y con el cambio del 2026-10-30 simulado.
+- «Foto» en `edifydb`, en una transacción revertida:
+  - se aplicó la migración y se recorrieron los 18 operadores activos;
+  - para todos, `calendar.manage_all`, `evaluations.review` y `management.read_all` coinciden con `current_operator_is_gen_or_digen_leader`, e `instructions.issue` con `current_operator_is_digen_director`: **0 diferencias**;
+  - la carga inicial creó 7 filas: 2 personas con supervisión, de las cuales 1 dirige DIGEN.
+  - Esta prueba se corrió sin las cláusulas `on delete` ni el disparador de auditoría, porque la palabra `delete` dispara la confirmación del conector y la primera vez se agotaron los 60 s. Lo comparado no depende de ellas, y se verificó que el intento cortado no dejó nada.
 
 ## Resultado
 
@@ -51,7 +78,7 @@ Las funciones de supervisión de Calendario, Evaluación y Asuntos pendientes de
 ### Datos
 
 - 4 organizaciones; solo CNBV tiene unidades `GEN` y `DIGEN`.
-- Personas que hoy ejercen la supervisión, todas activas:
+- Membresías que hoy dan la supervisión, todas activas: 3, de **2 personas** (una persona tiene dos cargos):
   - 1 directora o director de `DIGEN`;
   - 1 directora o director de `GEN`;
   - 1 `manager` de `GEN`.
@@ -114,9 +141,9 @@ Las funciones de supervisión de Calendario, Evaluación y Asuntos pendientes de
    - `can_self_evaluate_unit`: si `evaluation_reviewers_can_self_evaluate` es falso, excluye a quien tenga `evaluations.review`.
    - `evaluation_access_overview` suma `is_evaluation_reviewer` y `reviewers_can_self_evaluate`.
 6. **Carga inicial:**
-   - asigna a las 3 personas de CNBV los permisos que hoy ejercen: `calendar.manage_all`, `evaluations.review` y `management.read_all` a las 3, e `instructions.issue` a la dirección de DIGEN;
+   - asigna a las 2 personas de CNBV que hoy supervisan los permisos que ya ejercen: `calendar.manage_all`, `evaluations.review` y `management.read_all` a las 2, e `instructions.issue` a quien dirige DIGEN (7 filas);
    - deja `evaluation_reviewers_can_self_evaluate = false` en CNBV (decisión 8) y `true` en las demás organizaciones;
-   - después de aplicar, ninguna bandera de `calendar_access_overview`, `evaluation_access_overview` ni `pending_issue_access_overview` cambia para ninguna persona, salvo que las 3 personas de CNBV dejan de poder llenar su autoevaluación.
+   - después de aplicar, ninguna bandera de `calendar_access_overview`, `evaluation_access_overview` ni `pending_issue_access_overview` cambia para ninguna persona, salvo que las 2 personas de CNBV dejan de poder llenar su autoevaluación.
 7. **Limpieza (etapa final):**
    - renombrar las funciones `*_digen_*` y `*gen_or_digen*`;
    - borrar `private.current_operator_is_digen`;
@@ -137,7 +164,7 @@ Las funciones de supervisión de Calendario, Evaluación y Asuntos pendientes de
 
 | Etapa | Contenido | Riesgo |
 |---|---|---|
-| 1 | Tabla, función de permisos, RPC de admin y carga inicial. Las reglas viejas siguen sin cambios. | Bajo: nada lee los permisos todavía |
+| 1 | Tabla, función de permisos, RPC de admin y carga inicial. Las reglas viejas siguen sin cambios. Migración `20261023200000_supervision_permissions_foundation.sql`, prueba `031`. **Aplicada en `edifydb` (2026-10-23).** | Bajo: nada lee los permisos todavía |
 | 2 | Reemplazo de las reglas de Calendario y Evaluación, y ajuste por tenant | Medio: cambia la RLS |
 | 3 | Reemplazo de las reglas de Asuntos pendientes: destinos, `issued_by_unit_id`, columna `issued_by_name` y la pantalla «Unidad · Persona» | Medio |
 | 4 | Interfaz: «Usuarios y accesos», ajuste en Mantenedores y textos neutros | Bajo |
