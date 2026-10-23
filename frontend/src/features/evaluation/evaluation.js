@@ -94,3 +94,18 @@ export function evaluationsForCollection(rows, periodId, { includeDrafts = false
     .filter((row) => row.management_period_id === periodId)
     .filter((row) => includeDrafts || row.status === 'submitted')
 }
+
+/** GEN and DIGEN are recipients; only active subordinate unit directors fill forms. */
+export function isEvaluationResultUnit(unit) {
+  return Boolean(unit && !['GEN', 'DIGEN'].includes(String(unit.code || '').trim().toUpperCase()))
+}
+
+export function isEvaluatingUnit(unit) {
+  return Boolean(unit && unit.active !== false && isEvaluationResultUnit(unit))
+}
+
+export function eligibleEvaluationUnits(units = [], directorUnitIds = [], isSupervisor = false) {
+  if (isSupervisor) return []
+  const assigned = new Set(directorUnitIds)
+  return (units || []).filter((unit) => assigned.has(unit.id) && isEvaluatingUnit(unit))
+}

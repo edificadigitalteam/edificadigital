@@ -89,7 +89,7 @@ Do not add a nav entry or route without these answers.
 
 - Units form a hierarchy. A person sees their own units and every unit below them (`private.current_visible_unit_ids()`).
 - **DIGEN** (active DIGEN director) and **GEN** (active director, manager, operator, or reviewer of the `GEN` unit) are institutional supervisors (`private.current_operator_is_gen_or_digen_leader`). They read every submitted executive evaluation, edit and validate every unit's calendar, and control the shared calendar view.
-- Executive self-evaluations (`public.executive_self_evaluation`): only active unit directors create and edit their own drafts; drafts are visible to their author and the tenant admin; GEN and DIGEN read submitted evaluations only; submitted evaluations are final.
+- Executive self-evaluations (`public.executive_self_evaluation`): only active directors of units other than `GEN`/`DIGEN` create and edit their own drafts, and GEN/DIGEN institutional supervisors never submit, even with simultaneous memberships in other units (migration `20261022182000`, pending deployment). Drafts are visible to their author and tenant admin; GEN and DIGEN read submitted evaluations only; submitted evaluations are final.
 - Issuing DIGEN instructions in Pending issues is reserved to the DIGEN Director General and the tenant admin (`private.can_issue_digen_instructions`).
 - Roles come from active memberships in the exact organization. User-editable metadata never grants access.
 
