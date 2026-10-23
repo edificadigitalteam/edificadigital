@@ -167,7 +167,7 @@ Full decision record: `docs/adr/ADR-005-seo-and-ai-discoverability.md`.
 
 The only authorized project is `edifydb`, reference `rrqyihsjftlloizsccvi`. Other visible Supabase projects are outside scope unless the user explicitly identifies them.
 
-Deployed baseline, checked on 2026-10-23 (latest migration `20261023161252`, 77 entries in migration history):
+Deployed baseline, checked on 2026-10-23 (latest migration `20261023163219`, 78 entries in migration history):
 
 - 57 tables in `public`, every one with RLS enabled, and the security-invoker view `inventory_lot_balance`;
 - `private` schema (not exposed through the API) with `beneficiary` and `beneficiary_event` (forced RLS), `operator_access`, and `record_change_log`;
@@ -197,7 +197,7 @@ Deployed baseline, checked on 2026-10-23 (latest migration `20261023161252`, 77 
     - grant `authenticated` the privileges its RLS policies and the frontend need (`select` only when writes go through `SECURITY DEFINER` RPCs);
     - `grant select, insert, update, delete … to service_role`.
 
-    `supabase/tests/027_explicit_data_api_grants_test.sql` fails when any `public` table or view lacks the `authenticated` or `service_role` grant.
+    `supabase/tests/027_explicit_data_api_grants_test.sql` fails when any `public` table or view lacks the `authenticated` or `service_role` grant, and `028_revoke_anon_table_privileges_test.sql` fails when any of them grants a privilege to `anon`.
 
 ### Applying a migration
 
