@@ -30,7 +30,7 @@ El cambio sí afecta a toda base creada desde migraciones: `supabase db reset` o
 
 ## Impacto en base de datos
 
-Migración `supabase/migrations/20261023160000_explicit_data_api_grants.sql`. Solo `grant`/`revoke`; sin cambios de tablas, columnas, políticas ni funciones.
+Migración `supabase/migrations/20261023161252_explicit_data_api_grants.sql`. Solo `grant`/`revoke`; sin cambios de tablas, columnas, políticas ni funciones.
 
 Efecto en `edifydb`: quita privilegios automáticos que la aplicación no usa (acceso de `anon`, `TRUNCATE`/`REFERENCES`/`TRIGGER`, escritura directa en tablas `finance_*`). El comportamiento de la aplicación no cambia.
 
@@ -50,7 +50,7 @@ Efecto en `edifydb`: quita privilegios automáticos que la aplicación no usa (a
 ### Actualización 2026-10-23 (merge de `main`)
 
 - **Renombres.**
-  - La migración pasó de `20261005170000_…` a `20261023160000_…`. Con la fecha anterior corría antes de 9 migraciones ya aplicadas, y en una base nueva el `grant … to service_role` no cubría las tablas creadas después, como `unit_pending_issue` o `executive_self_evaluation`. No se había aplicado en ningún lado, así que se podía renombrar.
+  - La migración pasó de `20261005170000_…` a `20261023160000_…` (y al aplicarla, a `20261023161252_…`, la versión registrada). Con la fecha anterior corría antes de 9 migraciones ya aplicadas, y en una base nueva el `grant … to service_role` no cubría las tablas creadas después, como `unit_pending_issue` o `executive_self_evaluation`. No se había aplicado en ningún lado, así que se podía renombrar.
   - El test pasó de `021` a `027`, porque `021` ya era `021_digen_pending_instruction_test.sql`.
 - **Ninguna tabla nueva sin permisos.** Las tablas creadas desde el 2026-10-05 (`unit_pending_issue`, `executive_self_evaluation`) ya declaran sus permisos para `authenticated`.
 - **Base local reconstruida desde cero con las 75 migraciones** (imagen `supabase/postgres:17.11.0.004`):
@@ -68,4 +68,12 @@ Efecto en `edifydb`: quita privilegios automáticos que la aplicación no usa (a
 - [x] Migración y verificación local
 - [x] Documentación (`AGENTS.md` regla 14, `docs/DATABASE.md`)
 - [x] Actualizado con `main` (2026-10-23) y verificado en local
-- [ ] Aplicar en `edifydb` (este entorno no tiene acceso al proyecto) y correr advisors
+- [x] Aplicada en `edifydb` el 2026-10-23 y advisors sin hallazgos nuevos
+
+### Aplicación en `edifydb` (2026-10-23)
+
+- El product owner la autorizó por chat: «Te autorizo, aplícala en edifydb y fusiona el #123».
+- Prueba revertida antes de aplicar: la migración con las 20 aserciones de 027, 20/20; después se comprobó que nada persistió.
+- Aplicada con `apply_migration`; versión registrada `20261023161252` (77 entradas). El archivo se renombró a esa versión.
+- Revisión en vivo: las 4 tablas `finance_*` solo tienen `SELECT` para `authenticated`; las otras 4, `SELECT, INSERT, UPDATE, DELETE`; `anon` no tiene permisos en ninguna de las 8; `service_role` lee todas las tablas y vistas de `public`.
+- Advisors iguales antes y después: seguridad 3/50/1, rendimiento 51/3/122.
