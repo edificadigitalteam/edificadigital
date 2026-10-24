@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-23
 **Issue:** #147
-**Estado:** ✍️ En curso. Plan aprobado (#149). Etapa 1 aplicada en `edifydb` el 2026-10-23 (#150). Etapa 2 aplicada en `edifydb` el 2026-10-23 (#151). Etapa 3 en revisión, **pendiente** de aplicar en `edifydb`.
+**Estado:** ✍️ En curso. Plan aprobado (#149). Etapa 1 aplicada en `edifydb` el 2026-10-23 (#150). Etapa 2 aplicada en `edifydb` el 2026-10-23 (#151). Etapa 3 aplicada en `edifydb` el 2026-10-24 (#152).
 
 
 ### Etapa 1: aplicación en `edifydb` (2026-10-23)
@@ -31,9 +31,9 @@
   - la carga inicial creó 7 filas: 2 personas con supervisión, de las cuales 1 dirige DIGEN.
   - Esta prueba se corrió sin las cláusulas `on delete` ni el disparador de auditoría, porque la palabra `delete` dispara la confirmación del conector y la primera vez se agotaron los 60 s. Lo comparado no depende de ellas, y se verificó que el intento cortado no dejó nada.
 
-### Etapa 3: Asuntos pendientes (2026-10-23, pendiente de aplicar)
+### Etapa 3: Asuntos pendientes (2026-10-23)
 
-Migración `20261023220000_supervision_permissions_pending_issues.sql`:
+Migración `20261024013537_supervision_permissions_pending_issues.sql`:
 
 - vuelve a correr la carga inicial de permisos;
 - `can_issue_digen_instructions` y `current_operator_is_digen_director` leen `instructions.issue`. Conservan su nombre hasta la etapa 5. El admin del tenant sigue emitiendo sin el permiso (#136);
@@ -42,6 +42,20 @@ Migración `20261023220000_supervision_permissions_pending_issues.sql`:
 - columna nueva `unit_pending_issue.issued_by_name`, con una copia del nombre de quien emite. La escribe la base de datos y no se puede sobrescribir: ni quien emite ni la unidad asignada la cambian, y se conserva aunque la persona cambie de nombre. La instrucción existente se completó con el nombre de quien la creó;
 - el disparador rechaza una instrucción dirigida a una unidad propia de quien emite, al crearla y al moverla;
 - **pantalla:** la tarjeta de una instrucción muestra «Emitida por: Unidad · Persona» (ES/EN). Los textos que nombran a DIGEN se cambian en la etapa 4.
+
+### Etapa 3: aplicación en `edifydb` (2026-10-24)
+
+- Autorizada por el product owner por chat: «Fusiónalo», y a la pregunta de si aplicar también la migración, «Aplicar y fusionar».
+- Se aplicó con `apply_migration`, sin cortes. Quedó registrada como `20261024013537` y el archivo se renombró a esa versión.
+- **Revisión en vivo:**
+  - 83 entradas en el historial;
+  - la instrucción existente quedó como «DIGEN · Elier Romero»;
+  - ningún asunto propio de una unidad tiene nombre de emisor;
+  - el disparador de alcance quedó activo;
+  - siguen los 7 permisos;
+  - `anon` no ejecuta ninguna de las 3 funciones nuevas;
+  - solo `current_operator_is_gen_or_digen_leader`, que ya no se usa, y la carga inicial nombran los códigos GEN o DIGEN.
+- **Advisors:** sin cambios. Rendimiento 51/3/121 y seguridad 53, porque las funciones nuevas viven en `private`.
 
 ### Etapa 3: verificación (2026-10-23)
 
@@ -248,7 +262,7 @@ Las funciones de supervisión de Calendario, Evaluación y Asuntos pendientes de
 |---|---|---|
 | 1 | Tabla, función de permisos, RPC de admin y carga inicial. Las reglas viejas siguen sin cambios. Migración `20261023200000_supervision_permissions_foundation.sql`, prueba `031`. **Aplicada en `edifydb` (2026-10-23).** | Bajo: nada lee los permisos todavía |
 | 2 | Reemplazo de las reglas de Calendario y Evaluación, y ajuste por tenant. Migración `20261023203607_supervision_permissions_calendar_evaluation.sql`, prueba `032`. **Aplicada en `edifydb` (2026-10-23).** | Medio: cambia la RLS |
-| 3 | Reemplazo de las reglas de Asuntos pendientes: destinos, `issued_by_unit_id`, columna `issued_by_name` y la pantalla «Unidad · Persona». Migración `20261023220000_supervision_permissions_pending_issues.sql`, prueba `033`. **Pendiente de aplicar.** | Medio |
+| 3 | Reemplazo de las reglas de Asuntos pendientes: destinos, `issued_by_unit_id`, columna `issued_by_name` y la pantalla «Unidad · Persona». Migración `20261024013537_supervision_permissions_pending_issues.sql`, prueba `033`. **Aplicada en `edifydb` (2026-10-24).** | Medio |
 | 4 | Interfaz: «Usuarios y accesos», ajuste en Mantenedores y textos neutros | Bajo |
 | 5 | Limpieza: renombres, `origin` → `institutional_instruction`, actualización de `AGENTS.md` («Access model») | Bajo |
 
