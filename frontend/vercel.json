@@ -1,8 +1,35 @@
 {
-  "rewrites": [
+  "redirects": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.somosedificadigital.com" }],
+      "destination": "https://somosedificadigital.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/donations/monetary/:path*",
+      "destination": "/app/management/resources/monetary/new",
+      "permanent": true
+    },
+    {
+      "source": "/donations/in-kind/:path*",
+      "destination": "/app/management/resources/in-kind/new",
+      "permanent": true
     }
+  ],
+  "headers": [
+    { "source": "/app", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/app/:path*", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/activar", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "edificadigital.vercel.app" }],
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }]
+    }
+  ],
+  "rewrites": [
+    { "source": "/app", "destination": "/index.html" },
+    { "source": "/app/:path*", "destination": "/index.html" },
+    { "source": "/activar", "destination": "/index.html" }
   ]
 }

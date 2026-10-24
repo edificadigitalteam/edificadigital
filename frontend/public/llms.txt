@@ -1,21 +1,27 @@
 # Edifica Digital
 
-> Software modular para iglesias y organizaciones cristianas: gestión organizacional, donaciones trazables, proyectos y productos digitales en una plataforma con datos separados por organización.
-> Modular software for churches and Christian organizations: organizational management, traceable donations, projects, and digital products in one platform with data kept separate per organization.
+> Software para iglesias y organizaciones cristianas: estructura, objetivos, proyectos, aportes y recursos, equipos, beneficiarios, indicadores e informes en un mismo núcleo de gestión, con datos separados por organización.
+> Software for churches and Christian organizations: structure, objectives, projects, contributions and resources, teams, beneficiaries, indicators, and reports in one management core, with data kept separate per organization.
 
 ## Módulos / Modules
-- Donaciones y proyectos / Donations and projects (Disponible / Available): fondos y bienes, aliados, proyectos, beneficiarios, evidencias y ejecución / funds and goods, partners, projects, beneficiaries, evidence, and execution.
-- Gestión organizacional / Organizational management (Disponible / Available): organigrama, equipos, períodos, objetivos, proyectos, indicadores, avances, informes por unidad y consolidado institucional / organization chart, teams, periods, objectives, projects, indicators, progress, unit reports, and institutional consolidation.
-- Productos digitales / Digital products (Catálogo inicial / Initial catalog): cursos, plantillas, ebooks y bibliotecas descargables / courses, templates, ebooks, and downloadable libraries.
+- Gestión organizacional / Organizational management (Disponible / Available): organigrama, responsables, objetivos, proyectos propios o financiados, aportes y bienes, aliados, voluntariado, beneficiarios, evidencias, indicadores, informes por unidad y consolidado institucional / organization chart, responsibilities, objectives, own or funded projects, contributions and goods, partners, volunteers, beneficiaries, evidence, indicators, unit reports, and institutional consolidation.
+- Productos digitales / Digital products (Catálogo inicial / Initial catalog): cursos, plantillas, ebooks y bibliotecas descargables asociados con los procesos de la organización / courses, templates, ebooks, and downloadable libraries tied to the organization's processes.
 
-## Gestión organizacional / Organizational management
-El mismo modelo se adapta a convenciones, asociaciones, iglesias, ministerios y otras organizaciones cristianas. Una iglesia puede organizar ministerios, departamentos, comités, áreas o sedes dentro de Gestión organizacional.
-The same model adapts to conventions, associations, churches, ministries, and other Christian organizations. A church can organize ministries, departments, committees, areas, or campuses within Organizational management.
+## Donaciones y aportes / Donations and contributions
+Las donaciones se registran dentro de Gestión organizacional, en Aportes y recursos. Los fondos o bienes pueden vincularse con proyectos y alimentar su cotejo financiero y su rendición.
+Donations are recorded inside Organizational management, under Contributions and resources. Funds or goods can be linked to projects and feed their financial reconciliation and reporting.
+
+## Para quién / Who it serves
+El mismo modelo se adapta a convenciones, asociaciones, iglesias, ministerios y organizaciones de servicio. Una iglesia puede configurar ministerios, departamentos, comités, áreas o sedes. Cada organización trabaja dentro de su propio tenant, con usuarios y accesos según responsabilidad.
+The same model adapts to conventions, associations, churches, ministries, and service organizations. A church can configure ministries, departments, committees, areas, or campuses. Each organization works within its own tenant, with users and access based on responsibility.
 
 ## Planes / Plans
-- Esencial / Essential: equipos pequeños, un módulo principal / small teams, one primary module.
-- Organización / Organization: múltiples usuarios, módulos combinables / multiple users, combinable modules.
-- Ecosistema / Ecosystem: implementación amplia, mayor capacidad de usuarios y soporte prioritario / broad implementation, greater user capacity, and priority support.
+- Esencial / Essential: equipos pequeños que ordenan estructura, proyectos y seguimiento / small teams organizing structure, projects, and tracking.
+- Organización / Organization: iglesias y organizaciones con varias áreas y operadores / churches and organizations with several areas and operators.
+- Ecosistema / Ecosystem: estructuras amplias con gestión institucional, mayor capacidad de usuarios, formación y soporte prioritario / broad structures with institutional management, greater user capacity, training, and priority support.
+
+## Idiomas / Languages
+Español e inglés, con preferencia persistente / Spanish and English, with a persistent preference.
 
 ## Contacto / Contact
 - Solicitar presentación vía WhatsApp desde el sitio / Request a presentation via WhatsApp from the site: https://somosedificadigital.com/#contacto

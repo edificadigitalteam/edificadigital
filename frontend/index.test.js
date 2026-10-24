@@ -13,9 +13,13 @@ function readPngDimensions(path) {
   return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) }
 }
 
-test('index.html title and description match the approved landing copy', () => {
-  assert.match(html, /<title>Edifica Digital \| Software para iglesias<\/title>/)
-  assert.match(html, /<meta name="description" content="Edifica es un software modular para iglesias[^"]*"/)
+test('index.html title and description match the landing copy exactly, so crawlers and the rendered page agree', () => {
+  const landing = readFileSync(join(here, 'src/features/platform/ProductLandingPage.jsx'), 'utf8')
+  const esTitle = landing.match(/metaTitle: '([^']+)'/)[1]
+  const esDescription = landing.match(/metaDescription: '([^']+)'/)[1]
+  assert.equal(esTitle, 'Edifica Digital | Software para organizaciones cristianas')
+  assert.ok(html.includes(`<title>${esTitle}</title>`), 'static <title> must equal the Spanish metaTitle')
+  assert.ok(html.includes(`<meta name="description" content="${esDescription}" />`), 'static description must equal the Spanish metaDescription')
 })
 
 test('index.html declares a canonical link to the production domain', () => {
@@ -25,8 +29,8 @@ test('index.html declares a canonical link to the production domain', () => {
 test('index.html carries Open Graph and Twitter Card tags for link previews', () => {
   assert.match(html, /<meta property="og:type" content="website" \/>/)
   assert.match(html, /<meta property="og:site_name" content="Edifica Digital" \/>/)
-  assert.match(html, /<meta property="og:title" content="Edifica Digital \| Software para iglesias" \/>/)
-  assert.match(html, /<meta property="og:description" content="Edifica es un software modular para iglesias[^"]*" \/>/)
+  assert.match(html, /<meta property="og:title" content="Edifica Digital \| Software para organizaciones cristianas" \/>/)
+  assert.match(html, /<meta property="og:description" content="[^"]+" \/>/)
   assert.match(html, /<meta property="og:url" content="https:\/\/somosedificadigital\.com\/" \/>/)
   assert.match(html, /<meta property="og:image" content="https:\/\/somosedificadigital\.com\/og-image\.png" \/>/)
   assert.match(html, /<meta name="twitter:card" content="summary_large_image" \/>/)
@@ -46,7 +50,11 @@ test('index.html embeds JSON-LD Organization structured data with the confirmed 
   assert.equal(data['@type'], 'Organization')
   assert.equal(data.name, 'Edifica Digital')
   assert.equal(data.url, 'https://somosedificadigital.com/')
-  assert.match(html, /<meta name="keywords" content="software para iglesias, software para donaciones, software de trazabilidad de donaciones" \/>/)
+  const keywords = html.match(/<meta name="keywords" content="([^"]+)" \/>/)[1]
+  for (const keyword of ['software para iglesias', 'software para donaciones', 'software de trazabilidad de donaciones']) {
+    assert.ok(keywords.includes(keyword), `keywords meta must include "${keyword}"`)
+  }
+  assert.ok(html.includes(`"description": "${html.match(/<meta name="description" content="([^"]+)"/)[1]}"`), 'Organization description must equal the meta description')
 })
 
 test('og-image.png is a 1200x630 social preview asset checked into public/', () => {
