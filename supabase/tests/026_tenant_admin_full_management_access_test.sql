@@ -49,6 +49,10 @@ insert into public.organization_unit_member (organization_id, unit_id, operator_
 select org, u_digen, (select id from t_ids where k='a_digen'), 'director', true from v_ids
 union all select org, u_dime, (select id from t_ids where k='a_dime'), 'director', true from v_ids;
 
+-- Since S11 (#147) supervision comes from permissions assigned to people; the initial load
+-- grants them to the GEN/DIGEN leaders created above, as it did in edifydb.
+select private.backfill_supervision_permissions();
+
 insert into public.management_period (id, organization_id, name, start_date, end_date)
 select period, org, 'Gestión test', date '2026-01-01', date '2026-12-31' from v_ids;
 
@@ -148,9 +152,9 @@ create function pg_temp.flag(p_who text, p_k text) returns text language sql as 
 -- Pending issues: DIGEN instructions.
 select is(pg_temp.flag('admin','can_issue'), 'true', 'admin may issue DIGEN instructions');
 select ok(pg_temp.flag('admin','targets')::jsonb ? (select u_dime::text from pg_temp.v_ids)
-  and not (pg_temp.flag('admin','targets')::jsonb ? (select u_digen::text from pg_temp.v_ids))
-  and not (pg_temp.flag('admin','targets')::jsonb ? (select u_gen::text from pg_temp.v_ids)),
-  'admin instruction targets exclude GEN and DIGEN, as for the DIGEN director');
+  and (pg_temp.flag('admin','targets')::jsonb ? (select u_digen::text from pg_temp.v_ids))
+  and (pg_temp.flag('admin','targets')::jsonb ? (select u_gen::text from pg_temp.v_ids)),
+  'an admin outside every unit may assign instructions to every active unit (S11 stage 3)');
 select is(pg_temp.flag('admin','issue'), 'ok', 'admin issues a DIGEN instruction');
 select is(pg_temp.flag('admin','rewrite'), 'ok', 'admin rewrites a DIGEN instruction');
 select is(pg_temp.flag('digen','can_issue'), 'true', 'DIGEN director keeps issuing instructions');

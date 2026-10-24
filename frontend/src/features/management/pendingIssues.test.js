@@ -73,3 +73,16 @@ test('DIGEN manages instruction content while a target unit only responds by sta
   assert.equal(canManagePendingIssueContent(instruction,{ ownUnitIds:['digen'], canIssueInstructions:true }), true)
   assert.equal(canManagePendingIssueContent({ origin:'unit', unit_id:'diprom' },{ ownUnitIds:['diprom'], canIssueInstructions:false }), true)
 })
+
+test('an instruction shows the issuing unit and the person who issued it', async () => {
+  const { pendingInstructionIssuerLabel } = await import('./pendingIssues.js')
+  const units = [{ id: 'u1', code: 'DIGEN', name: 'Dirección General' }]
+  assert.equal(
+    pendingInstructionIssuerLabel({ origin: 'digen_instruction', issued_by_unit_id: 'u1', issued_by_name: 'Elier Romero' }, units),
+    'DIGEN · Elier Romero',
+  )
+  assert.equal(pendingInstructionIssuerLabel({ origin: 'digen_instruction', issued_by_unit_id: null, issued_by_name: 'Admin' }, units), 'Admin')
+  assert.equal(pendingInstructionIssuerLabel({ origin: 'digen_instruction', issued_by_unit_id: 'u1', issued_by_name: null }, units), 'DIGEN')
+  assert.equal(pendingInstructionIssuerLabel({ origin: 'digen_instruction', issued_by_unit_id: 'gone', issued_by_name: null }, units), '')
+  assert.equal(pendingInstructionIssuerLabel({ origin: 'unit', issued_by_name: 'X' }, units), '')
+})

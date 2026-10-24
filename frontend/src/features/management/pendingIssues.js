@@ -69,6 +69,14 @@ export function isDigenInstruction(issue) {
   return issue?.origin === 'digen_instruction'
 }
 
+// "Unit · Person" for the issuer of an instruction. The database records both when the
+// instruction is created; either part may be missing (an admin outside every unit).
+export function pendingInstructionIssuerLabel(issue, units = []) {
+  if (!isDigenInstruction(issue)) return ''
+  const unit = units.find((item) => item.id === issue?.issued_by_unit_id)
+  return [unit?.code, issue?.issued_by_name].filter(Boolean).join(' · ')
+}
+
 export function canRespondToPendingInstruction(issue, access) {
   if (!isDigenInstruction(issue) || access?.canIssueInstructions) return false
   const own = new Set(access?.ownUnitIds ?? [])
