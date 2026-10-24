@@ -129,9 +129,10 @@ Do not add a nav entry or route without these answers.
 Full decision record: `docs/adr/ADR-005-seo-and-ai-discoverability.md`.
 
 - Discoverability is an ongoing requirement for every public-facing page, on the same footing as accessibility and bilingual parity.
-- The public site (`/`, `/donations/*`) is a client-rendered SPA. Every public route ships a static `<title>`, meta description, canonical link, Open Graph/Twitter Card tags, and JSON-LD in `index.html`, so crawlers that never execute JavaScript see correct content.
+- The public site (`/`) is a client-rendered SPA; `/donations/*` redirects into the app. Every public route ships a static `<title>`, meta description, canonical link, Open Graph/Twitter Card tags, and JSON-LD in `index.html`, so crawlers that never execute JavaScript see correct content.
 - The canonical production domain for SEO artifacts is `somosedificadigital.com`, never the Vercel alias.
-- `robots.txt` allows all crawlers, including AI crawlers, and blocks only `/app` and `/app/*`.
+- `robots.txt` allows all crawlers, including AI crawlers, with no `Disallow`. Private routes (`/app`, `/app/*`, `/activar`) send `X-Robots-Tag: noindex` from `frontend/vercel.json`.
+- One canonical host: `www` redirects to the apex and the Vercel alias is noindex. `vercel.json` rewrites only real SPA routes; unknown URLs return `public/404.html` with status 404. A new public route needs a rewrite, a sitemap entry, and its static metadata.
 - `frontend/public/llms.txt` is a maintained bilingual summary, kept in sync with the public copy.
 - FAQ-style public copy ships with a matching `FAQPage` JSON-LD block. Structured data must exactly match visible content.
 - Confirmed target keywords: "software para iglesias", "software para donaciones", "software de trazabilidad de donaciones". Update meta copy and JSON-LD together if positioning changes.

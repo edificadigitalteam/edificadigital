@@ -1,6 +1,9 @@
 User-agent: *
 Allow: /
-Disallow: /app
-Disallow: /app/*
+
+# The authenticated app (/app, /app/*) and /activar stay out of search results
+# through an X-Robots-Tag: noindex header (see vercel.json). They are not
+# disallowed here on purpose: a blocked URL cannot show its noindex header,
+# and Google then lists it as "Indexed, though blocked by robots.txt".
 
 Sitemap: https://somosedificadigital.com/sitemap.xml
