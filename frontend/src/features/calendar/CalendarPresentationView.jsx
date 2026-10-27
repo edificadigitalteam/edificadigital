@@ -1,152 +1,193 @@
-import { useEffect, useRef, useState } from 'react'
-import { nextPresentationMonth, presentationMonthActivities, validatePresentationEdit } from './presentation.js'
+import { Fragment, useEffect, useRef, useState } from 'react'
+import { presentationYearSections, presentationDayRange, presentationReviewState, validatePresentationEdit } from './presentation.js'
 
-const words = {
+const phrases = {
   es: {
-    title:'Presentación mensual', prev:'Mes anterior', next:'Mes siguiente', month:'Seleccionar mes',
-    count:'actividades', one:'actividad', noActivities:'Este mes todavía no tiene actividades registradas.',
-    expand:'Pantalla completa', closeFull:'Salir de pantalla completa', update:'Actualizar',
-    edit:'Editar en vivo', cancel:'Cancelar', save:'Guardar cambios', saving:'Guardando…',
-    activity:'Actividad', from:'Inicio', to:'Cierre (opcional)', unit:'Dirección', notes:'Detalles',
-    invalid:'La fecha de cierre debe ser posterior o igual al inicio y estar dentro de la gestión seleccionada.',
-    missing:'Completa el nombre y la fecha de inicio de la actividad.',
-    status:'Revisión', validate:'Validar', observe:'Observar', live:'Los cambios se guardan al instante para todos los participantes.',
-    project:'Actividades institucionales', presenter:'Vista de reunión', saveFailed:'Revisa el aviso y vuelve a intentar guardar.', saved:'Cambios guardados correctamente.',
+    eyebrow:'CALENDARIO INSTITUCIONAL', title:'Proyecto de Calendario', calendar:'Actividades institucionales',
+    management:'Gestión', responsables:'RESPONSABLES', monthActivity:'ACTIVIDADES DEL MES',
+    date:'FECHA', one:'actividad', many:'actividades', empty:'Sin actividades registradas para este mes.',
+    months:'Ir al mes', fullscreen:'Pantalla completa', exit:'Salir de pantalla completa', refresh:'Actualizar',
+    legend:'Estados de revisión', edit:'Editar', save:'Guardar cambios', saving:'Guardando…', cancel:'Cancelar',
+    name:'Actividad', from:'Fecha de inicio', to:'Fecha de cierre', who:'Persona responsable (opcional)',
+    missing:'Escribe el nombre de la actividad e indica la fecha de inicio.',
+    invalid:'Las fechas deben estar dentro de la gestión seleccionada y la fecha de cierre debe ser igual o posterior a la de inicio.',
+    fail:'No se pudieron guardar los cambios. Revisa el aviso e inténtalo nuevamente.',
+    saved:'Cambios guardados.', validate:'Validar', observe:'Observar', pending:'Poner en revisión',
+    note:'Observación', unit:'Dirección', direct:'Editar actividad durante la reunión',
+    readOnly:'Consulta', editing:'Edición de actividad',
   },
   en: {
-    title:'Monthly presentation', prev:'Previous month', next:'Next month', month:'Select month',
-    count:'activities', one:'activity', noActivities:'There are no activities scheduled for this month yet.',
-    expand:'Full screen', closeFull:'Exit full screen', update:'Refresh',
-    edit:'Live edit', cancel:'Cancel', save:'Save changes', saving:'Saving…',
-    activity:'Activity', from:'Start', to:'End (optional)', unit:'Unit', notes:'Details',
-    invalid:'The end date must be on or after the start date, within the selected period.',
-    missing:'Complete the activity name and start date.',
-    status:'Review', validate:'Validate', observe:'Observe', live:'Changes are saved immediately for all meeting participants.',
-    project:'Institutional activities', presenter:'Meeting view', saveFailed:'Review the notice and try saving again.', saved:'Changes saved successfully.',
+    eyebrow:'INSTITUTIONAL CALENDAR', title:'Calendar Project', calendar:'Institutional activities',
+    management:'Management year', responsables:'RESPONSIBLE', monthActivity:'MONTHLY ACTIVITIES',
+    date:'DATE', one:'activity', many:'activities', empty:'No activities scheduled for this month.',
+    months:'Jump to month', fullscreen:'Full screen', exit:'Exit full screen', refresh:'Refresh',
+    legend:'Review statuses', edit:'Edit', save:'Save changes', saving:'Saving…', cancel:'Cancel',
+    name:'Activity', from:'Start date', to:'End date', who:'Responsible person (optional)',
+    missing:'Provide an activity name and start date.',
+    invalid:'Dates must be within the selected year and the end date must be on or after the start date.',
+    fail:'Changes could not be saved. Review the message and try again.',
+    saved:'Changes saved.', validate:'Validate', observe:'Observe', pending:'Send for review',
+    note:'Review note', unit:'Unit', direct:'Edit activity during the meeting',
+    readOnly:'Read-only', editing:'Edit activity',
   },
 }
-function dayLabel(value, language) {
-  if (!value) return '—'
-  return new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'es-VE', {
-    day:'numeric', month:'short', timeZone:'UTC',
-  }).format(new Date(value + 'T12:00:00Z'))
-}
+
 export default function CalendarPresentationView({
-  activities, units, monthNames, period, language, editableUnits, canReview, onSave,
-  onReview, onRefresh, saving, reviewLabel,
+  activities, units, monthNames, period, language, editableUnits, canReview,
+  onSave, onReview, onRefresh, saving, organizationName,
 }) {
-  const t = words[language] || words.es
+  const t = phrases[language] || phrases.es
   const panelRef = useRef(null)
-  const [month, setMonth] = useState(0)
-  const [fullScreen, setFullScreen] = useState(false)
+  const [isFull, setIsFull] = useState(false)
   const [editingId, setEditingId] = useState('')
-  const [draft, setDraft] = useState({ title:'', start_date:'', end_date:'' })
+  const [draft, setDraft] = useState({title:'',start_date:'',end_date:'',responsible_name:''})
   const [editError, setEditError] = useState('')
   const [notice, setNotice] = useState('')
-  const rows = presentationMonthActivities(activities, month)
+  const year = period?.start_date ? Number(period.start_date.slice(0,4)) : null
+  const sections = presentationYearSections(activities, year)
+
   useEffect(() => {
-    const change = () => setFullScreen(document.fullscreenElement === panelRef.current)
-    document.addEventListener('fullscreenchange', change)
-    return () => document.removeEventListener('fullscreenchange', change)
+    const update = () => setIsFull(document.fullscreenElement === panelRef.current)
+    document.addEventListener('fullscreenchange',update)
+    return () => document.removeEventListener('fullscreenchange',update)
   }, [])
-  const moveMonth = (next) => {
+
+  useEffect(() => {
     setEditingId('')
     setEditError('')
     setNotice('')
-    setMonth(next)
-    panelRef.current?.scrollTo({ top:0, behavior:'instant' })
+  }, [period?.id])
+
+  const jumpToMonth = (index) => {
+    const node = panelRef.current?.querySelector('[data-calendar-month="' + index + '"]')
+    node?.scrollIntoView({behavior:'smooth',block:'start'})
   }
-  const toggleFullScreen = async () => {
+  const toggleFullscreen = async () => {
     try {
       if (document.fullscreenElement === panelRef.current) await document.exitFullscreen()
-      else if (panelRef.current?.requestFullscreen) await panelRef.current.requestFullscreen()
+      else await panelRef.current?.requestFullscreen?.()
     } catch {
-      // Full-screen permissions depend on the browser; the embedded view remains usable.
+      setNotice('')
     }
   }
   const startEdit = (activity) => {
-    if (!editableUnits.has(activity.unit_id)) return
+    if (saving || !editableUnits.has(activity.unit_id)) return
+    setDraft({
+      title:activity.title || '',
+      start_date:activity.start_date || '',
+      end_date:activity.end_date || '',
+      responsible_name:activity.responsible_name || '',
+    })
     setEditingId(activity.id)
-    setDraft({ title:activity.title || '', start_date:activity.start_date || '', end_date:activity.end_date || '' })
     setEditError('')
     setNotice('')
   }
-  const commit = async (event, activity) => {
+  const save = async (event, activity) => {
     event.preventDefault()
     if (saving || !editableUnits.has(activity.unit_id)) return
-    const validation = validatePresentationEdit(draft, period)
-    if (validation) { setEditError(validation === 'missing' ? t.missing : t.invalid); return }
+    const issue = validatePresentationEdit(draft,period)
+    if (issue) {setEditError(issue === 'missing' ? t.missing : t.invalid);return}
     setEditError('')
-    const ok = await onSave(activity, draft)
-    if (ok) {
-      setNotice(t.saved)
+    const result = await onSave(activity,draft)
+    if (result) {
       setEditingId('')
-      // Follow a moved activity to its new month after the server confirms the save.
-      setMonth(Number(draft.start_date.slice(5,7)) - 1)
-    } else setEditError(t.saveFailed)
+      setNotice(t.saved)
+      const oldMonth = Number(activity.start_date.slice(5,7))
+      const newMonth = Number(draft.start_date.slice(5,7))
+      if (oldMonth !== newMonth) {
+        window.requestAnimationFrame(()=>jumpToMonth(newMonth - 1))
+      }
+    } else setEditError(t.fail)
   }
-  return <section ref={panelRef} className="calendar-presenter" aria-label={t.title}>
-    <header className="calendar-presenter-header">
-      <div className="calendar-presenter-brand">
-        <span>{t.presenter}</span>
-        <strong>{t.project}</strong>
-        <small>{period?.name || ''}</small>
+  return <section className="cnv-calendar-sheet" ref={panelRef} aria-label={t.title}>
+    <div className="cnv-sheet-top">
+      <div className="cnv-sheet-title">
+        <span>{organizationName || t.eyebrow}</span>
+        <h2>{t.title} {year || period?.name || ''}</h2>
+        <p>{period?.name || ''} · {t.calendar}</p>
       </div>
-      <div className="calendar-presenter-toolbar">
-        <button type="button" onClick={onRefresh} disabled={saving} title={t.update}>{t.update}</button>
-        <button type="button" onClick={toggleFullScreen} title={fullScreen ? t.closeFull : t.expand}>{fullScreen ? t.closeFull : t.expand}</button>
+      <div className="cnv-sheet-tools">
+        <button type="button" onClick={onRefresh} disabled={saving} title={t.refresh}>{t.refresh}</button>
+        <button type="button" className="cnv-fullscreen" onClick={toggleFullscreen} title={isFull ? t.exit : t.fullscreen}>{isFull ? t.exit : t.fullscreen}</button>
       </div>
-    </header>
-    <div className="calendar-presenter-month-nav">
-      <button type="button" className="calendar-presenter-arrow" onClick={()=>moveMonth(nextPresentationMonth(month,-1))} disabled={month===0} aria-label={t.prev} title={t.prev}>‹</button>
-      <div className="calendar-presenter-month-heading">
-        <label htmlFor="calendar-presenter-month-select">{t.month}</label>
-        <select id="calendar-presenter-month-select" value={month} onChange={(e)=>moveMonth(Number(e.target.value))} aria-label={t.month}>
+    </div>
+    <div className="cnv-sheet-controls">
+      <label>{t.months}
+        <select value="" onChange={(event)=>{if(event.target.value)jumpToMonth(Number(event.target.value));event.target.value=''}} aria-label={t.months}>
+          <option value="">{t.months}</option>
           {monthNames.map((name,i)=><option key={name} value={i}>{name}</option>)}
         </select>
-        <span>{rows.length} {rows.length===1 ? t.one : t.count}</span>
+      </label>
+      <div className="cnv-sheet-legend" aria-label={t.legend}>
+        {['pending','validated','observed'].map((state)=>{
+          const label = presentationReviewState(state,language)
+          return <span key={state} className={'cnv-review-legend cnv-state-'+state}><i aria-hidden="true"/>{label.label}</span>
+        })}
       </div>
-      <button type="button" className="calendar-presenter-arrow" onClick={()=>moveMonth(nextPresentationMonth(month,1))} disabled={month===11} aria-label={t.next} title={t.next}>›</button>
     </div>
-    {notice && <p className="calendar-presenter-notice" role="status">{notice}</p>}
-    <div className="calendar-presenter-activities" aria-live="polite">
-      {!rows.length && <p className="calendar-presenter-empty">{t.noActivities}</p>}
-      {rows.map((activity)=>{
-        const unit = units.find((item)=>item.id===activity.unit_id)
-        const editable = editableUnits.has(activity.unit_id)
-        const reviewable = canReview(activity)
-        return <article key={activity.id} className={'calendar-presenter-activity review-' + (activity.review_status || 'pending')}>
-          {editingId === activity.id
-            ? <form className="calendar-presenter-edit" onSubmit={(e)=>commit(e,activity)}>
-              <div className="calendar-presenter-edit-heading"><strong>{t.edit} · {unit?.code || '—'}</strong></div>
-              <label className="wide">{t.activity}<input required value={draft.title} onChange={(e)=>setDraft((value)=>({...value,title:e.target.value}))} /></label>
-              <label>{t.from}<input required type="date" min={period?.start_date} max={period?.end_date} value={draft.start_date} onChange={(e)=>setDraft((value)=>({...value,start_date:e.target.value}))} /></label>
-              <label>{t.to}<input type="date" min={draft.start_date || period?.start_date} max={period?.end_date} value={draft.end_date} onChange={(e)=>setDraft((value)=>({...value,end_date:e.target.value}))} /></label>
-              {editError && <p role="alert" className="calendar-presenter-edit-error">{editError}</p>}
-              <div className="calendar-presenter-edit-actions">
-                <button type="button" onClick={()=>{setEditingId('');setEditError('')}} disabled={saving}>{t.cancel}</button>
-                <button className="primary" type="submit" disabled={saving}>{saving?t.saving:t.save}</button>
-              </div>
-            </form>
-            : <>
-              <div className="calendar-presenter-date">
-                <strong>{dayLabel(activity.start_date,language)}{activity.end_date && activity.end_date !== activity.start_date ? ' – ' + dayLabel(activity.end_date,language) : ''}</strong>
-                <span>{unit?.code || '—'} · {unit?.name || t.unit}</span>
-              </div>
-              <div className="calendar-presenter-event-details">
-                <h3>{activity.title}</h3>
-                {activity.description && <p>{activity.description}</p>}
-                <div className="calendar-presenter-status"><span>{t.status}: {reviewLabel(activity.review_status,language)}</span></div>
-              </div>
-              {(editable || reviewable) && <div className="calendar-presenter-activity-actions">
-                {editable && <button type="button" onClick={()=>startEdit(activity)} disabled={saving} title={t.edit}>{t.edit}</button>}
-                {reviewable && <button type="button" onClick={()=>onReview(activity,'validated')} disabled={saving} title={t.validate}>{t.validate}</button>}
-                {reviewable && <button type="button" onClick={()=>onReview(activity,'observed')} disabled={saving} title={t.observe}>{t.observe}</button>}
-              </div>}
-            </>}
-        </article>
+    {notice && <p className="cnv-notice" role="status">{notice}</p>}
+    <div className="cnv-all-months">
+      {sections.map((section)=>{
+        const monthName = monthNames[section.index]
+        return <section key={section.index} className="cnv-month" data-calendar-month={section.index} aria-label={monthName}>
+          <table className="cnv-month-table">
+            <colgroup><col className="cnv-col-date"/><col className="cnv-col-activity"/><col className="cnv-col-responsible"/></colgroup>
+            <thead><tr>
+              <th scope="col" className="cnv-month-name">{monthName}</th>
+              <th scope="col" className="cnv-month-description">{t.monthActivity} · {section.activities.length} {section.activities.length===1 ? t.one : t.many}</th>
+              <th scope="col" className="cnv-month-responsible">{t.responsables}</th>
+            </tr></thead>
+            <tbody>
+              {!section.activities.length && <tr><td colSpan={3} className="cnv-empty">{t.empty}</td></tr>}
+              {section.activities.map((activity)=>{
+                const unit = units.find((item)=>item.id===activity.unit_id)
+                const state = presentationReviewState(activity.review_status,language)
+                const editable = editableUnits.has(activity.unit_id)
+                const reviewable = canReview(activity)
+                return <Fragment key={activity.id}>
+                  <tr className={'cnv-activity-row cnv-state-'+state.tone}>
+                    <td className="cnv-day" data-column={t.date}>{presentationDayRange(activity.start_date,activity.end_date,language)}</td>
+                    <td className="cnv-activity" data-column={t.name}>
+                      <div className="cnv-activity-text">{activity.title}</div>
+                      <div className="cnv-activity-bottom">
+                        <span className={'cnv-status cnv-state-'+state.tone}>{state.label}</span>
+                        {activity.review_note && <span className="cnv-review-note">{t.note}: {activity.review_note}</span>}
+                        {(editable || reviewable) && <div className="cnv-row-actions">
+                          {editable && <button type="button" onClick={()=>startEdit(activity)} disabled={saving} title={t.direct}>{t.edit}</button>}
+                          {reviewable && <>
+                            {state.tone!=='validated' && <button type="button" onClick={()=>onReview(activity,'validated')} disabled={saving} title={t.validate}>{t.validate}</button>}
+                            {state.tone!=='observed' && <button type="button" onClick={()=>onReview(activity,'observed')} disabled={saving} title={t.observe}>{t.observe}</button>}
+                            {state.tone!=='pending' && <button type="button" onClick={()=>onReview(activity,'pending')} disabled={saving} title={t.pending}>{t.pending}</button>}
+                          </>}
+                        </div>}
+                      </div>
+                    </td>
+                    <td className="cnv-responsible" data-column={t.responsables}>
+                      <strong>{unit?.code || '—'}</strong>
+                      {activity.responsible_name && <span>{activity.responsible_name}</span>}
+                    </td>
+                  </tr>
+                  {editingId === activity.id && <tr className="cnv-edit-row"><td colSpan={3}>
+                    <form className="cnv-edit-form" onSubmit={(event)=>save(event,activity)}>
+                      <strong className="cnv-edit-title">{t.editing} · {unit?.code || '—'}</strong>
+                      <label className="cnv-edit-name">{t.name}<input required value={draft.title} onChange={(e)=>setDraft((d)=>({...d,title:e.target.value}))}/></label>
+                      <label>{t.from}<input type="date" required value={draft.start_date} min={period?.start_date} max={period?.end_date} onChange={(e)=>setDraft((d)=>({...d,start_date:e.target.value}))}/></label>
+                      <label>{t.to}<input type="date" value={draft.end_date} min={draft.start_date||period?.start_date} max={period?.end_date} onChange={(e)=>setDraft((d)=>({...d,end_date:e.target.value}))}/></label>
+                      <label className="cnv-edit-who">{t.who}<input value={draft.responsible_name} onChange={(e)=>setDraft((d)=>({...d,responsible_name:e.target.value}))}/></label>
+                      {editError && <p className="cnv-edit-error" role="alert">{editError}</p>}
+                      <div className="cnv-edit-actions">
+                        <button type="button" onClick={()=>{setEditingId('');setEditError('')}} disabled={saving}>{t.cancel}</button>
+                        <button className="cnv-save" type="submit" disabled={saving}>{saving?t.saving:t.save}</button>
+                      </div>
+                    </form>
+                  </td></tr>}
+                </Fragment>
+              })}
+            </tbody>
+          </table>
+        </section>
       })}
     </div>
-    <footer className="calendar-presenter-footer"><span>{t.live}</span><span>{month+1} / 12</span></footer>
+    <footer className="cnv-footer">{organizationName || t.eyebrow} · {t.management} {year || ''}</footer>
   </section>
 }
