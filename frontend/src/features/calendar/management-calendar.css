@@ -329,3 +329,14 @@
  .calendar-header-editor label{grid-column:1!important}
  .calendar-header-actions button{flex:1}
 }
+
+/* Institution-wide informational dates, owned by associations rather than Direcciones. */
+.calendar-association-add{background:#254b68!important;color:#fff!important;border-color:#254b68!important}
+.calendar-association-form{border-left:5px solid #7198b8}
+.calendar-event.review-informational{border-left:4px solid #537e9e;background:#f0f6fb}
+.calendar-review-badge.informational{background:#e4f0fa;border:1px solid #91b1ca;color:#214969}
+.calendar-list-row:has(.calendar-review-badge.informational){background:#f3f8fc}
+.cnv-activity-row.cnv-state-informational td{background:#f0f6fb}
+.cnv-activity-row.cnv-state-informational td:first-child{border-left:7px solid #507a9d}
+.cnv-status.cnv-state-informational{background:#deedf9;color:#1d4969;border-color:#8ab0ce}
+.cnv-review-legend.cnv-state-informational i{background:#507a9d}
