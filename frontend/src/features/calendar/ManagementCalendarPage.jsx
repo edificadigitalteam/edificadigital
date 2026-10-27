@@ -29,6 +29,7 @@ const copy = {
   es: {
     eyebrow:'PLANIFICACIÓN INSTITUCIONAL', title:'Calendario anual', intro:'Cada Dirección o agencia administra sus actividades del año seleccionado.',
     preliminary:'PRELIMINAR', preliminaryText:'Calendario preliminar sujeto a validación institucional.', year:'Año', unit:'Dirección / agencia',
+    addAssociationNotice:'＋ Actividad informativa de asociación', association:'Asociación', associationInfo:'Informativa · Asociación', associationSaved:'Actividad informativa guardada.', associationMissing:'Completa actividad, asociación y fechas de la gestión.',
     myCalendar:'Mi calendario', consolidated:'Consolidado institucional', calendar:'Calendario anual', list:'Listado', presenter:'Presentación', newActivity:'＋ Cargar actividades',
     bulkTitle:'Cargar actividades', bulkIntro:'Completa una vez los datos compartidos y agrega todas las actividades que necesites.', noObjective:'Sin objetivo vinculado',
     sharedData:'DATOS COMPARTIDOS', activitiesToLoad:'ACTIVIDADES A CARGAR', addRow:'＋ Agregar otra actividad', removeRow:'Quitar',
@@ -49,6 +50,7 @@ const copy = {
   en: {
     eyebrow:'INSTITUTIONAL PLANNING', title:'Annual calendar', intro:'Each unit or agency manages its activities for the selected year.',
     preliminary:'PRELIMINARY', preliminaryText:'Preliminary calendar subject to institutional validation.', year:'Year', unit:'Unit / agency',
+    addAssociationNotice:'＋ Association notice', association:'Association', associationInfo:'Information · Association', associationSaved:'Association notice saved.', associationMissing:'Complete activity, association and dates for this period.',
     myCalendar:'My calendar', consolidated:'Institutional consolidated', calendar:'Annual calendar', list:'List', presenter:'Presentation', newActivity:'＋ Load activities',
     bulkTitle:'Load activities', bulkIntro:'Complete the shared details once and add every activity you need.', noObjective:'No linked objective',
     sharedData:'SHARED DETAILS', activitiesToLoad:'ACTIVITIES TO LOAD', addRow:'＋ Add another activity', removeRow:'Remove',
@@ -293,6 +295,26 @@ export default function ManagementCalendarPage(){
     setSaving(false)
   }
 
+  const saveAssociationNotice = async (value,initial) => {
+    if(!supabase || saving || !canManageNotices || !activePeriod) return
+    const issue=validateAssociationNotice(value,activePeriod)
+    if(issue){setError(t.associationMissing);return}
+    setSaving(true);setError('');setMessage('')
+    const fullPayload=associationNoticePayload(value,{organizationId,periodId,userId:access.userId})
+    const request=initial?.id
+      ? supabase.from('association_calendar_notice').update((({created_by,...fields})=>fields)(fullPayload))
+        .eq('id',initial.id).eq('organization_id',organizationId).eq('management_period_id',periodId)
+        .select('id').maybeSingle()
+      : supabase.from('association_calendar_notice').insert(fullPayload).select('id').maybeSingle()
+    const {data,error:requestError}=await request
+    if(requestError || !data?.id) setError(requestError?.message || t.associationMissing)
+    else {
+      setAssociationFormOpen(false);setEditingNotice(null);setMessage(t.associationSaved)
+      await reloadActivities()
+    }
+    setSaving(false)
+  }
+
   const savePresentationEdit = async (activity, draft) => {
     if (!supabase || saving || !canEditActivity(activity) || validatePresentationEdit(draft, activePeriod)) return false
     if(isAssociationNotice(activity) && !String(draft.responsible_name||'').trim()) {setError(language==='en'?'Responsible association required.':'Debes indicar la asociación responsable.');return false}
@@ -440,19 +462,19 @@ export default function ManagementCalendarPage(){
         {presentation==='calendar' ? <section className="calendar-year-grid">{MONTHS[language].map((month,index)=>{
           const monthRows=visibleActivities.filter((activity)=>new Date(activity.start_date + 'T12:00:00').getMonth()===index)
           return <article className="calendar-month-card" key={month}><header><span>{String(index+1).padStart(2,'0')}</span><strong>{month}</strong><b>{monthRows.length}</b></header><div>{monthRows.length ? monthRows.map((activity)=>{
-            const unit=units.find((row)=>row.id===activity.unit_id); const objective=objectives.find((row)=>row.id===activity.objective_id); const indicator=indicators.find((row)=>row.id===activity.indicator_id); const editable=editableUnits.has(activity.unit_id)
+            const unit=units.find((row)=>row.id===activity.unit_id); const objective=objectives.find((row)=>row.id===activity.objective_id); const indicator=indicators.find((row)=>row.id===activity.indicator_id); const editable=canEditActivity(activity)
             return <div className={'calendar-event review-' + (activity.review_status||'pending')} key={activity.id}>
-              <div className="calendar-event-top"><span>{dateLabel(activity.start_date,language)}</span><b>{unit?.code||'—'}</b></div>
-              <strong>{activity.title}</strong><small>{objective?.code||''}{indicator ? ' · ' + indicator.name : ''}</small>
-              <div className="calendar-event-meta"><span>{MODALITY[language][activity.modality]||activity.modality}</span><span>{STATUS[language][activity.status]||activity.status}</span></div>
-              <div className="calendar-event-footer"><span className={'calendar-review-badge ' + (activity.review_status||'pending')}>{reviewStatusLabel(activity.review_status,language)}</span><div>{editable && <button type="button" onClick={()=>openEdit(activity)}>{t.edit}</button>}{canReviewUnitActivity(activity, calendarAccess) && <><button className="validate" type="button" onClick={()=>reviewActivity(activity,'validated')}>{t.validate}</button><button className="observe" type="button" onClick={()=>reviewActivity(activity,'observed')}>{t.observe}</button></>}</div></div>
+              <div className="calendar-event-top"><span>{dateLabel(activity.start_date,language)}</span><b>{isAssociationNotice(activity)?t.association:unit?.code||'—'}</b></div>
+              <strong>{activity.title}</strong><small>{isAssociationNotice(activity)?activity.association_name:(objective?.code||'')+(indicator ? ' · ' + indicator.name : '')}</small>
+              <div className="calendar-event-meta">{isAssociationNotice(activity)?<span>{t.associationInfo}</span>:<><span>{MODALITY[language][activity.modality]||activity.modality}</span><span>{STATUS[language][activity.status]||activity.status}</span></>}</div>
+              <div className="calendar-event-footer"><span className={'calendar-review-badge ' + (activity.review_status||'pending')}>{reviewStatusLabel(activity.review_status,language)}</span><div>{editable && <button type="button" onClick={()=>openEdit(activity)}>{t.edit}</button>}{canReviewActivity(activity) && <><button className="validate" type="button" onClick={()=>reviewActivity(activity,'validated')}>{t.validate}</button><button className="observe" type="button" onClick={()=>reviewActivity(activity,'observed')}>{t.observe}</button></>}</div></div>
             </div>
           }) : <p>{t.noActivities}</p>}</div></article>
         })}</section> : presentation==='list' ? <section className="calendar-list-card">
           <div className={"calendar-list-head" + (scope==="consolidated" && calendarAccess.can_edit_consolidated ? " has-actions" : "")}><span>{t.date}</span><span>{t.activity}</span><span>{t.direction}</span><span>{t.objectiveIndicator}</span><span>{t.reviewState}</span>{scope==="consolidated" && calendarAccess.can_edit_consolidated && <span>{t.actions}</span>}</div>
           {visibleActivities.length ? visibleActivities.map((activity)=>{
             const unit=units.find((row)=>row.id===activity.unit_id); const objective=objectives.find((row)=>row.id===activity.objective_id); const indicator=indicators.find((row)=>row.id===activity.indicator_id)
-            return <div className={"calendar-list-row" + (scope==="consolidated" && calendarAccess.can_edit_consolidated ? " has-actions" : "")} key={activity.id}><div className="calendar-list-cell" data-label={t.date}><span>{dateLabel(activity.start_date,language)}</span></div><div className="calendar-list-cell calendar-list-activity" data-label={t.activity}><strong>{activity.title}</strong></div><div className="calendar-list-cell" data-label={t.direction}><span>{unit?.code||'—'}</span></div><div className="calendar-list-cell calendar-list-objective" data-label={t.objectiveIndicator}><span>{objective?.code||'—'}</span>{indicator?<small>{indicator.name}</small>:null}</div><div className="calendar-list-cell" data-label={t.reviewState}><span className={'calendar-review-badge ' + (activity.review_status||'pending')}>{reviewStatusLabel(activity.review_status,language)}</span></div>{scope==="consolidated" && calendarAccess.can_edit_consolidated && <div className="calendar-list-cell calendar-list-action" data-label={t.actions}><button type="button" onClick={()=>openEdit(activity)}>{t.edit}</button></div>}</div>
+            return <div className={"calendar-list-row" + (scope==="consolidated" && calendarAccess.can_edit_consolidated ? " has-actions" : "")} key={activity.id}><div className="calendar-list-cell" data-label={t.date}><span>{dateLabel(activity.start_date,language)}</span></div><div className="calendar-list-cell calendar-list-activity" data-label={t.activity}><strong>{activity.title}</strong></div><div className="calendar-list-cell" data-label={t.direction}><span>{isAssociationNotice(activity)?t.association:unit?.code||'—'}</span></div><div className="calendar-list-cell calendar-list-objective" data-label={t.objectiveIndicator}><span>{isAssociationNotice(activity)?activity.association_name:(objective?.code||'—')}</span>{!isAssociationNotice(activity)&&indicator?<small>{indicator.name}</small>:null}</div><div className="calendar-list-cell" data-label={t.reviewState}><span className={'calendar-review-badge ' + (activity.review_status||'pending')}>{reviewStatusLabel(activity.review_status,language)}</span></div>{scope==="consolidated" && calendarAccess.can_edit_consolidated && <div className="calendar-list-cell calendar-list-action" data-label={t.actions}>{canEditActivity(activity)&&<button type="button" onClick={()=>openEdit(activity)}>{t.edit}</button>}</div>}</div>
           }) : <p className="management-empty">{t.noActivities}</p>}
         </section> : <CalendarPresentationView
           activities={visibleActivities}
@@ -466,7 +488,8 @@ export default function ManagementCalendarPage(){
           savingYearHeader={savingHeader}
           language={language}
           editableUnits={editableUnits}
-          canReview={(activity)=>canReviewUnitActivity(activity, calendarAccess)}
+          canEdit={canEditActivity}
+          canReview={canReviewActivity}
           onSave={savePresentationEdit}
           onReview={reviewActivity}
           onRefresh={reloadActivities}
