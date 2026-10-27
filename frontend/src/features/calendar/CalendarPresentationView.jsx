@@ -11,7 +11,7 @@ const words = {
     invalid:'La fecha de cierre debe ser posterior o igual al inicio y estar dentro de la gestión seleccionada.',
     missing:'Completa el nombre y la fecha de inicio de la actividad.',
     status:'Revisión', validate:'Validar', observe:'Observar', live:'Los cambios se guardan al instante para todos los participantes.',
-    project:'Actividades institucionales', presenter:'Vista de reunión', saveFailed:'Revisa el aviso y vuelve a intentar guardar.',
+    project:'Actividades institucionales', presenter:'Vista de reunión', saveFailed:'Revisa el aviso y vuelve a intentar guardar.', saved:'Cambios guardados correctamente.',
   },
   en: {
     title:'Monthly presentation', prev:'Previous month', next:'Next month', month:'Select month',
@@ -22,7 +22,7 @@ const words = {
     invalid:'The end date must be on or after the start date, within the selected period.',
     missing:'Complete the activity name and start date.',
     status:'Review', validate:'Validate', observe:'Observe', live:'Changes are saved immediately for all meeting participants.',
-    project:'Institutional activities', presenter:'Meeting view', saveFailed:'Review the notice and try saving again.',
+    project:'Institutional activities', presenter:'Meeting view', saveFailed:'Review the notice and try saving again.', saved:'Changes saved successfully.',
   },
 }
 function dayLabel(value, language) {
@@ -42,6 +42,7 @@ export default function CalendarPresentationView({
   const [editingId, setEditingId] = useState('')
   const [draft, setDraft] = useState({ title:'', start_date:'', end_date:'' })
   const [editError, setEditError] = useState('')
+  const [notice, setNotice] = useState('')
   const rows = presentationMonthActivities(activities, month)
   useEffect(() => {
     const change = () => setFullScreen(document.fullscreenElement === panelRef.current)
@@ -51,6 +52,7 @@ export default function CalendarPresentationView({
   const moveMonth = (next) => {
     setEditingId('')
     setEditError('')
+    setNotice('')
     setMonth(next)
     panelRef.current?.scrollTo({ top:0, behavior:'instant' })
   }
@@ -67,6 +69,7 @@ export default function CalendarPresentationView({
     setEditingId(activity.id)
     setDraft({ title:activity.title || '', start_date:activity.start_date || '', end_date:activity.end_date || '' })
     setEditError('')
+    setNotice('')
   }
   const commit = async (event, activity) => {
     event.preventDefault()
@@ -76,6 +79,7 @@ export default function CalendarPresentationView({
     setEditError('')
     const ok = await onSave(activity, draft)
     if (ok) {
+      setNotice(t.saved)
       setEditingId('')
       // Follow a moved activity to its new month after the server confirms the save.
       setMonth(Number(draft.start_date.slice(5,7)) - 1)
@@ -104,6 +108,7 @@ export default function CalendarPresentationView({
       </div>
       <button type="button" className="calendar-presenter-arrow" onClick={()=>moveMonth(nextPresentationMonth(month,1))} disabled={month===11} aria-label={t.next} title={t.next}>›</button>
     </div>
+    {notice && <p className="calendar-presenter-notice" role="status">{notice}</p>}
     <div className="calendar-presenter-activities" aria-live="polite">
       {!rows.length && <p className="calendar-presenter-empty">{t.noActivities}</p>}
       {rows.map((activity)=>{
