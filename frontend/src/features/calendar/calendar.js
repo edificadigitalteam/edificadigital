@@ -46,8 +46,8 @@ export function canEditCalendarActivity(activity, access) {
 
 export function reviewStatusLabel(status, language = 'es') {
   const labels = language === 'en'
-    ? { pending: 'Pending', validated: 'Validated', observed: 'Observed' }
-    : { pending: 'Pendiente', validated: 'Validada', observed: 'Observada' }
+    ? { pending: 'Pending', validated: 'Validated', observed: 'Observed', informational: 'Information · Association' }
+    : { pending: 'Pendiente', validated: 'Validada', observed: 'Observada', informational: 'Informativa · Asociación' }
   return labels[status] || labels.pending
 }
 
