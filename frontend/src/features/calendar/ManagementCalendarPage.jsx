@@ -258,6 +258,7 @@ export default function ManagementCalendarPage(){
         title: draft.title.trim(),
         start_date: draft.start_date,
         end_date: draft.end_date || null,
+        responsible_name: String(draft.responsible_name || '').trim() || null,
         updated_by: access.userId || null,
       })
       .eq('id', activity.id)
@@ -380,7 +381,7 @@ export default function ManagementCalendarPage(){
 
         <div className="calendar-view-controls">
           <div className="calendar-scope-tabs"><button className={scope==='mine'?'active':''} type="button" onClick={()=>setScope('mine')}>{t.myCalendar}</button>{canViewConsolidated && <button className={scope==='consolidated'?'active':''} type="button" onClick={()=>setScope('consolidated')}>{t.consolidated}</button>}</div>
-          <div className="calendar-presentation-tabs"><button className={presentation==='calendar'?'active':''} type="button" onClick={()=>setPresentation('calendar')}>{t.calendar}</button><button className={presentation==='list'?'active':''} type="button" onClick={()=>setPresentation('list')}>{t.list}</button><button className={presentation==='presenter'?'active':''} type="button" onClick={()=>{setPresentation('presenter');setFormOpen(false);setBulkOpen(false)}}>{t.presenter}</button></div>
+          <div className="calendar-presentation-tabs"><button className={presentation==='calendar'?'active':''} type="button" onClick={()=>setPresentation('calendar')}>{t.calendar}</button><button className={presentation==='list'?'active':''} type="button" onClick={()=>setPresentation('list')}>{t.list}</button><button className={presentation==='presenter'?'active':''} type="button" onClick={()=>{setPresentation('presenter');if(canViewConsolidated)setScope('consolidated');setFormOpen(false);setBulkOpen(false)}}>{t.presenter}</button></div>
         </div>
 
         {scope==='consolidated' && calendarAccess.can_edit_consolidated && <div className="calendar-live-controls"><p>{t.live}</p><button type="button" onClick={reloadActivities} disabled={saving}>{t.refresh}</button></div>}
@@ -407,6 +408,7 @@ export default function ManagementCalendarPage(){
           units={units}
           monthNames={MONTHS[language]}
           period={activePeriod}
+          organizationName={organization?.name || ''}
           language={language}
           editableUnits={editableUnits}
           canReview={(activity)=>canReviewUnitActivity(activity, calendarAccess)}
