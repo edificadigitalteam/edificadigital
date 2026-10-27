@@ -47,7 +47,8 @@ All project plans are stored in `/docs/plans/` with a consistent naming conventi
 
 | S10-EVAL | [SPRINT-S10-v1_private-evaluations-and-digen-calendar.md](SPRINT-S10-v1_private-evaluations-and-digen-calendar.md) | 🧪 In Review | Self-evaluations privately restricted to DIGEN and cross-unit calendar editing; database activation pending |
 | S11-PERM | [SPRINT-S11-v1_permission-based-supervision.md](SPRINT-S11-v1_permission-based-supervision.md) | ✍️ In Progress | Supervision through permissions assigned to people instead of the GEN/DIGEN unit codes (#147) |
-| S11-CAL-PRESENT | [SPRINT-S11-v1_calendar-presentation.md](SPRINT-S11-v1_calendar-presentation.md) | 🧪 In Review | One-month-at-a-time large-text meeting presentation, full screen and live activity/date edits using existing access permissions |
+| S11-CAL-PRESENT | [SPRINT-S11-v1_calendar-presentation.md](SPRINT-S11-v1_calendar-presentation.md) | ✅ Implemented | Original one-month presentation replaced by CNBV year-table improvement in S11.2 |
+| S11.2-CAL-TABLE | [SPRINT-S11.2-v1_pdf-calendar-table-live-review.md](SPRINT-S11.2-v1_pdf-calendar-table-live-review.md) | 🧪 In Review | Continuous navy-header PDF-style calendar, date/activity/responsibles, inline edits and color review status |
 | S11.1-SEO | [SPRINT-S11.1-v1_seo-canonical-and-indexing-fixes.md](SPRINT-S11.1-v1_seo-canonical-and-indexing-fixes.md) | 🧪 In Review | SEO drift fixes: www→apex redirect, noindex on app and Vercel alias, real 404s, sitemap/robots cleanup, FAQPage JSON-LD synced with the visible FAQ |
 
 ### Legend
