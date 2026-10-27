@@ -6,6 +6,14 @@ The Edifica Digital operational database is deployed in Supabase project `edifyd
 
 All database identifiers and stored enum-like values use English `snake_case`. Spanish and English belong in interface content, catalog display names, exports, and reports.
 
+## Pending migration: Association calendar notices (S11.4)
+
+- `20261027170000_association_calendar_notices.sql` is **pending on edifydb**. The current ChatGPT Supabase connection returns «You do not have permission» for the authorized project `rrqyihsjftlloizsccvi`.
+- Adds `public.association_calendar_notice` with organizational scope, management-period FK, `association_name`, title, optional description, start/end dates, operator audit references, date integrity trigger and indexes.
+- RLS: authorized organization users may read; writes require a tenant admin or assigned `calendar.manage_all`. An ordinary unit director cannot create or edit informational association dates.
+- API privileges: authenticated SELECT/INSERT/UPDATE/DELETE subject to RLS, service_role grants; `anon` none. No new public RPCs.
+- **Release gate:** verify pgTAP on local CI, then apply migration through `edifydb` history and confirm permissions/live schema before merging the frontend. The current production schema is unchanged.
+
 ## Applied migrations
 
 One row per entry in the `edifydb` migration history (`supabase_migrations.schema_migrations`), in version order, checked with `list_migrations` on 2026-10-23: 83 entries, latest `20261024013537`. Every file in `supabase/migrations/` maps to exactly one entry.

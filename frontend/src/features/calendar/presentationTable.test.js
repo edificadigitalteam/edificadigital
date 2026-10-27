@@ -31,6 +31,7 @@ test('review styles always map to an explicit accessible status', () => {
   assert.deepEqual(presentationReviewState('observed','es'),{ tone:'observed',label:'Observada' })
   assert.deepEqual(presentationReviewState(undefined,'es'),{ tone:'pending',label:'Pendiente de revisión' })
   assert.deepEqual(presentationReviewState('observed','en'),{ tone:'observed',label:'Observed' })
+  assert.deepEqual(presentationReviewState('informational','es'),{ tone:'informational',label:'Informativa · Asociación' })
 })
 
 test('changing responsible person uses existing activity permissions and preserves date validation', () => {

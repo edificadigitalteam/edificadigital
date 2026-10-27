@@ -50,9 +50,9 @@ export function presentationDayRange(startDate, endDate, language = 'es') {
 /** Maps existing persisted review states to accessible labels and row colors. */
 export function presentationReviewState(reviewStatus, language = 'es') {
   const states = {
-    es: { pending:'Pendiente de revisión',validated:'Validada',observed:'Observada' },
-    en: { pending:'Pending review',validated:'Validated',observed:'Observed' },
+    es: { pending:'Pendiente de revisión',validated:'Validada',observed:'Observada',informational:'Informativa · Asociación' },
+    en: { pending:'Pending review',validated:'Validated',observed:'Observed',informational:'Information · Association' },
   }
-  const tone = ['validated','observed'].includes(reviewStatus) ? reviewStatus : 'pending'
+  const tone = ['validated','observed','informational'].includes(reviewStatus) ? reviewStatus : 'pending'
   return { tone, label:(states[language] || states.es)[tone] }
 }

@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { presentationYearSections, presentationDayRange, presentationReviewState, validatePresentationEdit } from './presentation.js'
 import CalendarYearHeader from './CalendarYearHeader.jsx'
+import { isAssociationNotice } from './associationNotices.js'
 
 const phrases = {
   es: {
@@ -15,7 +16,7 @@ const phrases = {
     fail:'No se pudieron guardar los cambios. Revisa el aviso e inténtalo nuevamente.',
     saved:'Cambios guardados.', validate:'Validar', observe:'Observar', pending:'Poner en revisión',
     note:'Observación', unit:'Dirección', direct:'Editar actividad durante la reunión',
-    readOnly:'Consulta', editing:'Edición de actividad',
+    readOnly:'Consulta', editing:'Edición de actividad', association:'Asociación', associationResponsible:'Asociación responsable *',
   },
   en: {
     eyebrow:'INSTITUTIONAL CALENDAR', title:'Calendar Project', calendar:'Institutional activities',
@@ -29,12 +30,12 @@ const phrases = {
     fail:'Changes could not be saved. Review the message and try again.',
     saved:'Changes saved.', validate:'Validate', observe:'Observe', pending:'Send for review',
     note:'Review note', unit:'Unit', direct:'Edit activity during the meeting',
-    readOnly:'Read-only', editing:'Edit activity',
+    readOnly:'Read-only', editing:'Edit activity', association:'Association', associationResponsible:'Responsible association *',
   },
 }
 
 export default function CalendarPresentationView({
-  activities, units, monthNames, period, language, editableUnits, canReview,
+  activities, units, monthNames, period, language, canEdit, canReview,
   onSave, onReview, onRefresh, saving, organizationName,
   annualHeader, canEditYearHeader, onSaveYearHeader, savingYearHeader,
 }) {
@@ -73,7 +74,7 @@ export default function CalendarPresentationView({
     }
   }
   const startEdit = (activity) => {
-    if (saving || !editableUnits.has(activity.unit_id)) return
+    if (saving || !canEdit(activity)) return
     setDraft({
       title:activity.title || '',
       start_date:activity.start_date || '',
@@ -86,7 +87,7 @@ export default function CalendarPresentationView({
   }
   const save = async (event, activity) => {
     event.preventDefault()
-    if (saving || !editableUnits.has(activity.unit_id)) return
+    if (saving || !canEdit(activity)) return
     const issue = validatePresentationEdit(draft,period)
     if (issue) {setEditError(issue === 'missing' ? t.missing : t.invalid);return}
     setEditError('')
@@ -143,7 +144,8 @@ export default function CalendarPresentationView({
               {section.activities.map((activity)=>{
                 const unit = units.find((item)=>item.id===activity.unit_id)
                 const state = presentationReviewState(activity.review_status,language)
-                const editable = editableUnits.has(activity.unit_id)
+                const editable = canEdit(activity)
+                const informationOnly=isAssociationNotice(activity)
                 const reviewable = canReview(activity)
                 return <Fragment key={activity.id}>
                   <tr className={'cnv-activity-row cnv-state-'+state.tone}>
@@ -164,17 +166,17 @@ export default function CalendarPresentationView({
                       </div>
                     </td>
                     <td className="cnv-responsible" data-column={t.responsables}>
-                      <strong>{unit?.code || '—'}</strong>
+                      <strong>{informationOnly?t.association:unit?.code || '—'}</strong>
                       {activity.responsible_name && <span>{activity.responsible_name}</span>}
                     </td>
                   </tr>
                   {editingId === activity.id && <tr className="cnv-edit-row"><td colSpan={3}>
                     <form className="cnv-edit-form" onSubmit={(event)=>save(event,activity)}>
-                      <strong className="cnv-edit-title">{t.editing} · {unit?.code || '—'}</strong>
+                      <strong className="cnv-edit-title">{t.editing} · {informationOnly?t.association:unit?.code || '—'}</strong>
                       <label className="cnv-edit-name">{t.name}<input required value={draft.title} onChange={(e)=>setDraft((d)=>({...d,title:e.target.value}))}/></label>
                       <label>{t.from}<input type="date" required value={draft.start_date} min={period?.start_date} max={period?.end_date} onChange={(e)=>setDraft((d)=>({...d,start_date:e.target.value}))}/></label>
                       <label>{t.to}<input type="date" value={draft.end_date} min={draft.start_date||period?.start_date} max={period?.end_date} onChange={(e)=>setDraft((d)=>({...d,end_date:e.target.value}))}/></label>
-                      <label className="cnv-edit-who">{t.who}<input value={draft.responsible_name} onChange={(e)=>setDraft((d)=>({...d,responsible_name:e.target.value}))}/></label>
+                      <label className="cnv-edit-who">{informationOnly?t.associationResponsible:t.who}<input required={informationOnly} value={draft.responsible_name} onChange={(e)=>setDraft((d)=>({...d,responsible_name:e.target.value}))}/></label>
                       {editError && <p className="cnv-edit-error" role="alert">{editError}</p>}
                       <div className="cnv-edit-actions">
                         <button type="button" onClick={()=>{setEditingId('');setEditError('')}} disabled={saving}>{t.cancel}</button>
