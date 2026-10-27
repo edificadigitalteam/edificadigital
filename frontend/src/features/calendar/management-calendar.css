@@ -172,3 +172,5 @@
   .calendar-presenter-footer{flex-wrap:wrap}
 }
 @media(prefers-reduced-motion:reduce){.calendar-presenter *{scroll-behavior:auto!important}}
+
+.calendar-presenter-notice{margin:0;padding:12px 18px;border-left:5px solid #187044;background:#edf8f1;color:#164d32;font-size:20px;font-weight:800;border-radius:8px}
