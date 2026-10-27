@@ -1,6 +1,6 @@
 # S11.4 · Actividades informativas de asociaciones en Calendario
 
-**Fecha:** 27/10/2026. **Estado:** en desarrollo, rama para revisión y pruebas.
+**Fecha:** 27/10/2026. **Estado:** completado. Migración aplicada en edifydb y PR #157 fusionado el 27/10/2026.
 
 ## Necesidad y decisiones
 Las asociaciones regionales del país anuncian actividades (asambleas y encuentros) que deben aparecer en el calendario general de la CNBV aunque no sean actividades de las Direcciones ni organizaciones incluidas como unidades de trabajo. Los administradores pueden cargarlas manualmente y especificar asociación responsable.
@@ -20,5 +20,5 @@ Carga manual y edición a través del mismo Calendario; en Listado, Calendario a
 ## Entrega / pruebas
 - Migración nueva y pgTAP (seguridad/validación/visibilidad).
 - Suite frontend con normalización, autoridad, fechas y visualización, lint + build.
-- CI `Database checks` usa Supabase local para migraciones y tests; aplicar la migración en **edifydb `rrqyihsjftlloizsccvi`** antes de publicar, tras verificar permiso del conector. El conector actualmente devuelve «You do not have permission»; por lo tanto sin aplicación real **no** se debe integrar a `main` ni afirmar que está publicada.
+- CI `Database checks` usa Supabase local para migraciones y tests; aplicar la migración en **edifydb `rrqyihsjftlloizsccvi`** antes de publicar, tras verificar permiso del conector. Aplicada el 27/10/2026 tras una prueba en seco revertida; versión registrada `20261027170000`.
 - Revisión humana del PR para fusión y limpieza de rama.
