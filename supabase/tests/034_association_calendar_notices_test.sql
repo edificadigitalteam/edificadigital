@@ -35,13 +35,13 @@ insert into public.organization_unit_member(organization_id,unit_id,operator_acc
 insert into public.association_calendar_notice(id,organization_id,management_period_id,association_name,title,start_date)
 values(pg_temp.id('notice'),pg_temp.id('org'),pg_temp.id('period'),'ASIBEB','Asamblea regional de Barinas',date '2027-01-10');
 
-create function pg_temp.act_as(p_email text) returns void language plpgsql as $
+create function pg_temp.act_as(p_email text) returns void language plpgsql as $actor$
 declare uid uuid;
 begin
  select id into uid from auth.users where auth.users.email=p_email;
  perform set_config('request.jwt.claim.sub',uid::text,true);
  perform set_config('request.jwt.claims',json_build_object('sub',uid,'email',p_email,'role','authenticated')::text,true);
-end $$;
+end $actor$;
 create function pg_temp.try_change(actor text,kind text,query text) returns void language plpgsql as $$
 declare rows_changed integer;
 begin
