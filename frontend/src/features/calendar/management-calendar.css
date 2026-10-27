@@ -291,3 +291,41 @@
  .cnv-activity-text{font-size:15px}
 }
 @media(prefers-reduced-motion:reduce){.cnv-calendar-sheet *{scroll-behavior:auto!important}}
+
+/* Annual institutional calendar masthead — same details in all three formats. */
+.calendar-annual-header{width:100%;box-sizing:border-box;border:1px solid #c9d5e1;border-top:4px solid #1c405f;border-radius:12px;background:#f9fbfe;padding:19px 22px;color:#24384c}
+.calendar-annual-header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:18px}
+.calendar-annual-header-top>div{flex:1;min-width:0}
+.calendar-annual-header h2{margin:0 0 12px;color:#173957;font-size:clamp(22px,2.4vw,34px);font-weight:950;line-height:1.17;overflow-wrap:anywhere}
+.calendar-annual-header-details{display:grid;gap:6px}
+.calendar-annual-header-details p{margin:0;color:#273c50;font-size:clamp(15px,1.35vw,20px);line-height:1.45;overflow-wrap:anywhere}
+.calendar-annual-header-details strong{font-weight:900}
+.calendar-annual-header-details span{white-space:pre-wrap}
+.calendar-header-edit-toggle,.calendar-header-actions button{min-height:45px;padding:9px 14px;background:#fff;color:#173957;border:1px solid #899eb0;border-radius:7px;font:inherit;font-size:15px;font-weight:850;cursor:pointer}
+.calendar-header-editor{display:grid;grid-template-columns:1fr 1fr;gap:13px 16px;margin-top:16px;padding-top:16px;border-top:1px solid #d5dee7}
+.calendar-header-editor label{display:grid;min-width:0;gap:5px;color:#263c50;font-size:15px;font-weight:850}
+.calendar-header-editor label:first-child,.calendar-header-editor label:last-of-type{grid-column:1/-1}
+.calendar-header-editor input,.calendar-header-editor textarea{width:100%;min-width:0;box-sizing:border-box;padding:11px;border:1px solid #91a5b6;border-radius:7px;background:#fff;color:#213447;font:inherit;font-size:17px}
+.calendar-header-editor textarea{resize:vertical}
+.calendar-header-error{grid-column:1/-1;color:#a72b2b;font-weight:850}
+.calendar-header-actions{grid-column:1/-1;display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+.calendar-header-actions .primary{background:#173957;color:#fff}
+.calendar-annual-header.is-compact{padding:0;border:0;border-radius:0;background:transparent;width:auto}
+.calendar-annual-header.is-compact h2{font-size:clamp(25px,2.65vw,39px);margin:0 0 12px}
+.calendar-annual-header.is-compact .calendar-annual-header-details p{font-size:clamp(17px,1.5vw,22px)}
+.cnv-calendar-sheet:fullscreen .calendar-annual-header.is-compact h2{font-size:clamp(29px,2.8vw,44px)}
+.cnv-calendar-sheet:fullscreen .calendar-annual-header.is-compact .calendar-annual-header-details p{font-size:clamp(20px,1.7vw,26px)}
+/* Replace pending-cream only with a soft slate blue. Preserve validated green and observed red. */
+.cnv-activity-row.cnv-state-pending td{background:#f0f5fa}
+.cnv-activity-row.cnv-state-pending td:first-child{border-left-color:#8ba9c6}
+.cnv-status.cnv-state-pending{background:#e3edf7;border-color:#aac2d7;color:#294d6c}
+.cnv-review-legend.cnv-state-pending i{background:#8ba9c6}
+.calendar-review-badge:not(.validated):not(.observed){background:#e3edf7;color:#294d6c;border-color:#aac2d7}
+@media(max-width:720px){
+ .calendar-annual-header{padding:15px}
+ .calendar-annual-header-top{flex-direction:column}
+ .calendar-header-edit-toggle{align-self:flex-start}
+ .calendar-header-editor{grid-template-columns:1fr}
+ .calendar-header-editor label{grid-column:1!important}
+ .calendar-header-actions button{flex:1}
+}

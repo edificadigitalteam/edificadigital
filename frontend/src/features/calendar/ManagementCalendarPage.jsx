@@ -4,6 +4,8 @@ import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from '../management/ManagementStandaloneShell.jsx'
 import CalendarPresentationView from './CalendarPresentationView.jsx'
+import CalendarYearHeader from './CalendarYearHeader.jsx'
+import { readCalendarYearHeader, writeCalendarYearHeader } from './annualHeader.js'
 import { validatePresentationEdit } from './presentation.js'
 import { DEFAULT_CALENDAR_MODULE_LABEL, buildCalendarActivityPayloads, calendarAccessSummaryKey, canOpenCalendarActivityEntry, resolveCalendarModuleLabel, reviewStatusLabel, selectDefaultCalendarPeriodId, canClearUnitCalendar } from './calendar.js'
 import { canReviewUnitActivity, canViewAllUnits, defaultSelectableUnitId, editableUnitIds, selectableUnits } from '../management/unitScope.js'
@@ -100,6 +102,7 @@ export default function ManagementCalendarPage(){
   const [bulkRows,setBulkRows] = useState(()=>[emptyBulkRow()])
   const [loading,setLoading] = useState(true)
   const [saving,setSaving] = useState(false)
+  const [savingHeader,setSavingHeader] = useState(false)
   const [error,setError] = useState('')
   const [message,setMessage] = useState('')
   const organizationId = access.organizationId || ''
@@ -155,6 +158,8 @@ export default function ManagementCalendarPage(){
   },[defaultUnitId,unitOptions])
 
   const activePeriod = periods.find((period)=>period.id===periodId)
+  const calendarYearHeader = useMemo(()=>readCalendarYearHeader(activePeriod?.notes),[activePeriod?.notes])
+  const canEditYearHeader = access.role === 'admin'
   const workPlanById = useMemo(()=>new Map(workPlans.map((plan)=>[plan.id,plan])),[workPlans])
   const periodPlans = useMemo(()=>workPlans.filter((plan)=>plan.management_period_id===periodId),[workPlans,periodId])
   const ownSelectedPlan = periodPlans.find((plan)=>plan.unit_id===selectedUnitId)
@@ -170,6 +175,24 @@ export default function ManagementCalendarPage(){
   const canClearOwn = canClearUnitCalendar(selectedUnitId, calendarAccess)
   const canViewConsolidated = Boolean(calendarAccess.can_view_consolidated)
   const visibleUnitCount = new Set(visibleActivities.map((activity)=>activity.unit_id).filter(Boolean)).size
+
+  const saveYearHeader = async (header) => {
+    if (!supabase || !activePeriod || !organizationId || !canEditYearHeader || savingHeader) return false
+    setSavingHeader(true);setError('');setMessage('')
+    const notes=writeCalendarYearHeader(activePeriod.notes,header)
+    const {data,error:requestError}=await supabase.from('management_period')
+      .update({notes,updated_by:access.userId||null})
+      .eq('id',activePeriod.id).eq('organization_id',organizationId).select('id,notes').maybeSingle()
+    if(requestError || !data?.id){
+      setError(requestError?.message || (language==='en'?'Unable to save calendar heading.':'No fue posible guardar el encabezado del calendario.'))
+      setSavingHeader(false)
+      return false
+    }
+    setPeriods((rows)=>rows.map((p)=>p.id===activePeriod.id?{...p,notes:data.notes}:p))
+    setMessage(language==='en'?'Calendar heading saved.':'Encabezado del calendario guardado.')
+    setSavingHeader(false)
+    return true
+  }
 
   const reloadActivities = async () => {
     const { data,error:requestError } = await supabase.from('unit_work_activity').select('*').eq('organization_id',organizationId).order('start_date')
@@ -372,6 +395,7 @@ export default function ManagementCalendarPage(){
       </form>}
 
       {loading ? <div className="management-loading"><span/><p>{t.loading}</p></div> : <>
+        {presentation !== 'presenter' && <CalendarYearHeader header={calendarYearHeader} period={activePeriod} language={language} canEdit={canEditYearHeader} onSave={saveYearHeader} saving={savingHeader}/>}
         <section className="calendar-metrics">
           <article><span>{t.visibleActivities}</span><strong>{visibleActivities.length}</strong></article>
           <article><span>{t.visibleUnits}</span><strong>{visibleUnitCount || (selectedUnitId?1:0)}</strong></article>
@@ -409,6 +433,10 @@ export default function ManagementCalendarPage(){
           monthNames={MONTHS[language]}
           period={activePeriod}
           organizationName={organization?.name || ''}
+          annualHeader={calendarYearHeader}
+          canEditYearHeader={canEditYearHeader}
+          onSaveYearHeader={saveYearHeader}
+          savingYearHeader={savingHeader}
           language={language}
           editableUnits={editableUnits}
           canReview={(activity)=>canReviewUnitActivity(activity, calendarAccess)}

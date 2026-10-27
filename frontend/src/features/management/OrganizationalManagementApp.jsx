@@ -5,6 +5,7 @@ import { trace as sharedTrace } from '../../lib/trace.js'
 import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ProjectsPanel from '../dashboard/ProjectsPanel.jsx'
+import { readCalendarYearHeader, removeCalendarYearHeader, writeCalendarYearHeader } from '../calendar/annualHeader.js'
 import OrganizationTree from './OrganizationTree.jsx'
 import './management.css'
 
@@ -143,13 +144,17 @@ function ObjectivesPanel({ organizationId, periods, units, objectives, assignmen
   const savePeriod = async (event) => {
     event.preventDefault(); if (!canAdmin || saving) return
     setSaving(true); setError(''); setMessage('')
-    const payload = { organization_id: organizationId, name: periodForm.name.trim(), start_date: periodForm.start_date, end_date: periodForm.end_date, status: periodForm.status, reporting_due_date: periodForm.reporting_due_date || null, notes: periodForm.notes.trim() || null }
+    const previous = periods.find((period)=>period.id===periodForm.id)
+    const previousHeader=readCalendarYearHeader(previous?.notes)
+    const plainNotes=periodForm.notes.trim()
+    const notes=Object.values(previousHeader).some(Boolean) ? writeCalendarYearHeader(plainNotes,previousHeader) : (plainNotes || null)
+    const payload = { organization_id: organizationId, name: periodForm.name.trim(), start_date: periodForm.start_date, end_date: periodForm.end_date, status: periodForm.status, reporting_due_date: periodForm.reporting_due_date || null, notes }
     const request = periodForm.id ? supabase.from('management_period').update(payload).eq('id', periodForm.id).select('id').single() : supabase.from('management_period').insert(payload).select('id').single()
     const { data, error: requestError } = await request
     if (requestError) setError(requestError.message); else { setMessage('Período guardado.'); setPeriodOpen(false); setPeriodForm(emptyPeriod()); await reload(); if (data?.id) setActivePeriodId(data.id) }
     setSaving(false)
   }
-  const editPeriod = (period) => { setPeriodForm({ ...period, reporting_due_date: period.reporting_due_date ?? '', notes: period.notes ?? '' }); setPeriodOpen(true); setError('') }
+  const editPeriod = (period) => { setPeriodForm({ ...period, reporting_due_date: period.reporting_due_date ?? '', notes: removeCalendarYearHeader(period.notes) }); setPeriodOpen(true); setError('') }
   const editObjective = (objective) => {
     setObjectiveForm({ ...emptyObjective, ...objective, parent_objective_id: objective.parent_objective_id ?? '', weight: objective.weight ?? '', responsible_unit_id: assignmentFor(objective.id, 'responsible')[0]?.unit_id ?? '', supporting_unit_ids: assignmentFor(objective.id, 'supporting').map((item) => item.unit_id) })
     setObjectiveOpen(true); setError('')
