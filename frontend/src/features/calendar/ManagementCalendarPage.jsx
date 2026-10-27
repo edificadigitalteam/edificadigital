@@ -3,6 +3,8 @@ import { supabase } from '../../lib/supabase.js'
 import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from '../management/ManagementStandaloneShell.jsx'
+import CalendarPresentationView from './CalendarPresentationView.jsx'
+import { validatePresentationEdit } from './presentation.js'
 import { DEFAULT_CALENDAR_MODULE_LABEL, buildCalendarActivityPayloads, calendarAccessSummaryKey, canOpenCalendarActivityEntry, resolveCalendarModuleLabel, reviewStatusLabel, selectDefaultCalendarPeriodId, canClearUnitCalendar } from './calendar.js'
 import { canReviewUnitActivity, canViewAllUnits, defaultSelectableUnitId, editableUnitIds, selectableUnits } from '../management/unitScope.js'
 import './management-calendar.css'
@@ -23,7 +25,7 @@ const copy = {
   es: {
     eyebrow:'PLANIFICACIÓN INSTITUCIONAL', title:'Calendario anual', intro:'Cada Dirección o agencia administra sus actividades del año seleccionado.',
     preliminary:'PRELIMINAR', preliminaryText:'Calendario preliminar sujeto a validación institucional.', year:'Año', unit:'Dirección / agencia',
-    myCalendar:'Mi calendario', consolidated:'Consolidado institucional', calendar:'Calendario anual', list:'Listado', newActivity:'＋ Cargar actividades',
+    myCalendar:'Mi calendario', consolidated:'Consolidado institucional', calendar:'Calendario anual', list:'Listado', presenter:'Presentación', newActivity:'＋ Cargar actividades',
     bulkTitle:'Cargar actividades', bulkIntro:'Completa una vez los datos compartidos y agrega todas las actividades que necesites.', noObjective:'Sin objetivo vinculado',
     sharedData:'DATOS COMPARTIDOS', activitiesToLoad:'ACTIVIDADES A CARGAR', addRow:'＋ Agregar otra actividad', removeRow:'Quitar',
     saveBatch:'Guardar actividades', incompleteRows:'Completa el nombre y la fecha de inicio de cada actividad agregada.',
@@ -43,7 +45,7 @@ const copy = {
   en: {
     eyebrow:'INSTITUTIONAL PLANNING', title:'Annual calendar', intro:'Each unit or agency manages its activities for the selected year.',
     preliminary:'PRELIMINARY', preliminaryText:'Preliminary calendar subject to institutional validation.', year:'Year', unit:'Unit / agency',
-    myCalendar:'My calendar', consolidated:'Institutional consolidated', calendar:'Annual calendar', list:'List', newActivity:'＋ Load activities',
+    myCalendar:'My calendar', consolidated:'Institutional consolidated', calendar:'Annual calendar', list:'List', presenter:'Presentation', newActivity:'＋ Load activities',
     bulkTitle:'Load activities', bulkIntro:'Complete the shared details once and add every activity you need.', noObjective:'No linked objective',
     sharedData:'SHARED DETAILS', activitiesToLoad:'ACTIVITIES TO LOAD', addRow:'＋ Add another activity', removeRow:'Remove',
     saveBatch:'Save activities', incompleteRows:'Complete the name and start date for every activity you added.',
@@ -176,13 +178,13 @@ export default function ManagementCalendarPage(){
   }
 
   useEffect(() => {
-    if (!supabase || !organizationId || scope !== 'consolidated' || !calendarAccess.can_view_consolidated) return undefined
+    if (!supabase || !organizationId || (presentation !== 'presenter' && (scope !== 'consolidated' || !calendarAccess.can_view_consolidated))) return undefined
     const timer = window.setInterval(async () => {
       const { data } = await supabase.from('unit_work_activity').select('*').eq('organization_id', organizationId).order('start_date')
       if (data) setActivities(data)
     }, 12000)
     return () => window.clearInterval(timer)
-  }, [organizationId, scope, calendarAccess.can_view_consolidated])
+  }, [organizationId, scope, presentation, calendarAccess.can_view_consolidated])
 
   const openNew = () => {
     if (!canOpenCalendarActivityEntry({ canCreate, saving })) return
@@ -246,6 +248,31 @@ export default function ManagementCalendarPage(){
     if (requestError) setError(requestError.message)
     else { setFormOpen(false); setForm(emptyActivity()); setMessage(t.saved); await reloadActivities() }
     setSaving(false)
+  }
+
+  const savePresentationEdit = async (activity, draft) => {
+    if (!supabase || saving || !editableUnits.has(activity.unit_id) || validatePresentationEdit(draft, activePeriod)) return false
+    setSaving(true); setError(''); setMessage('')
+    const { data, error: requestError } = await supabase.from('unit_work_activity')
+      .update({
+        title: draft.title.trim(),
+        start_date: draft.start_date,
+        end_date: draft.end_date || null,
+        updated_by: access.userId || null,
+      })
+      .eq('id', activity.id)
+      .eq('work_plan_id', activity.work_plan_id)
+      .select('id')
+      .maybeSingle()
+    if (requestError || !data?.id) {
+      setError(requestError?.message || (language === 'en' ? 'Unable to save this activity with your permissions.' : 'Tus permisos actuales impiden guardar esta actividad.'))
+      setSaving(false)
+      return false
+    }
+    await reloadActivities()
+    setMessage(t.saved)
+    setSaving(false)
+    return true
   }
 
   const reviewActivity = async (activity,status) => {
@@ -353,7 +380,7 @@ export default function ManagementCalendarPage(){
 
         <div className="calendar-view-controls">
           <div className="calendar-scope-tabs"><button className={scope==='mine'?'active':''} type="button" onClick={()=>setScope('mine')}>{t.myCalendar}</button>{canViewConsolidated && <button className={scope==='consolidated'?'active':''} type="button" onClick={()=>setScope('consolidated')}>{t.consolidated}</button>}</div>
-          <div className="calendar-presentation-tabs"><button className={presentation==='calendar'?'active':''} type="button" onClick={()=>setPresentation('calendar')}>{t.calendar}</button><button className={presentation==='list'?'active':''} type="button" onClick={()=>setPresentation('list')}>{t.list}</button></div>
+          <div className="calendar-presentation-tabs"><button className={presentation==='calendar'?'active':''} type="button" onClick={()=>setPresentation('calendar')}>{t.calendar}</button><button className={presentation==='list'?'active':''} type="button" onClick={()=>setPresentation('list')}>{t.list}</button><button className={presentation==='presenter'?'active':''} type="button" onClick={()=>{setPresentation('presenter');setFormOpen(false);setBulkOpen(false)}}>{t.presenter}</button></div>
         </div>
 
         {scope==='consolidated' && calendarAccess.can_edit_consolidated && <div className="calendar-live-controls"><p>{t.live}</p><button type="button" onClick={reloadActivities} disabled={saving}>{t.refresh}</button></div>}
@@ -369,13 +396,26 @@ export default function ManagementCalendarPage(){
               <div className="calendar-event-footer"><span className={'calendar-review-badge ' + (activity.review_status||'pending')}>{reviewStatusLabel(activity.review_status,language)}</span><div>{editable && <button type="button" onClick={()=>openEdit(activity)}>{t.edit}</button>}{canReviewUnitActivity(activity, calendarAccess) && <><button className="validate" type="button" onClick={()=>reviewActivity(activity,'validated')}>{t.validate}</button><button className="observe" type="button" onClick={()=>reviewActivity(activity,'observed')}>{t.observe}</button></>}</div></div>
             </div>
           }) : <p>{t.noActivities}</p>}</div></article>
-        })}</section> : <section className="calendar-list-card">
+        })}</section> : presentation==='list' ? <section className="calendar-list-card">
           <div className={"calendar-list-head" + (scope==="consolidated" && calendarAccess.can_edit_consolidated ? " has-actions" : "")}><span>{t.date}</span><span>{t.activity}</span><span>{t.direction}</span><span>{t.objectiveIndicator}</span><span>{t.reviewState}</span>{scope==="consolidated" && calendarAccess.can_edit_consolidated && <span>{t.actions}</span>}</div>
           {visibleActivities.length ? visibleActivities.map((activity)=>{
             const unit=units.find((row)=>row.id===activity.unit_id); const objective=objectives.find((row)=>row.id===activity.objective_id); const indicator=indicators.find((row)=>row.id===activity.indicator_id)
             return <div className={"calendar-list-row" + (scope==="consolidated" && calendarAccess.can_edit_consolidated ? " has-actions" : "")} key={activity.id}><div className="calendar-list-cell" data-label={t.date}><span>{dateLabel(activity.start_date,language)}</span></div><div className="calendar-list-cell calendar-list-activity" data-label={t.activity}><strong>{activity.title}</strong></div><div className="calendar-list-cell" data-label={t.direction}><span>{unit?.code||'—'}</span></div><div className="calendar-list-cell calendar-list-objective" data-label={t.objectiveIndicator}><span>{objective?.code||'—'}</span>{indicator?<small>{indicator.name}</small>:null}</div><div className="calendar-list-cell" data-label={t.reviewState}><span className={'calendar-review-badge ' + (activity.review_status||'pending')}>{reviewStatusLabel(activity.review_status,language)}</span></div>{scope==="consolidated" && calendarAccess.can_edit_consolidated && <div className="calendar-list-cell calendar-list-action" data-label={t.actions}><button type="button" onClick={()=>openEdit(activity)}>{t.edit}</button></div>}</div>
           }) : <p className="management-empty">{t.noActivities}</p>}
-        </section>}
+        </section> : <CalendarPresentationView
+          activities={visibleActivities}
+          units={units}
+          monthNames={MONTHS[language]}
+          period={activePeriod}
+          language={language}
+          editableUnits={editableUnits}
+          canReview={(activity)=>canReviewUnitActivity(activity, calendarAccess)}
+          onSave={savePresentationEdit}
+          onReview={reviewActivity}
+          onRefresh={reloadActivities}
+          saving={saving}
+          reviewLabel={reviewStatusLabel}
+        />}
       </>}
     </div>
   </ManagementStandaloneShell>
