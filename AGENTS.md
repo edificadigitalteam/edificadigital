@@ -168,9 +168,9 @@ Full decision record: `docs/adr/ADR-005-seo-and-ai-discoverability.md`.
 
 The only authorized project is `edifydb`, reference `rrqyihsjftlloizsccvi`. Other visible Supabase projects are outside scope unless the user explicitly identifies them.
 
-Deployed baseline, checked on 2026-10-23 (latest migration `20261024013537`, 83 entries in migration history):
+Deployed baseline, checked on 2026-10-27 (latest migration `20261027170000`, 84 entries in migration history):
 
-- 57 tables in `public`, every one with RLS enabled, and the security-invoker view `inventory_lot_balance`;
+- 58 tables in `public`, every one with RLS enabled, and the security-invoker view `inventory_lot_balance`;
 - `private` schema (not exposed through the API) with `beneficiary` and `beneficiary_event` (forced RLS), `operator_access`, and `record_change_log`;
 - anonymous table privileges revoked; `SECURITY DEFINER` RPCs validate access inside the function;
 - private Storage buckets `attachments` (20 MB, approved image/PDF types) and `project-evidence` (50 MB);
