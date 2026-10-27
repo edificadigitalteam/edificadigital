@@ -11,7 +11,7 @@ const words = {
     invalid:'La fecha de cierre debe ser posterior o igual al inicio y estar dentro de la gestión seleccionada.',
     missing:'Completa el nombre y la fecha de inicio de la actividad.',
     status:'Revisión', validate:'Validar', observe:'Observar', live:'Los cambios se guardan al instante para todos los participantes.',
-    project:'Actividades institucionales', presenter:'Vista de reunión',
+    project:'Actividades institucionales', presenter:'Vista de reunión', saveFailed:'Revisa el aviso y vuelve a intentar guardar.',
   },
   en: {
     title:'Monthly presentation', prev:'Previous month', next:'Next month', month:'Select month',
@@ -22,7 +22,7 @@ const words = {
     invalid:'The end date must be on or after the start date, within the selected period.',
     missing:'Complete the activity name and start date.',
     status:'Review', validate:'Validate', observe:'Observe', live:'Changes are saved immediately for all meeting participants.',
-    project:'Institutional activities', presenter:'Meeting view',
+    project:'Institutional activities', presenter:'Meeting view', saveFailed:'Review the notice and try saving again.',
   },
 }
 function dayLabel(value, language) {
@@ -79,7 +79,7 @@ export default function CalendarPresentationView({
       setEditingId('')
       // Follow a moved activity to its new month after the server confirms the save.
       setMonth(Number(draft.start_date.slice(5,7)) - 1)
-    }
+    } else setEditError(t.saveFailed)
   }
   return <section ref={panelRef} className="calendar-presenter" aria-label={t.title}>
     <header className="calendar-presenter-header">
