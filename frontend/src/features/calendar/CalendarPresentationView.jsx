@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { presentationYearSections, presentationDayRange, presentationReviewState, validatePresentationEdit } from './presentation.js'
+import CalendarYearHeader from './CalendarYearHeader.jsx'
 
 const phrases = {
   es: {
@@ -35,6 +36,7 @@ const phrases = {
 export default function CalendarPresentationView({
   activities, units, monthNames, period, language, editableUnits, canReview,
   onSave, onReview, onRefresh, saving, organizationName,
+  annualHeader, canEditYearHeader, onSaveYearHeader, savingYearHeader,
 }) {
   const t = phrases[language] || phrases.es
   const panelRef = useRef(null)
@@ -103,8 +105,7 @@ export default function CalendarPresentationView({
     <div className="cnv-sheet-top">
       <div className="cnv-sheet-title">
         <span>{organizationName || t.eyebrow}</span>
-        <h2>{t.title} {year || period?.name || ''}</h2>
-        <p>{period?.name || ''} · {t.calendar}</p>
+        <CalendarYearHeader header={annualHeader} period={period} language={language} canEdit={canEditYearHeader} onSave={onSaveYearHeader} saving={savingYearHeader} compact/>
       </div>
       <div className="cnv-sheet-tools">
         <button type="button" onClick={onRefresh} disabled={saving} title={t.refresh}>{t.refresh}</button>
