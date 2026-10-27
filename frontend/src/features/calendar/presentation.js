@@ -27,3 +27,32 @@ export function validatePresentationEdit(draft, period) {
   if (draft.end_date && period?.end_date && draft.end_date > period.end_date) return 'dates'
   return ''
 }
+
+/** All twelve months are visible together in the CNBV-style institutional table. */
+export function presentationYearSections(activities = [], year = null) {
+  return Array.from({ length: 12 }, (_, index) => ({
+    index,
+    activities: presentationMonthActivities(activities,index,year),
+  }))
+}
+
+/** Render PDF-style compact day ranges; use ISO strings (no timezone conversion). */
+export function presentationDayRange(startDate, endDate, language = 'es') {
+  if (!startDate) return '—'
+  const d = (iso) => Number(String(iso).slice(8,10))
+  const m = (iso) => Number(String(iso).slice(5,7))
+  if (!endDate || startDate === endDate) return String(d(startDate))
+  if (startDate.slice(0,7) === endDate.slice(0,7)) return `${d(startDate)}–${d(endDate)}`
+  const separator = language === 'en' ? '–' : ' – '
+  return `${d(startDate)}/${m(startDate)}${separator}${d(endDate)}/${m(endDate)}`
+}
+
+/** Maps existing persisted review states to accessible labels and row colors. */
+export function presentationReviewState(reviewStatus, language = 'es') {
+  const states = {
+    es: { pending:'Pendiente de revisión',validated:'Validada',observed:'Observada' },
+    en: { pending:'Pending review',validated:'Validated',observed:'Observed' },
+  }
+  const tone = ['validated','observed'].includes(reviewStatus) ? reviewStatus : 'pending'
+  return { tone, label:(states[language] || states.es)[tone] }
+}
