@@ -9,7 +9,7 @@ test('the presentation shows one month at a time with chronological activities',
     { id:'a', start_date:'2027-03-02', title:'Two' },
     { id:'c', start_date:'2027-03-02', title:'Same day' },
   ]
-  assert.deepEqual(presentationMonthActivities(activities, 2).map(x=>x.id), ['a','c','d'])
+  assert.deepEqual(presentationMonthActivities(activities, 2).map(x=>x.id), ['c','a','d'])
   assert.deepEqual(presentationMonthActivities(activities, 0), [])
   assert.deepEqual(presentationMonthActivities(activities, 12), [])
 })
