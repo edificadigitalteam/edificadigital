@@ -4,6 +4,8 @@ import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from '../management/ManagementStandaloneShell.jsx'
 import CalendarPresentationView from './CalendarPresentationView.jsx'
+import AssociationNoticeForm from './AssociationNoticeForm.jsx'
+import { canManageAssociationNotices, isAssociationNotice, mergeCalendarActivities, associationNoticePayload, validateAssociationNotice } from './associationNotices.js'
 import CalendarYearHeader from './CalendarYearHeader.jsx'
 import { readCalendarYearHeader, writeCalendarYearHeader } from './annualHeader.js'
 import { validatePresentationEdit } from './presentation.js'
@@ -90,6 +92,9 @@ export default function ManagementCalendarPage(){
   const [objectives,setObjectives] = useState([])
   const [indicators,setIndicators] = useState([])
   const [activities,setActivities] = useState([])
+  const [associationNotices,setAssociationNotices] = useState([])
+  const [associationFormOpen,setAssociationFormOpen] = useState(false)
+  const [editingNotice,setEditingNotice] = useState(null)
   const [calendarAccess,setCalendarAccess] = useState({ is_digen:false, unit_ids:[], joint_review_enabled:false, can_view_consolidated:false, digen_unit_id:null })
   const [periodId,setPeriodId] = useState('')
   const [selectedUnitId,setSelectedUnitId] = useState('')
@@ -124,13 +129,14 @@ export default function ManagementCalendarPage(){
       supabase.from('institutional_objective').select('*').eq('organization_id',organizationId).order('code'),
       supabase.from('management_indicator').select('*').eq('organization_id',organizationId).eq('active',true).order('created_at'),
       supabase.from('unit_work_activity').select('*').eq('organization_id',organizationId).order('start_date'),
+      supabase.from('association_calendar_notice').select('*').eq('organization_id',organizationId).order('start_date'),
     ])
     const firstError = responses.find((response)=>response.error)?.error
     if (firstError) { setError(firstError.message); setLoading(false); return }
     const periodRows = responses[1].data ?? []
     setOrganization(responses[0].data ?? null)
     setPeriods(periodRows); setUnits(responses[2].data ?? []); setWorkPlans(responses[3].data ?? [])
-    setObjectives(responses[4].data ?? []); setIndicators(responses[5].data ?? []); setActivities(responses[6].data ?? [])
+    setObjectives(responses[4].data ?? []); setIndicators(responses[5].data ?? []); setActivities(responses[6].data ?? []);setAssociationNotices(responses[7].data ?? [])
     setPeriodId((current)=>selectDefaultCalendarPeriodId(periodRows,current))
     setLoading(false)
   },[access.status,organizationId])
@@ -165,7 +171,7 @@ export default function ManagementCalendarPage(){
   const ownSelectedPlan = periodPlans.find((plan)=>plan.unit_id===selectedUnitId)
   const allPeriodPlanIds = useMemo(()=>new Set(periodPlans.map((plan)=>plan.id)),[periodPlans])
   const enrichedActivities = useMemo(()=>activities.filter((activity)=>allPeriodPlanIds.has(activity.work_plan_id) && sameYear(activity.start_date,activePeriod)).map((activity)=>({ ...activity, unit_id:workPlanById.get(activity.work_plan_id)?.unit_id || '' })),[activities,allPeriodPlanIds,workPlanById,activePeriod])
-  const visibleActivities = useMemo(()=>scope==='consolidated' && calendarAccess.can_view_consolidated ? enrichedActivities : enrichedActivities.filter((activity)=>activity.unit_id===selectedUnitId),[enrichedActivities,scope,calendarAccess.can_view_consolidated,selectedUnitId])
+  const visibleActivities = useMemo(()=>mergeCalendarActivities(scope==='consolidated' && calendarAccess.can_view_consolidated ? enrichedActivities : enrichedActivities.filter((activity)=>activity.unit_id===selectedUnitId),associationNotices,periodId),[enrichedActivities,associationNotices,periodId,scope,calendarAccess.can_view_consolidated,selectedUnitId])
   const planObjectives = useMemo(()=>objectives.filter((objective)=>objective.management_period_id===periodId && objective.work_plan_id===ownSelectedPlan?.id),[objectives,periodId,ownSelectedPlan?.id])
   const planObjectiveIds = useMemo(()=>new Set(planObjectives.map((objective)=>objective.id)),[planObjectives])
   const planIndicators = useMemo(()=>indicators.filter((indicator)=>indicator.management_period_id===periodId && indicator.unit_id===selectedUnitId && planObjectiveIds.has(indicator.objective_id)),[indicators,periodId,selectedUnitId,planObjectiveIds])
@@ -174,6 +180,9 @@ export default function ManagementCalendarPage(){
   const canCreate = Boolean(selectedUnitId && editableUnits.has(selectedUnitId))
   const canClearOwn = canClearUnitCalendar(selectedUnitId, calendarAccess)
   const canViewConsolidated = Boolean(calendarAccess.can_view_consolidated)
+  const canManageNotices = canManageAssociationNotices(access,calendarAccess)
+  const canEditActivity = (activity)=>isAssociationNotice(activity)?canManageNotices:editableUnits.has(activity.unit_id)
+  const canReviewActivity = (activity)=>!isAssociationNotice(activity)&&canReviewUnitActivity(activity,calendarAccess)
   const visibleUnitCount = new Set(visibleActivities.map((activity)=>activity.unit_id).filter(Boolean)).size
 
   const saveYearHeader = async (header) => {
@@ -195,16 +204,23 @@ export default function ManagementCalendarPage(){
   }
 
   const reloadActivities = async () => {
-    const { data,error:requestError } = await supabase.from('unit_work_activity').select('*').eq('organization_id',organizationId).order('start_date')
-    if (requestError) setError(requestError.message)
-    else setActivities(data ?? [])
+    if(!supabase || !organizationId)return
+    const [regular,association] = await Promise.all([
+      supabase.from('unit_work_activity').select('*').eq('organization_id',organizationId).order('start_date'),
+      supabase.from('association_calendar_notice').select('*').eq('organization_id',organizationId).order('start_date'),
+    ])
+    if(regular.error || association.error)setError((regular.error||association.error).message)
+    else{setActivities(regular.data??[]);setAssociationNotices(association.data??[])}
   }
 
   useEffect(() => {
     if (!supabase || !organizationId || (presentation !== 'presenter' && (scope !== 'consolidated' || !calendarAccess.can_view_consolidated))) return undefined
     const timer = window.setInterval(async () => {
-      const { data } = await supabase.from('unit_work_activity').select('*').eq('organization_id', organizationId).order('start_date')
-      if (data) setActivities(data)
+      const [regular,association]=await Promise.all([
+        supabase.from('unit_work_activity').select('*').eq('organization_id',organizationId).order('start_date'),
+        supabase.from('association_calendar_notice').select('*').eq('organization_id',organizationId).order('start_date'),
+      ])
+      if(!regular.error && !association.error){setActivities(regular.data??[]);setAssociationNotices(association.data??[])}
     }, 12000)
     return () => window.clearInterval(timer)
   }, [organizationId, scope, presentation, calendarAccess.can_view_consolidated])
@@ -216,6 +232,10 @@ export default function ManagementCalendarPage(){
     setBulkOpen(true); setFormOpen(false); setError(''); setMessage(''); window.scrollTo({top:0,behavior:'smooth'})
   }
   const openEdit = (activity) => {
+    if (isAssociationNotice(activity)) {
+      if(!canManageNotices)return
+      setEditingNotice(activity);setAssociationFormOpen(true);setFormOpen(false);setBulkOpen(false);setError('');setMessage('');window.scrollTo({top:0,behavior:'smooth'});return
+    }
     if (!editableUnits.has(activity.unit_id)) return
     setSelectedUnitId(activity.unit_id)
     setForm({ ...emptyActivity(), ...activity, objective_id:activity.objective_id || '', end_date:activity.end_date || '', indicator_id:activity.indicator_id || '', description:activity.description || '', responsible_name:activity.responsible_name || '' })
@@ -274,10 +294,14 @@ export default function ManagementCalendarPage(){
   }
 
   const savePresentationEdit = async (activity, draft) => {
-    if (!supabase || saving || !editableUnits.has(activity.unit_id) || validatePresentationEdit(draft, activePeriod)) return false
+    if (!supabase || saving || !canEditActivity(activity) || validatePresentationEdit(draft, activePeriod)) return false
+    if(isAssociationNotice(activity) && !String(draft.responsible_name||'').trim()) {setError(language==='en'?'Responsible association required.':'Debes indicar la asociación responsable.');return false}
     setSaving(true); setError(''); setMessage('')
-    const { data, error: requestError } = await supabase.from('unit_work_activity')
-      .update({
+    const { data, error: requestError } = await supabase.from(isAssociationNotice(activity)?'association_calendar_notice':'unit_work_activity')
+      .update(isAssociationNotice(activity)?{
+        title:draft.title.trim(),start_date:draft.start_date,end_date:draft.end_date||null,
+        association_name:String(draft.responsible_name||'').trim(),updated_by:access.userId||null,
+      }:{
         title: draft.title.trim(),
         start_date: draft.start_date,
         end_date: draft.end_date || null,
@@ -285,7 +309,7 @@ export default function ManagementCalendarPage(){
         updated_by: access.userId || null,
       })
       .eq('id', activity.id)
-      .eq('work_plan_id', activity.work_plan_id)
+      .eq(isAssociationNotice(activity)?'management_period_id':'work_plan_id',isAssociationNotice(activity)?periodId:activity.work_plan_id)
       .select('id')
       .maybeSingle()
     if (requestError || !data?.id) {
@@ -300,7 +324,7 @@ export default function ManagementCalendarPage(){
   }
 
   const reviewActivity = async (activity,status) => {
-    if (!canReviewUnitActivity(activity, calendarAccess) || saving) return
+    if (!canReviewActivity(activity) || saving) return
     setSaving(true); setError('')
     const { error:requestError } = await supabase.rpc('review_calendar_activity',{ target_activity_id:activity.id, target_status:status, target_note:null })
     if (requestError) setError(requestError.message)
@@ -337,6 +361,7 @@ export default function ManagementCalendarPage(){
           {canClearOwn && <button className="secondary calendar-clear-button" type="button" onClick={clearCalendar} disabled={saving || !enrichedActivities.some((activity)=>activity.unit_id===selectedUnitId)}>{t.clear}</button>}
           {calendarAccess.can_manage_joint_review && <button className="secondary" type="button" onClick={toggleJointReview} disabled={saving}>{calendarAccess.joint_review_enabled?t.jointOff:t.jointOn}</button>}
           {canCreate && <button type="button" onClick={openNew} disabled={!canOpenCalendarActivityEntry({ canCreate, saving })}>{t.newActivity}</button>}
+          {canManageNotices && <button type="button" className="calendar-association-add" onClick={()=>{setEditingNotice(null);setAssociationFormOpen(true);setFormOpen(false);setBulkOpen(false);setError('')}} disabled={saving}>{t.addAssociationNotice}</button>}
         </div>
       </div>
 
@@ -345,12 +370,14 @@ export default function ManagementCalendarPage(){
       {message && <p className="management-flash success">{message}</p>}
 
       <section className="calendar-context-row">
-        <label><span>{t.year}</span><select value={periodId} onChange={(event)=>{setPeriodId(event.target.value);setScope('mine');setFormOpen(false);setBulkOpen(false)}}>{periods.map((period)=><option key={period.id} value={period.id}>{period.name}</option>)}</select></label>
+        <label><span>{t.year}</span><select value={periodId} onChange={(event)=>{setPeriodId(event.target.value);setScope('mine');setFormOpen(false);setBulkOpen(false);setAssociationFormOpen(false)}}>{periods.map((period)=><option key={period.id} value={period.id}>{period.name}</option>)}</select></label>
         <label><span>{t.unit}</span><select value={selectedUnitId} onChange={(event)=>{setSelectedUnitId(event.target.value);setScope('mine');setFormOpen(false);setBulkOpen(false)}} disabled={unitOptions.length<=1}>{unitOptions.map((unit)=><option key={unit.id} value={unit.id}>{unit.code} · {unit.name}</option>)}</select></label>
         <div className="calendar-access-summary"><strong>{t[calendarAccessSummaryKey(access.role, calendarAccess)]}</strong><small>{currentUnit ? currentUnit.code + ' · ' + currentUnit.name : ''}</small></div>
       </section>
 
       {!unitOptions.length && !viewAllUnits && <p className="management-flash error">{t.noUnitAccess}</p>}
+
+      {associationFormOpen && canManageNotices && <AssociationNoticeForm key={editingNotice?.id||'new'} initial={editingNotice} period={activePeriod} language={language} saving={saving} onCancel={()=>{setAssociationFormOpen(false);setEditingNotice(null)}} onSave={saveAssociationNotice}/>}
 
       {bulkOpen && <form className="management-form-card calendar-bulk-form" onSubmit={saveBulkActivities}>
         <div className="management-form-title calendar-bulk-title"><div><small>{currentUnit?.code || t.preliminary} · {activePeriod?.name || ''}</small><h2>{t.bulkTitle}</h2><p>{t.bulkIntro}</p></div><button type="button" onClick={()=>setBulkOpen(false)}>{t.cancel}</button></div>
