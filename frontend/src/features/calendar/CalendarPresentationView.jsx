@@ -113,7 +113,7 @@ export default function CalendarPresentationView({
     </div>
     <div className="cnv-sheet-controls">
       <label>{t.months}
-        <select value="" onChange={(event)=>{if(event.target.value)jumpToMonth(Number(event.target.value))}} aria-label={t.months}>
+        <select value="" onChange={(event)=>{if(event.target.value)jumpToMonth(Number(event.target.value));event.target.value=''}} aria-label={t.months}>
           <option value="">{t.months}</option>
           {monthNames.map((name,i)=><option key={name} value={i}>{name}</option>)}
         </select>
