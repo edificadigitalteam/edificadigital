@@ -71,7 +71,7 @@ alter table public.association_calendar_notice enable row level security;
 
 create policy association_calendar_notice_select
 on public.association_calendar_notice for select to authenticated
-using (private.is_authorized_operator() and private.can_access_organization(organization_id));
+using (private.can_access_organization(organization_id));
 
 create policy association_calendar_notice_insert
 on public.association_calendar_notice for insert to authenticated
