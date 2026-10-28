@@ -4,6 +4,7 @@ import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from './ManagementStandaloneShell.jsx'
 import { isCalendarCutComplete } from './reportFlow.js'
+import { normalizeAnnualObjective, annualObjectiveFields, requiresResponsibleAssignment } from './annualPlanObjective.js'
 import './management-reports-tablet.css'
 import './management.css'
 import './management-annual-plan.css'
@@ -164,17 +165,21 @@ export default function ManagementAnnualPlanPage() {
   }
 
   const openNewObjective = () => { setObjectiveForm(emptyObjective()); setObjectiveOpen(true); setError(''); setMessage(''); window.scrollTo({top:0,behavior:'smooth'}) }
-  const openEditObjective = (objective) => { setObjectiveForm({...emptyObjective(),...objective,weight:objective.weight ?? ''}); setObjectiveOpen(true); setError(''); window.scrollTo({top:0,behavior:'smooth'}) }
+  const openEditObjective = (objective) => { setObjectiveForm(normalizeAnnualObjective(objective)); setObjectiveOpen(true); setError(''); window.scrollTo({top:0,behavior:'smooth'}) }
   const saveObjective = async (event) => {
     event.preventDefault(); if (!canManageSelected || saving || !activePeriodId || !selectedUnitId) return
     setSaving(true); setError(''); setMessage('')
     try {
       const planId = selectedPlan?.id || await ensurePlan()
-      const payload={organization_id:organizationId,management_period_id:activePeriodId,work_plan_id:planId,code:objectiveForm.id?objectiveForm.code:nextObjectiveCode(),title:objectiveForm.title.trim(),description:objectiveForm.description.trim()||null,objective_level:objectiveForm.objective_level,weight:objectiveForm.weight===''?null:Number(objectiveForm.weight),status:objectiveForm.status,updated_by:access.userId,...(objectiveForm.id?{}:{created_by:access.userId})}
+      const fields=annualObjectiveFields(objectiveForm)
+      if(!fields.title){setError(language==='en'?'Objective title is required.':'Escribe el título del objetivo.');setSaving(false);return}
+      const payload={organization_id:organizationId,management_period_id:activePeriodId,work_plan_id:planId,code:objectiveForm.id?objectiveForm.code:nextObjectiveCode(),...fields,updated_by:access.userId,...(objectiveForm.id?{}:{created_by:access.userId})}
       const request=objectiveForm.id?supabase.from('institutional_objective').update(payload).eq('id',objectiveForm.id).select('id').single():supabase.from('institutional_objective').insert(payload).select('id').single()
       const {data,error:requestError}=await request; if(requestError) throw requestError
-      await supabase.from('objective_unit_assignment').delete().eq('objective_id',data.id)
-      const {error:assignmentError}=await supabase.from('objective_unit_assignment').insert({organization_id:organizationId,objective_id:data.id,unit_id:selectedUnitId,assignment_type:'responsible'}); if(assignmentError) throw assignmentError
+      // Preserve other Directorate assignments; this form only ensures our own responsible relation.
+      if(requiresResponsibleAssignment(assignments,data.id,selectedUnitId)){
+        const {error:assignmentError}=await supabase.from('objective_unit_assignment').insert({organization_id:organizationId,objective_id:data.id,unit_id:selectedUnitId,assignment_type:'responsible'}); if(assignmentError) throw assignmentError
+      }
       setObjectiveOpen(false); setObjectiveForm(emptyObjective()); setMessage(language==='en'?'Objective saved.':'Objetivo guardado.'); await reload()
     } catch (err) { setError(err.message || String(err)) }
     setSaving(false)
@@ -208,7 +213,7 @@ export default function ManagementAnnualPlanPage() {
 
     {yearOpen&&<form className="management-form-card annual-year-form" onSubmit={createYear}><div className="management-form-title"><div><small>{t.eyebrow}</small><h2>{t.newYear.replace('＋ ','')}</h2><p>{t.yearHelp}</p></div><button type="button" onClick={()=>setYearOpen(false)}>{t.close}</button></div><label><span>{t.yearPrompt}</span><input type="number" min="2000" max="2100" value={newYear} onChange={(e)=>setNewYear(e.target.value)} /></label><div className="management-form-actions"><button type="button" onClick={()=>setYearOpen(false)}>{t.cancel}</button><button className="primary" disabled={saving}>{t.createYear}</button></div></form>}
 
-    {objectiveOpen&&<form className="management-form-card annual-objective-form" onSubmit={saveObjective}><div className="management-form-title"><div><small>{selectedUnit?.code} · {activePeriod?.name}</small><h2>{objectiveForm.id?t.editObjective:t.newObjective}</h2></div><button type="button" onClick={()=>setObjectiveOpen(false)}>{t.close}</button></div><div className="management-form-grid"><label className="wide"><span>{t.whatGoal} *</span><input value={objectiveForm.title} onChange={(e)=>setObjectiveForm((c)=>({...c,title:e.target.value}))} required /></label><label><span>{t.level}</span><select value={objectiveForm.objective_level} onChange={(e)=>setObjectiveForm((c)=>({...c,objective_level:e.target.value}))}>{Object.entries(LEVEL_LABELS[language]).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><label><span>{t.weight}</span><input type="number" min="0" max="100" step="0.01" value={objectiveForm.weight} onChange={(e)=>setObjectiveForm((c)=>({...c,weight:e.target.value}))} /></label><label className="wide"><span>{t.description}</span><textarea value={objectiveForm.description} onChange={(e)=>setObjectiveForm((c)=>({...c,description:e.target.value}))} /></label></div><div className="management-form-actions"><button type="button" onClick={()=>setObjectiveOpen(false)}>{t.cancel}</button><button className="primary" disabled={saving}>{t.saveObjective}</button></div></form>}
+    {objectiveOpen&&<form className="management-form-card annual-objective-form" onSubmit={saveObjective}><div className="management-form-title"><div><small>{selectedUnit?.code} · {activePeriod?.name}</small><h2>{objectiveForm.id?t.editObjective:t.newObjective}</h2></div><button type="button" onClick={()=>setObjectiveOpen(false)}>{t.close}</button></div><div className="management-form-grid"><label className="wide"><span>{t.whatGoal} *</span><input value={objectiveForm.title} onChange={(e)=>setObjectiveForm((c)=>({...c,title:e.target.value}))} required /></label><label><span>{t.level}</span><select value={objectiveForm.objective_level} onChange={(e)=>setObjectiveForm((c)=>({...c,objective_level:e.target.value}))}>{Object.entries(LEVEL_LABELS[language]).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><label><span>{t.weight}</span><input type="number" min="0" max="100" step="0.01" value={objectiveForm.weight} onChange={(e)=>setObjectiveForm((c)=>({...c,weight:e.target.value}))} /></label><label className="wide"><span>{t.description}</span><textarea value={objectiveForm.description ?? ''} onChange={(e)=>setObjectiveForm((c)=>({...c,description:e.target.value}))} /></label></div><div className="management-form-actions"><button type="button" onClick={()=>setObjectiveOpen(false)}>{t.cancel}</button><button className="primary" disabled={saving}>{t.saveObjective}</button></div></form>}
 
     {loading?<div className="management-loading"><span/><p>{t.loading}</p></div>:<>
       <section className="annual-plan-summary"><article><span>{t.objectives}</span><strong>{planObjectives.length}</strong></article><article><span>{t.indicators}</span><strong>{planIndicators.length}</strong></article><article><span>{t.activities}</span><strong>{planActivities.length}</strong></article><article><span>{t.completed}</span><strong>{planActivities.filter((item)=>item.status==='completed').length}</strong></article></section>
