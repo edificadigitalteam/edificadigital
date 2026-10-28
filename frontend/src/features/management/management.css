@@ -139,7 +139,7 @@ button.unit-disclosure { cursor: pointer; }
   .management-executive-metrics, .management-quick-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
   .indicator-grid, .unit-dashboard-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
-@media (max-width: 920px) {
+@media (max-width: 1180px) {
   .management-shell { grid-template-columns: 1fr; }
   .management-sidebar { display: none; }
   .management-main { padding: 20px 16px 48px; }
@@ -182,7 +182,7 @@ button.unit-disclosure { cursor: pointer; }
 .management-mobile-backdrop { display: none; }
 .management-mobile-drawer { display: none; }
 
-@media (max-width: 920px) {
+@media (max-width: 1180px) {
   .management-mobile-header {
     position: sticky;
     top: 8px;
