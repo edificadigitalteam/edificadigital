@@ -5,8 +5,9 @@ import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from './ManagementStandaloneShell.jsx'
 import { reportCanSaveDraft, reportCanSubmit, NEXT_STEPS_HELP_ES } from './reportFlow.js'
 import './management-report-create.css'
+import './management-reports-tablet.css'
 
-const statusLabels = { draft: 'Borrador', submitted: 'Enviado a GEN–DIGEN', reviewed: 'Revisado', approved: 'Aprobado', closed: 'Cerrado' }
+const statusLabels = { draft: 'Borrador', submitted: 'Enviado', reviewed: 'Revisado', approved: 'Aprobado', closed: 'Cerrado' }
 const kindLabels = { result: 'Resultado', output: 'Producto / entregable', process: 'Proceso / gestión', impact: 'Impacto' }
 
 function emptyStatement() { return { statement: '', objective_id: '', indicator_id: '' } }
