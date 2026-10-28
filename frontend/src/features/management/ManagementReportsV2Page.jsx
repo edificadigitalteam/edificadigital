@@ -18,7 +18,7 @@ export default function ManagementReportsV2Page(){
         supabase.rpc('management_report_access_overview',{target_organization_id:access.organizationId}),
         supabase.rpc('calendar_access_overview',{target_organization_id:access.organizationId,target_period_id:null}),
       ])
-      const reportAllowed=!reports.error&&(reports.data?.can_view_all_reports||reports.data?.is_digen)
+      const reportAllowed=!reports.error&&(reports.data?.is_digen || (reports.data?.can_view_all_reports && !reports.data?.can_review_reports))
       const institutionalEditor=!calendar.error&&calendar.data?.can_edit_consolidated===true
       if(active){setCanConsolidate(Boolean(reportAllowed||institutionalEditor||access.role==='admin'));setChecking(false)}
     }
