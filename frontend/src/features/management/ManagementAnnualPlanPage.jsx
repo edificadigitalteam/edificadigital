@@ -4,6 +4,7 @@ import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from './ManagementStandaloneShell.jsx'
 import { isCalendarCutComplete } from './reportFlow.js'
+import { annualPlanUnitScope, annualPlanCanEditUnit, expectedBoardWindows2027 } from './annualPlanAccess.js'
 import { normalizeAnnualObjective, annualObjectiveFields, requiresResponsibleAssignment } from './annualPlanObjective.js'
 import './management-reports-tablet.css'
 import './management.css'
@@ -77,7 +78,7 @@ export default function ManagementAnnualPlanPage() {
   const [periods,setPeriods] = useState([])
   const [reportWindows,setReportWindows] = useState([])
   const [units,setUnits] = useState([])
-  const [memberships,setMemberships] = useState([])
+  const [operatorUnitOverview,setOperatorUnitOverview] = useState(null)
   const [workPlans,setWorkPlans] = useState([])
   const [objectives,setObjectives] = useState([])
   const [assignments,setAssignments] = useState([])
@@ -115,19 +116,19 @@ export default function ManagementAnnualPlanPage() {
     const responses = await Promise.all([
       supabase.from('management_period').select('*').eq('organization_id',organizationId).order('start_date',{ascending:false}),
       supabase.from('organization_unit').select('*').eq('organization_id',organizationId).eq('active',true).order('sort_order').order('name'),
-      supabase.from('organization_unit_member').select('*').eq('organization_id',organizationId).eq('active',true),
       supabase.from('unit_work_plan').select('*').eq('organization_id',organizationId),
       supabase.from('institutional_objective').select('*').eq('organization_id',organizationId).order('code'),
       supabase.from('objective_unit_assignment').select('*').eq('organization_id',organizationId),
       supabase.from('management_indicator').select('*').eq('organization_id',organizationId).eq('active',true).order('created_at'),
       supabase.from('unit_work_activity').select('*').eq('organization_id',organizationId).order('start_date'),
       supabase.from('management_report_window').select('*').eq('organization_id',organizationId).eq('active',true),
+      supabase.rpc('calendar_access_overview',{target_organization_id:organizationId,target_period_id:null}),
     ])
-    const firstError = responses.find((response)=>response.error)?.error
+    const firstError = responses.slice(0,8).find((response)=>response.error)?.error
     if (firstError) setError(firstError.message)
     else {
       const periodRows=responses[0].data ?? []; const unitRows=responses[1].data ?? []
-      setPeriods(periodRows); setUnits(unitRows); setMemberships(responses[2].data ?? []); setWorkPlans(responses[3].data ?? []); setObjectives(responses[4].data ?? []); setAssignments(responses[5].data ?? []); setIndicators(responses[6].data ?? []); setActivities(responses[7].data ?? []); setReportWindows(responses[8].data ?? [])
+      setPeriods(periodRows); setUnits(unitRows); setWorkPlans(responses[2].data ?? []); setObjectives(responses[3].data ?? []); setAssignments(responses[4].data ?? []); setIndicators(responses[5].data ?? []); setActivities(responses[6].data ?? []); setReportWindows(responses[7].data ?? []);setOperatorUnitOverview(responses[8].error?null:(responses[8].data??null))
       setActivePeriodId((current)=>periodRows.some((item)=>item.id===current)?current:periodRows.find((item)=>item.status==='active')?.id || periodRows[0]?.id || '')
     }
     setLoading(false)
@@ -135,12 +136,13 @@ export default function ManagementAnnualPlanPage() {
   useEffect(()=>{ loadOrganizations() },[loadOrganizations])
   useEffect(()=>{ reload() },[reload])
 
-  const manageableUnitIds = useMemo(() => canAdmin ? units.map((unit)=>unit.id) : memberships.filter((item)=>['director','manager','operator','reviewer'].includes(item.unit_role)).map((item)=>item.unit_id),[canAdmin,memberships,units])
-  const visibleUnits = useMemo(() => canAdmin ? units : units.filter((unit)=>manageableUnitIds.includes(unit.id)),[canAdmin,manageableUnitIds,units])
+  const scopedUnits = useMemo(()=>annualPlanUnitScope(units,operatorUnitOverview,access.role),[units,operatorUnitOverview,access.role])
+  const visibleUnits = scopedUnits.units
   useEffect(()=>{ if (!visibleUnits.some((unit)=>unit.id===selectedUnitId)) setSelectedUnitId(visibleUnits[0]?.id || '') },[selectedUnitId,visibleUnits])
-  const canManageSelected = canAdmin || manageableUnitIds.includes(selectedUnitId)
+  const canManageSelected = annualPlanCanEditUnit(selectedUnitId,scopedUnits,access.role)
   const activePeriod = periods.find((item)=>item.id===activePeriodId)
   const activePeriodYear = Number(String(activePeriod?.start_date||'').slice(0,4))
+  const year2027Cuts=expectedBoardWindows2027(reportWindows.filter(w=>w.management_period_id===activePeriodId))
   const needsCuts2027 = canAdmin && activePeriodYear===2027 && !isCalendarCutComplete(reportWindows.filter(w=>w.management_period_id===activePeriodId))
   const selectedUnit = units.find((item)=>item.id===selectedUnitId)
   const selectedPlan = workPlans.find((item)=>item.management_period_id===activePeriodId && item.unit_id===selectedUnitId)
@@ -153,8 +155,18 @@ export default function ManagementAnnualPlanPage() {
     if (selectedPlan) return selectedPlan.id
     if (!selectedUnitId || !activePeriodId) return ''
     const year = activePeriod?.start_date ? new Date(`${activePeriod.start_date}T12:00:00`).getFullYear() : new Date().getFullYear()
-    const {data,error:requestError}=await supabase.from('unit_work_plan').upsert({organization_id:organizationId,management_period_id:activePeriodId,unit_id:selectedUnitId,title:`Plan Anual de Trabajo ${year} · ${selectedUnit?.code || ''}`,status:'planning',updated_by:access.userId,created_by:access.userId},{onConflict:'management_period_id,unit_id'}).select('id').single()
-    if (requestError) throw requestError
+    // Insert only. UPSERT unnecessarily requires UPDATE permissions for the conflict branch.
+    const {data,error:requestError}=await supabase.from('unit_work_plan').insert({organization_id:organizationId,management_period_id:activePeriodId,unit_id:selectedUnitId,title:`Plan Anual de Trabajo ${year} · ${selectedUnit?.code || ''}`,status:'planning',updated_by:access.userId,created_by:access.userId}).select('id').single()
+    if (requestError) {
+      if(requestError.code==='23505'){
+        const existing=await supabase.from('unit_work_plan').select('id').eq('organization_id',organizationId).eq('management_period_id',activePeriodId).eq('unit_id',selectedUnitId).maybeSingle()
+        if(!existing.error && existing.data?.id){await reload();return existing.data.id}
+      }
+      if(requestError.code==='42501'||requestError.code==='PGRST301'||/row-level security/i.test(requestError.message||'')){
+        throw new Error(language==='en'?'Your account is not authorized to create this Directorate plan. Ask an administrator to check your active Directorate membership.':'Tu cuenta no tiene autorización para crear el plan de esta Dirección. Solicita al administrador que verifique tu asignación activa en DICOM o en la Dirección que corresponda.')
+      }
+      throw requestError
+    }
     await reload(); return data.id
   }
 
@@ -208,7 +220,12 @@ export default function ManagementAnnualPlanPage() {
   return <ManagementStandaloneShell access={access}><div className="management-panel annual-plan-page">
     <div className="management-panel-heading"><div><p>{t.eyebrow}</p><h1>{t.title}</h1><span>{t.intro}</span></div><div className="management-heading-actions">{canAdmin&&<button className="secondary" onClick={()=>setYearOpen(true)}>{t.newYear}</button>}{needsCuts2027&&<button className="secondary" disabled={saving} onClick={completeReportWindows}>{language==='en'?'Enable 2027 reporting windows':'Habilitar cortes e informe anual 2027'}</button>}{canManageSelected&&<button onClick={openNewObjective} disabled={!activePeriodId||!selectedUnitId}>{t.objective}</button>}<a className="annual-calendar-open" href="/app/management/calendar">{language==='en'?'Open Calendar · Add activity':'Abrir Calendario · Agregar actividad'}</a></div></div>
     {isSuperAdmin&&<section className="management-filter-row"><label><span>{t.organization}</span><select value={organizationId} onChange={(e)=>{setOrganizationId(e.target.value);setActivePeriodId('');setSelectedUnitId('')}}>{organizations.map((item)=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label></section>}
-    <section className="annual-plan-context"><label><span>{t.year}</span><select value={activePeriodId} onChange={(e)=>setActivePeriodId(e.target.value)}>{periods.map((item)=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label><span>{t.unit}</span><select value={selectedUnitId} onChange={(e)=>setSelectedUnitId(e.target.value)}>{visibleUnits.map((item)=><option key={item.id} value={item.id}>{item.code} · {item.name}</option>)}</select></label><div className="annual-plan-context-title"><small>{selectedPlan?.status?.toUpperCase() || 'PLAN'}</small><strong>{selectedPlan?.title || `${t.title} · ${selectedUnit?.code || ''}`}</strong></div></section>
+    <section className="annual-plan-context"><label><span>{t.year}</span><select value={activePeriodId} onChange={(e)=>setActivePeriodId(e.target.value)}>{periods.map((item)=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label><span>{t.unit}</span><select value={selectedUnitId} disabled={!scopedUnits.canViewAll || visibleUnits.length<=1} onChange={(e)=>setSelectedUnitId(e.target.value)}>{visibleUnits.map((item)=><option key={item.id} value={item.id}>{item.code} · {item.name}</option>)}</select></label><div className="annual-plan-context-title"><small>{selectedPlan?.status?.toUpperCase() || 'PLAN'}</small><strong>{selectedPlan?.title || `${t.title} · ${selectedUnit?.code || ''}`}</strong></div></section>
+    {activePeriodYear===2027&&<section className="annual-2027-windows" aria-label={language==='en'?'2027 reporting windows':'Cortes Junta Ejecutiva 2027'}>
+      <div className="annual-2027-heading"><strong>{language==='en'?'2027 Executive Board reporting windows':'Cortes de Junta Ejecutiva · Gestión 2027'}</strong><small>{language==='en'?'March, July, November and annual':'Marzo, julio, noviembre y anual'}</small></div>
+      <div className="annual-2027-window-grid">{year2027Cuts.map(row=><div className={'annual-2027-window '+(row.available?'is-active':'is-missing')} key={row.code}><strong>{row.title}</strong><span>{row.start} — {row.end}</span><small>{row.available?(language==='en'?'Available':'Habilitado'):(language==='en'?'Pending activation':'Pendiente de habilitar')}</small></div>)}</div>
+    </section>}
+    {!scopedUnits.canViewAll&&!visibleUnits.length&&!loading&&<p className="management-flash error">{language==='en'?'Your account has no active Directorate assignment. Ask the organization administrator to verify your role in the unit directory.':'Esta cuenta no tiene una Dirección activa asignada para el Plan Anual. Solicita al administrador verificar la asignación de tu usuario en DICOM o en la Dirección correspondiente.'}</p>}
     {error&&<p className="management-flash error">{error}</p>}{message&&<p className="management-flash success">{message}</p>}
 
     {yearOpen&&<form className="management-form-card annual-year-form" onSubmit={createYear}><div className="management-form-title"><div><small>{t.eyebrow}</small><h2>{t.newYear.replace('＋ ','')}</h2><p>{t.yearHelp}</p></div><button type="button" onClick={()=>setYearOpen(false)}>{t.close}</button></div><label><span>{t.yearPrompt}</span><input type="number" min="2000" max="2100" value={newYear} onChange={(e)=>setNewYear(e.target.value)} /></label><div className="management-form-actions"><button type="button" onClick={()=>setYearOpen(false)}>{t.cancel}</button><button className="primary" disabled={saving}>{t.createYear}</button></div></form>}

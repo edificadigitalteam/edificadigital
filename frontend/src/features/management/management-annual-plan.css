@@ -73,3 +73,16 @@
     overflow-wrap: break-word;
   }
 }
+
+/* Executive Board reporting windows: all four visible even before provisioned. */
+.annual-2027-windows{display:grid;gap:10px;min-width:0;padding:15px 18px;border-radius:15px;border:1px solid #e1d8e8;background:#faf8fc}
+.annual-2027-heading{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;color:#341740}
+.annual-2027-heading strong{font-size:16px}.annual-2027-heading small{font-size:12px;color:#796984}
+.annual-2027-window-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.annual-2027-window{display:grid;align-content:start;gap:5px;min-width:0;padding:12px 13px;border:1px solid #cddccd;border-radius:10px;background:#f3faf4;color:#26472b}
+.annual-2027-window strong{font-size:13px;overflow-wrap:anywhere}
+.annual-2027-window span{font-size:11px;font-variant-numeric:tabular-nums}
+.annual-2027-window small{font-size:11px;font-weight:800}
+.annual-2027-window.is-missing{border-color:#dcccb0;background:#fbf6ed;color:#704c23}
+@media(max-width:950px){.annual-2027-window-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.annual-2027-window-grid{grid-template-columns:minmax(0,1fr)}}
