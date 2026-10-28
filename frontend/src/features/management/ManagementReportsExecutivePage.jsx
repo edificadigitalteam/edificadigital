@@ -5,24 +5,25 @@ import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from './ManagementStandaloneShell.jsx'
 import { supervisedUnits } from './unitScope.js'
 import './management-reports-executive.css'
+import './management-reports-tablet.css'
 
 const copy = {
   es: {
     eyebrow: 'SUPERVISIÓN', title: 'Consolidado de informes', intro: 'Ves los informes de las unidades que dependen de tu unidad. Consulta cada informe y el consolidado del corte seleccionado.',
-    year: 'Año de trabajo', window: 'Informe / corte', directions: 'Unidades', submitted: 'Enviados', approved: 'Aprobados', pending: 'Pendientes', own: 'Mi informe', print: 'Imprimir / PDF',
+    year: 'Año de trabajo', window: 'Informe / corte', directions: 'Unidades', submitted: 'Enviados', approved: 'Aprobados', pending: 'Pendientes', own: 'Mi informe', print: 'Imprimir / PDF', allUnits:'Todas las Direcciones', onlyUnit:'Dirección para consultar',
     consolidated: 'CONSOLIDADO INSTITUCIONAL', consolidatedTitle: 'Rendición de las unidades a tu cargo', noReport: 'Informe pendiente', summary: 'Resumen ejecutivo', statements: 'Resultados y declaraciones', challenges: 'Retos', next: 'Próximos pasos', noItems: 'Sin información registrada.',
-    updated: 'Actualizado', loading: 'Cargando consolidado institucional…', route: 'Supervisión', routeHelp: 'Ves la rendición de las unidades que dependen de tu unidad. La revisión y aprobación financiera continúa en DIAF.',
+    updated: 'Actualizado', loading: 'Cargando consolidado institucional…', route: 'Supervisión', routeHelp: 'Ves la rendición de las unidades que dependen de tu unidad. La revisión financiera de DIAF se realiza cuando corresponda.',
   },
   en: {
     eyebrow: 'OVERSIGHT', title: 'Report consolidation', intro: 'You see the reports of the units below your unit. Review each report and the consolidated reporting window.',
-    year: 'Work year', window: 'Report / window', directions: 'Units', submitted: 'Submitted', approved: 'Approved', pending: 'Pending', own: 'My report', print: 'Print / PDF',
+    year: 'Work year', window: 'Report / window', directions: 'Units', submitted: 'Submitted', approved: 'Approved', pending: 'Pending', own: 'My report', print: 'Print / PDF', allUnits:'All units', onlyUnit:'Select a unit',
     consolidated: 'INSTITUTIONAL CONSOLIDATED', consolidatedTitle: 'Accountability from the units you oversee', noReport: 'Report pending', summary: 'Executive summary', statements: 'Results and statements', challenges: 'Challenges', next: 'Next steps', noItems: 'No information recorded.',
-    updated: 'Updated', loading: 'Loading institutional consolidated report…', route: 'Oversight', routeHelp: 'You see the reports of the units below your unit. Financial review and approval remains with DIAF.',
+    updated: 'Updated', loading: 'Loading institutional consolidated report…', route: 'Oversight', routeHelp: 'You see the reports of the units below your unit. Finance reviews reports when financial review is requested.',
   },
 }
 const statuses = {
-  es: { draft: 'Borrador', submitted: 'Enviado a DIAF', reviewed: 'Revisado por DIAF', approved: 'Aprobado por DIAF', closed: 'Cerrado', none: 'Pendiente' },
-  en: { draft: 'Draft', submitted: 'Sent to Finance', reviewed: 'Reviewed by Finance', approved: 'Approved by Finance', closed: 'Closed', none: 'Pending' },
+  es: { draft: 'Borrador', submitted: 'Enviado', reviewed: 'Revisado', approved: 'Aprobado', closed: 'Cerrado', none: 'Pendiente' },
+  en: { draft: 'Draft', submitted: 'Submitted', reviewed: 'Reviewed', approved: 'Approved', closed: 'Closed', none: 'Pending' },
 }
 function readLanguage(){try{return document.documentElement.lang==='en'||window.localStorage.getItem('edifica-language')==='en'?'en':'es'}catch{return'es'}}
 function formatDate(value,language){if(!value)return'—';return new Intl.DateTimeFormat(language==='en'?'en-US':'es-VE',{dateStyle:'medium'}).format(new Date(`${String(value).slice(0,10)}T12:00:00`))}
@@ -39,6 +40,7 @@ export default function ManagementReportsExecutivePage(){
   const [scopeAccess,setScopeAccess]=useState({})
   const [activePeriodId,setActivePeriodId]=useState('')
   const [activeWindowId,setActiveWindowId]=useState('')
+  const [selectedDirectionId,setSelectedDirectionId]=useState('')
   const [loading,setLoading]=useState(true)
   const [error,setError]=useState('')
 
@@ -72,10 +74,12 @@ export default function ManagementReportsExecutivePage(){
   const activePeriod=periods.find((row)=>row.id===activePeriodId)
   const directorates=useMemo(()=>supervisedUnits(units,scopeAccess),[units,scopeAccess])
   const ownTopUnit=units.find((unit)=>unit.id===scopeAccess.digen_unit_id)
+  const displayedDirectorates=selectedDirectionId ? directorates.filter((u)=>u.id===selectedDirectionId) : directorates
   const reportFor=useCallback((unitId)=>{
+    const ready=(report)=>report&&['submitted','reviewed','approved','closed'].includes(report.status)
     const exact=reports.find((report)=>report.unit_id===unitId&&report.report_window_id===activeWindowId)
-    if(exact)return exact
-    if(activeWindow?.window_type==='annual')return reports.find((report)=>report.unit_id===unitId&&report.management_period_id===activePeriodId&&!report.report_window_id)
+    if(exact)return ready(exact)?exact:null
+    if(activeWindow?.window_type==='annual'){const annual=reports.find((report)=>report.unit_id===unitId&&report.management_period_id===activePeriodId&&!report.report_window_id);return ready(annual)?annual:null}
     return null
   },[reports,activeWindowId,activeWindow,activePeriodId])
   const currentReports=useMemo(()=>directorates.map((unit)=>reportFor(unit.id)).filter(Boolean),[directorates,reportFor])
@@ -92,8 +96,8 @@ export default function ManagementReportsExecutivePage(){
     {loading?<div className="management-loading"><span/><p>{t.loading}</p></div>:<>
       <section className="digen-report-route"><div><small>{t.route}</small><strong>{ownTopUnit?`${ownTopUnit.code} · ${ownTopUnit.name}`:'—'}</strong></div><p>{t.routeHelp}</p></section>
       <section className="digen-report-filters no-print"><label><span>{t.year}</span><select value={activePeriodId} onChange={(event)=>{setActivePeriodId(event.target.value);setActiveWindowId('')}}>{periods.map((period)=><option key={period.id} value={period.id}>{period.name}</option>)}</select></label><label><span>{t.window}</span><select value={activeWindowId} onChange={(event)=>setActiveWindowId(event.target.value)}>{periodWindows.map((window)=><option key={window.id} value={window.id}>{window.title}</option>)}</select></label>{activeWindow&&<div><small>{activePeriod?.name}</small><strong>{formatDate(activeWindow.start_date,language)} — {formatDate(activeWindow.end_date,language)}</strong></div>}</section>
-      <section className="digen-report-summary"><article><span>{t.directions}</span><strong>{directorates.length}</strong></article><article><span>{t.submitted}</span><strong>{submitted}</strong></article><article><span>{t.approved}</span><strong>{approved}</strong></article><article><span>{t.pending}</span><strong>{pending}</strong></article></section>
-      <section className="digen-consolidated"><header><small>{t.consolidated}</small><h2>{t.consolidatedTitle}</h2><p>{activeWindow?.title} · {activePeriod?.name}</p></header><div className="digen-direction-list">{directorates.map((unit)=>{const report=reportFor(unit.id);const achievements=reportItems(report,'achievement');const challenges=reportItems(report,'challenge');const nextSteps=reportItems(report,'next_step');return <article className="digen-direction-report" key={unit.id}><header><span>{unit.code}</span><div><h3>{unit.name}</h3><small>{report?`${statuses[language][report.status]} · ${t.updated} ${formatDate(report.updated_at,language)}`:t.noReport}</small></div><b className={`report-state ${report?.status||'none'}`}>{statuses[language][report?.status||'none']}</b></header>{report?<div className="digen-report-body">{report.executive_summary&&<section><h4>{t.summary}</h4><p>{report.executive_summary}</p></section>}<section><h4>{t.statements}</h4>{achievements.length?<ol>{achievements.map((item)=><li key={item.id}>{item.statement}</li>)}</ol>:<p>{t.noItems}</p>}</section>{challenges.length>0&&<section><h4>{t.challenges}</h4><ol>{challenges.map((item)=><li key={item.id}>{item.statement}</li>)}</ol></section>}{nextSteps.length>0&&<section><h4>{t.next}</h4><ol>{nextSteps.map((item)=><li key={item.id}>{item.statement}</li>)}</ol></section>}</div>:<p className="digen-report-empty">{t.noReport}</p>}</article>})}</div></section>
+      <div className="digen-direction-filter no-print"><label>{t.onlyUnit}<select value={selectedDirectionId} onChange={(e)=>setSelectedDirectionId(e.target.value)}><option value="">{t.allUnits}</option>{directorates.map((u)=><option key={u.id} value={u.id}>{u.code} · {u.name}</option>)}</select></label></div><section className="digen-report-summary"><article><span>{t.directions}</span><strong>{directorates.length}</strong></article><article><span>{t.submitted}</span><strong>{submitted}</strong></article><article><span>{t.approved}</span><strong>{approved}</strong></article><article><span>{t.pending}</span><strong>{pending}</strong></article></section>
+      <section className="digen-consolidated"><header><small>{t.consolidated}</small><h2>{t.consolidatedTitle}</h2><p>{activeWindow?.title} · {activePeriod?.name}</p></header><div className="digen-direction-list">{displayedDirectorates.map((unit)=>{const report=reportFor(unit.id);const achievements=reportItems(report,'achievement');const challenges=reportItems(report,'challenge');const nextSteps=reportItems(report,'next_step');return <article className="digen-direction-report" key={unit.id}><header><span>{unit.code}</span><div><h3>{unit.name}</h3><small>{report?`${statuses[language][report.status]} · ${t.updated} ${formatDate(report.updated_at,language)}`:t.noReport}</small></div><b className={`report-state ${report?.status||'none'}`}>{statuses[language][report?.status||'none']}</b></header>{report?<div className="digen-report-body">{report.executive_summary&&<section><h4>{t.summary}</h4><p>{report.executive_summary}</p></section>}<section><h4>{t.statements}</h4>{achievements.length?<ol>{achievements.map((item)=><li key={item.id}>{item.statement}</li>)}</ol>:<p>{t.noItems}</p>}</section>{challenges.length>0&&<section><h4>{t.challenges}</h4><ol>{challenges.map((item)=><li key={item.id}>{item.statement}</li>)}</ol></section>}{nextSteps.length>0&&<section><h4>{t.next}</h4><ol>{nextSteps.map((item)=><li key={item.id}>{item.statement}</li>)}</ol></section>}</div>:<p className="digen-report-empty">{t.noReport}</p>}</article>})}</div></section>
     </>}
   </div></ManagementStandaloneShell>
 }

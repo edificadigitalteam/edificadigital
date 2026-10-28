@@ -1,0 +1,49 @@
+
+/* S12. Tablet readability for reports, plan, and standard management shell. */
+.management-shell,.management-main,.management-panel,.annual-plan-page,.cycle-reports-page,
+.report-create-page,.digen-reports-page,.annual-objective-card,.annual-objective-list,
+.report-create-context,.cycle-report-context,.cycle-report-document,
+.cycle-statement-list,.cycle-statement-row,.cycle-statement-links,.cycle-report-editor,
+.report-create-card,.report-statement-card,.report-statement-selectors,
+.cycle-indicator-grid,.cycle-consolidated-units,.digen-consolidated,
+.digen-direction-list,.digen-direction-report{min-width:0;max-width:100%;box-sizing:border-box}
+.management-main,.management-panel,.cycle-reports-page,.annual-plan-page,.report-create-page,
+.cycle-report-document,.cycle-consolidated-units,.digen-consolidated,
+.report-create-card{overflow-wrap:anywhere}
+.cycle-reports-page select,.cycle-reports-page input,.cycle-reports-page textarea,
+.report-create-page select,.report-create-page input,.report-create-page textarea,
+.annual-plan-page select,.annual-plan-page input,.annual-plan-page textarea{max-width:100%;min-width:0;box-sizing:border-box}
+.report-next-help{color:#50465a;line-height:1.55;font-size:.86rem;margin:6px 0 10px;max-width:72ch}
+.annual-calendar-open{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 14px;border-radius:10px;background:#5d2d70;color:#fff;text-decoration:none;font-weight:800;white-space:normal;text-align:center}
+.annual-calendar-open:hover,.annual-calendar-open:focus-visible{background:#412051;color:#fff}
+@media (min-width: 700px) and (max-width: 1180px){
+  .management-main{width:100%;min-width:0;max-width:100vw;padding-inline:clamp(14px,3vw,28px)}
+  .management-panel-heading{flex-wrap:wrap;min-width:0}
+  .management-panel-heading>div,.management-heading-actions{min-width:0;max-width:100%}
+  .report-create-context,.cycle-report-context,.annual-plan-context{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cycle-indicator-grid,.annual-calendar-grid,.report-indicator-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .report-statement-selectors,.cycle-statement-links{grid-template-columns:minmax(0,1fr)}
+  .cycle-report-document,.report-create-card{padding:clamp(16px,2vw,25px)}
+  .cycle-consolidated-units,.digen-direction-list{grid-template-columns:minmax(0,1fr)}
+  .annual-plan-context-title,.report-create-range{min-width:0}
+  .management-form-grid,.report-create-context label,.cycle-report-context label{min-width:0}
+  .unit-report-row-actions,.report-actions{flex-wrap:wrap;max-width:100%}
+}
+@media(max-width:720px){
+ .report-create-context,.cycle-report-context,.annual-plan-context{grid-template-columns:minmax(0,1fr)}
+ .cycle-indicator-grid,.annual-calendar-grid,.report-indicator-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media print{
+ .management-shell,.management-main,.cycle-reports-page,.cycle-report-document,
+ .digen-reports-page,.digen-consolidated{width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important;overflow:visible!important}
+ .cycle-report-document,.digen-direction-report{break-inside:auto}
+ .digen-direction-report>header,.cycle-consolidated-units>article>header{break-after:avoid}
+ .cycle-consolidated-units>article,.digen-direction-report{break-inside:avoid-page;page-break-inside:avoid}
+ .report-actions,.management-panel-heading.no-print,.unit-report-v2-actions,.no-print{display:none!important}
+ .digen-consolidated p,.cycle-report-document p,.digen-consolidated li{font-size:11pt;line-height:1.5}
+}
+
+.digen-direction-filter{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:12px;max-width:100%;min-width:0;margin:12px 0}
+.digen-direction-filter label{display:grid;gap:5px;min-width:min(100%,275px);font-weight:850;color:#3b2650;font-size:14px}
+.digen-direction-filter select{min-height:45px;max-width:100%;width:100%;min-width:0;border:1px solid #bfaed0;border-radius:9px;background:#fff;padding:8px 11px;font:inherit}
+@media print{.digen-direction-filter{display:none!important}}

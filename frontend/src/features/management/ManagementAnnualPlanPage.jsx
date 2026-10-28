@@ -3,6 +3,8 @@ import { supabase } from '../../lib/supabase.js'
 import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from './ManagementStandaloneShell.jsx'
+import { isCalendarCutComplete } from './reportFlow.js'
+import './management-reports-tablet.css'
 import './management.css'
 import './management-annual-plan.css'
 
@@ -63,7 +65,6 @@ function metricValue(indicator, language) {
 function dateLabel(value, language) { if (!value) return ''; return new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'es-VE',{ day:'numeric',month:'short' }).format(new Date(`${value}T12:00:00`)) }
 
 const emptyObjective = () => ({ id:'', title:'', description:'', objective_level:'specific', weight:'', status:'active' })
-const emptyActivity = () => ({ id:'', objective_id:'', indicator_id:'', title:'', description:'', start_date:'', end_date:'', status:'planned', responsible_name:'' })
 
 export default function ManagementAnnualPlanPage() {
   const access = useOperatorAccess()
@@ -73,6 +74,7 @@ export default function ManagementAnnualPlanPage() {
   const [organizationId,setOrganizationId] = useState(access.organizationId || '')
   const [organizations,setOrganizations] = useState([])
   const [periods,setPeriods] = useState([])
+  const [reportWindows,setReportWindows] = useState([])
   const [units,setUnits] = useState([])
   const [memberships,setMemberships] = useState([])
   const [workPlans,setWorkPlans] = useState([])
@@ -84,9 +86,7 @@ export default function ManagementAnnualPlanPage() {
   const [selectedUnitId,setSelectedUnitId] = useState(params.get('unit') || '')
   const [view,setView] = useState('objectives')
   const [objectiveForm,setObjectiveForm] = useState(emptyObjective)
-  const [activityForm,setActivityForm] = useState(emptyActivity)
   const [objectiveOpen,setObjectiveOpen] = useState(false)
-  const [activityOpen,setActivityOpen] = useState(false)
   const [yearOpen,setYearOpen] = useState(false)
   const [newYear,setNewYear] = useState(new Date().getFullYear()+1)
   const [loading,setLoading] = useState(true)
@@ -120,12 +120,13 @@ export default function ManagementAnnualPlanPage() {
       supabase.from('objective_unit_assignment').select('*').eq('organization_id',organizationId),
       supabase.from('management_indicator').select('*').eq('organization_id',organizationId).eq('active',true).order('created_at'),
       supabase.from('unit_work_activity').select('*').eq('organization_id',organizationId).order('start_date'),
+      supabase.from('management_report_window').select('*').eq('organization_id',organizationId).eq('active',true),
     ])
     const firstError = responses.find((response)=>response.error)?.error
     if (firstError) setError(firstError.message)
     else {
       const periodRows=responses[0].data ?? []; const unitRows=responses[1].data ?? []
-      setPeriods(periodRows); setUnits(unitRows); setMemberships(responses[2].data ?? []); setWorkPlans(responses[3].data ?? []); setObjectives(responses[4].data ?? []); setAssignments(responses[5].data ?? []); setIndicators(responses[6].data ?? []); setActivities(responses[7].data ?? [])
+      setPeriods(periodRows); setUnits(unitRows); setMemberships(responses[2].data ?? []); setWorkPlans(responses[3].data ?? []); setObjectives(responses[4].data ?? []); setAssignments(responses[5].data ?? []); setIndicators(responses[6].data ?? []); setActivities(responses[7].data ?? []); setReportWindows(responses[8].data ?? [])
       setActivePeriodId((current)=>periodRows.some((item)=>item.id===current)?current:periodRows.find((item)=>item.status==='active')?.id || periodRows[0]?.id || '')
     }
     setLoading(false)
@@ -138,6 +139,8 @@ export default function ManagementAnnualPlanPage() {
   useEffect(()=>{ if (!visibleUnits.some((unit)=>unit.id===selectedUnitId)) setSelectedUnitId(visibleUnits[0]?.id || '') },[selectedUnitId,visibleUnits])
   const canManageSelected = canAdmin || manageableUnitIds.includes(selectedUnitId)
   const activePeriod = periods.find((item)=>item.id===activePeriodId)
+  const activePeriodYear = Number(String(activePeriod?.start_date||'').slice(0,4))
+  const needsCuts2027 = canAdmin && activePeriodYear===2027 && !isCalendarCutComplete(reportWindows.filter(w=>w.management_period_id===activePeriodId))
   const selectedUnit = units.find((item)=>item.id===selectedUnitId)
   const selectedPlan = workPlans.find((item)=>item.management_period_id===activePeriodId && item.unit_id===selectedUnitId)
   const planObjectives = useMemo(() => objectives.filter((item)=>item.management_period_id===activePeriodId && (selectedPlan ? item.work_plan_id===selectedPlan.id : assignments.some((a)=>a.objective_id===item.id && a.assignment_type==='responsible' && a.unit_id===selectedUnitId))),[objectives,assignments,activePeriodId,selectedPlan,selectedUnitId])
@@ -160,8 +163,8 @@ export default function ManagementAnnualPlanPage() {
     return `${prefix}${String((values.length?Math.max(...values):0)+1).padStart(2,'0')}`
   }
 
-  const openNewObjective = () => { setObjectiveForm(emptyObjective()); setObjectiveOpen(true); setActivityOpen(false); setError(''); setMessage(''); window.scrollTo({top:0,behavior:'smooth'}) }
-  const openEditObjective = (objective) => { setObjectiveForm({...emptyObjective(),...objective,weight:objective.weight ?? ''}); setObjectiveOpen(true); setActivityOpen(false); setError(''); window.scrollTo({top:0,behavior:'smooth'}) }
+  const openNewObjective = () => { setObjectiveForm(emptyObjective()); setObjectiveOpen(true); setError(''); setMessage(''); window.scrollTo({top:0,behavior:'smooth'}) }
+  const openEditObjective = (objective) => { setObjectiveForm({...emptyObjective(),...objective,weight:objective.weight ?? ''}); setObjectiveOpen(true); setError(''); window.scrollTo({top:0,behavior:'smooth'}) }
   const saveObjective = async (event) => {
     event.preventDefault(); if (!canManageSelected || saving || !activePeriodId || !selectedUnitId) return
     setSaving(true); setError(''); setMessage('')
@@ -177,18 +180,12 @@ export default function ManagementAnnualPlanPage() {
     setSaving(false)
   }
 
-  const openNewActivity = (objectiveId='') => { setActivityForm({...emptyActivity(),objective_id:objectiveId,start_date:activePeriod?.start_date || ''}); setActivityOpen(true); setObjectiveOpen(false); setError(''); window.scrollTo({top:0,behavior:'smooth'}) }
-  const openEditActivity = (activity) => { setActivityForm({...emptyActivity(),...activity,end_date:activity.end_date || '',indicator_id:activity.indicator_id || '',responsible_name:activity.responsible_name || '',description:activity.description || ''}); setActivityOpen(true); setObjectiveOpen(false); window.scrollTo({top:0,behavior:'smooth'}) }
-  const saveActivity = async (event) => {
-    event.preventDefault(); if(!canManageSelected || saving || !activityForm.objective_id || !activityForm.title.trim()) return
-    setSaving(true); setError(''); setMessage('')
-    try {
-      const planId=selectedPlan?.id || await ensurePlan()
-      const payload={organization_id:organizationId,work_plan_id:planId,objective_id:activityForm.objective_id,indicator_id:activityForm.indicator_id||null,title:activityForm.title.trim(),description:activityForm.description.trim()||null,start_date:activityForm.start_date,end_date:activityForm.end_date||null,status:activityForm.status,responsible_name:activityForm.responsible_name.trim()||null,updated_by:access.userId,...(activityForm.id?{}:{created_by:access.userId})}
-      const request=activityForm.id?supabase.from('unit_work_activity').update(payload).eq('id',activityForm.id):supabase.from('unit_work_activity').insert(payload)
-      const {error:requestError}=await request; if(requestError) throw requestError
-      setActivityOpen(false); setActivityForm(emptyActivity()); setMessage(language==='en'?'Activity saved.':'Actividad guardada.'); await reload()
-    } catch(err){ setError(err.message || String(err)) }
+  const completeReportWindows = async () => {
+    if(!canAdmin || saving || !organizationId || !activePeriodId || activePeriodYear!==2027)return
+    setSaving(true);setError('');setMessage('')
+    const {error:requestError}=await supabase.rpc('create_annual_management_cycle',{target_organization_id:organizationId,target_year:2027})
+    if(requestError)setError(requestError.message)
+    else {setMessage(language==='en'?'2027 reporting windows are available.':'Cortes de marzo, julio y noviembre de 2027 e informe anual habilitados.');await reload()}
     setSaving(false)
   }
 
@@ -202,10 +199,9 @@ export default function ManagementAnnualPlanPage() {
 
   if(access.status!=='authorized') return <OperatorAccessScreen access={access} copy={{languageLabel:language==='en'?'Language':'Idioma'}} language={language} onLanguageChange={()=>{}} />
 
-  const selectedObjectiveIndicators = planIndicators.filter((item)=>item.objective_id===activityForm.objective_id)
 
   return <ManagementStandaloneShell access={access}><div className="management-panel annual-plan-page">
-    <div className="management-panel-heading"><div><p>{t.eyebrow}</p><h1>{t.title}</h1><span>{t.intro}</span></div><div className="management-heading-actions">{canAdmin&&<button className="secondary" onClick={()=>setYearOpen(true)}>{t.newYear}</button>}{canManageSelected&&<button onClick={openNewObjective} disabled={!activePeriodId||!selectedUnitId}>{t.objective}</button>}{canManageSelected&&<button className="accent" onClick={()=>openNewActivity()} disabled={!planObjectives.length}>{t.activity}</button>}</div></div>
+    <div className="management-panel-heading"><div><p>{t.eyebrow}</p><h1>{t.title}</h1><span>{t.intro}</span></div><div className="management-heading-actions">{canAdmin&&<button className="secondary" onClick={()=>setYearOpen(true)}>{t.newYear}</button>}{needsCuts2027&&<button className="secondary" disabled={saving} onClick={completeReportWindows}>{language==='en'?'Enable 2027 reporting windows':'Habilitar cortes e informe anual 2027'}</button>}{canManageSelected&&<button onClick={openNewObjective} disabled={!activePeriodId||!selectedUnitId}>{t.objective}</button>}<a className="annual-calendar-open" href="/app/management/calendar">{language==='en'?'Open Calendar · Add activity':'Abrir Calendario · Agregar actividad'}</a></div></div>
     {isSuperAdmin&&<section className="management-filter-row"><label><span>{t.organization}</span><select value={organizationId} onChange={(e)=>{setOrganizationId(e.target.value);setActivePeriodId('');setSelectedUnitId('')}}>{organizations.map((item)=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label></section>}
     <section className="annual-plan-context"><label><span>{t.year}</span><select value={activePeriodId} onChange={(e)=>setActivePeriodId(e.target.value)}>{periods.map((item)=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label><span>{t.unit}</span><select value={selectedUnitId} onChange={(e)=>setSelectedUnitId(e.target.value)}>{visibleUnits.map((item)=><option key={item.id} value={item.id}>{item.code} · {item.name}</option>)}</select></label><div className="annual-plan-context-title"><small>{selectedPlan?.status?.toUpperCase() || 'PLAN'}</small><strong>{selectedPlan?.title || `${t.title} · ${selectedUnit?.code || ''}`}</strong></div></section>
     {error&&<p className="management-flash error">{error}</p>}{message&&<p className="management-flash success">{message}</p>}
@@ -214,15 +210,13 @@ export default function ManagementAnnualPlanPage() {
 
     {objectiveOpen&&<form className="management-form-card annual-objective-form" onSubmit={saveObjective}><div className="management-form-title"><div><small>{selectedUnit?.code} · {activePeriod?.name}</small><h2>{objectiveForm.id?t.editObjective:t.newObjective}</h2></div><button type="button" onClick={()=>setObjectiveOpen(false)}>{t.close}</button></div><div className="management-form-grid"><label className="wide"><span>{t.whatGoal} *</span><input value={objectiveForm.title} onChange={(e)=>setObjectiveForm((c)=>({...c,title:e.target.value}))} required /></label><label><span>{t.level}</span><select value={objectiveForm.objective_level} onChange={(e)=>setObjectiveForm((c)=>({...c,objective_level:e.target.value}))}>{Object.entries(LEVEL_LABELS[language]).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><label><span>{t.weight}</span><input type="number" min="0" max="100" step="0.01" value={objectiveForm.weight} onChange={(e)=>setObjectiveForm((c)=>({...c,weight:e.target.value}))} /></label><label className="wide"><span>{t.description}</span><textarea value={objectiveForm.description} onChange={(e)=>setObjectiveForm((c)=>({...c,description:e.target.value}))} /></label></div><div className="management-form-actions"><button type="button" onClick={()=>setObjectiveOpen(false)}>{t.cancel}</button><button className="primary" disabled={saving}>{t.saveObjective}</button></div></form>}
 
-    {activityOpen&&<form className="management-form-card annual-activity-form" onSubmit={saveActivity}><div className="management-form-title"><div><small>{selectedUnit?.code} · {activePeriod?.name}</small><h2>{activityForm.id?t.editActivity:t.newActivity}</h2></div><button type="button" onClick={()=>setActivityOpen(false)}>{t.close}</button></div><div className="management-form-grid"><label className="wide"><span>{t.activityName} *</span><input value={activityForm.title} onChange={(e)=>setActivityForm((c)=>({...c,title:e.target.value}))} required /></label><label><span>{t.relatedObjective} *</span><select value={activityForm.objective_id} onChange={(e)=>setActivityForm((c)=>({...c,objective_id:e.target.value,indicator_id:''}))} required><option value="">—</option>{planObjectives.map((item)=><option key={item.id} value={item.id}>{item.code} · {item.title}</option>)}</select></label><label><span>{t.relatedIndicator}</span><select value={activityForm.indicator_id} onChange={(e)=>setActivityForm((c)=>({...c,indicator_id:e.target.value}))}><option value="">—</option>{selectedObjectiveIndicators.map((item)=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label><span>{t.start} *</span><input type="date" value={activityForm.start_date} min={activePeriod?.start_date} max={activePeriod?.end_date} onChange={(e)=>setActivityForm((c)=>({...c,start_date:e.target.value}))} required /></label><label><span>{t.end}</span><input type="date" value={activityForm.end_date} min={activityForm.start_date||activePeriod?.start_date} max={activePeriod?.end_date} onChange={(e)=>setActivityForm((c)=>({...c,end_date:e.target.value}))} /></label><label><span>{t.status}</span><select value={activityForm.status} onChange={(e)=>setActivityForm((c)=>({...c,status:e.target.value}))}>{Object.entries(ACTIVITY_STATUS[language]).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><label><span>{t.responsible}</span><input value={activityForm.responsible_name} onChange={(e)=>setActivityForm((c)=>({...c,responsible_name:e.target.value}))} /></label><label className="wide"><span>{t.description}</span><textarea value={activityForm.description} onChange={(e)=>setActivityForm((c)=>({...c,description:e.target.value}))} /></label></div><div className="management-form-actions"><button type="button" onClick={()=>setActivityOpen(false)}>{t.cancel}</button><button className="primary" disabled={saving}>{t.saveActivity}</button></div></form>}
-
     {loading?<div className="management-loading"><span/><p>{t.loading}</p></div>:<>
       <section className="annual-plan-summary"><article><span>{t.objectives}</span><strong>{planObjectives.length}</strong></article><article><span>{t.indicators}</span><strong>{planIndicators.length}</strong></article><article><span>{t.activities}</span><strong>{planActivities.length}</strong></article><article><span>{t.completed}</span><strong>{planActivities.filter((item)=>item.status==='completed').length}</strong></article></section>
       <div className="annual-plan-tabs"><button className={view==='objectives'?'active':''} onClick={()=>setView('objectives')}>{t.objectiveView}</button><button className={view==='calendar'?'active':''} onClick={()=>setView('calendar')}>{t.calendarView}</button></div>
 
-      {view==='objectives'&&<section className="annual-objectives-section"><div className="annual-section-heading"><div><small>{selectedUnit?.code} · {activePeriod?.name}</small><h2>{t.objectiveView}</h2><p>{t.indicatorHelp}</p></div>{canManageSelected&&<button onClick={openNewObjective}>{t.objective}</button>}</div>{!selectedPlan?<p className="management-empty">{t.noPlan}</p>:!planObjectives.length?<p className="management-empty">{t.noObjectives}</p>:<div className="annual-objective-list">{planObjectives.map((objective)=>{const objectiveIndicators=planIndicators.filter((item)=>item.objective_id===objective.id);const objectiveActivities=planActivities.filter((item)=>item.objective_id===objective.id);return <article className="annual-objective-card" key={objective.id}><header><div><small>{objective.code} · {LEVEL_LABELS[language][objective.objective_level] || objective.objective_level}</small><h3>{objective.title}</h3>{objective.description&&<p>{objective.description}</p>}<span>{objectiveIndicators.length} {t.indicators.toLowerCase()} · {objectiveActivities.length} {t.activities.toLowerCase()}</span></div>{canManageSelected&&<div className="annual-objective-actions"><button onClick={()=>openEditObjective(objective)}>{t.edit}</button><a href={`/app/management/tracking/new?period=${encodeURIComponent(activePeriodId)}&unit=${encodeURIComponent(selectedUnitId)}&objective=${encodeURIComponent(objective.id)}&workPlan=${encodeURIComponent(selectedPlan.id)}`}>{t.addIndicator}</a><button className="activity" onClick={()=>openNewActivity(objective.id)}>{t.activity}</button></div>}</header><div className="annual-indicator-list">{objectiveIndicators.length?objectiveIndicators.map((indicator)=><div className="annual-indicator-card" key={indicator.id}><div className="annual-indicator-badges"><b>{KIND_LABELS[language][indicator.indicator_kind || 'result']}</b><span>{METRIC_LABELS[language][indicator.metric_type] || indicator.metric_type}</span></div><strong>{indicator.name}</strong><div><span>{t.target}</span><b>{metricValue(indicator,language)}</b></div><footer><small>{t.frequency}: {indicator.frequency}</small><a href={`/app/management/tracking?period=${encodeURIComponent(activePeriodId)}&unit=${encodeURIComponent(selectedUnitId)}`}>{language==='en'?'Open tracking':'Abrir seguimiento'} →</a></footer></div>):<div className="annual-no-indicators"><p>{language==='en'?'This objective still has no indicator.':'Este objetivo todavía no tiene indicador.'}</p>{canManageSelected&&<a href={`/app/management/tracking/new?period=${encodeURIComponent(activePeriodId)}&unit=${encodeURIComponent(selectedUnitId)}&objective=${encodeURIComponent(objective.id)}&workPlan=${encodeURIComponent(selectedPlan.id)}`}>{t.addIndicator}</a>}</div>}</div></article>})}</div>}</section>}
+      {view==='objectives'&&<section className="annual-objectives-section"><div className="annual-section-heading"><div><small>{selectedUnit?.code} · {activePeriod?.name}</small><h2>{t.objectiveView}</h2><p>{t.indicatorHelp}</p></div>{canManageSelected&&<button onClick={openNewObjective}>{t.objective}</button>}</div>{!selectedPlan?<p className="management-empty">{t.noPlan}</p>:!planObjectives.length?<p className="management-empty">{t.noObjectives}</p>:<div className="annual-objective-list">{planObjectives.map((objective)=>{const objectiveIndicators=planIndicators.filter((item)=>item.objective_id===objective.id);const objectiveActivities=planActivities.filter((item)=>item.objective_id===objective.id);return <article className="annual-objective-card" key={objective.id}><header><div><small>{objective.code} · {LEVEL_LABELS[language][objective.objective_level] || objective.objective_level}</small><h3>{objective.title}</h3>{objective.description&&<p>{objective.description}</p>}<span>{objectiveIndicators.length} {t.indicators.toLowerCase()} · {objectiveActivities.length} {t.activities.toLowerCase()}</span></div>{canManageSelected&&<div className="annual-objective-actions"><button onClick={()=>openEditObjective(objective)}>{t.edit}</button><a href={`/app/management/tracking/new?period=${encodeURIComponent(activePeriodId)}&unit=${encodeURIComponent(selectedUnitId)}&objective=${encodeURIComponent(objective.id)}&workPlan=${encodeURIComponent(selectedPlan.id)}`}>{t.addIndicator}</a><a className="activity annual-calendar-open" href="/app/management/calendar">{language==='en'?'Open Calendar':'Abrir Calendario'}</a></div>}</header><div className="annual-indicator-list">{objectiveIndicators.length?objectiveIndicators.map((indicator)=><div className="annual-indicator-card" key={indicator.id}><div className="annual-indicator-badges"><b>{KIND_LABELS[language][indicator.indicator_kind || 'result']}</b><span>{METRIC_LABELS[language][indicator.metric_type] || indicator.metric_type}</span></div><strong>{indicator.name}</strong><div><span>{t.target}</span><b>{metricValue(indicator,language)}</b></div><footer><small>{t.frequency}: {indicator.frequency}</small><a href={`/app/management/tracking?period=${encodeURIComponent(activePeriodId)}&unit=${encodeURIComponent(selectedUnitId)}`}>{language==='en'?'Open tracking':'Abrir seguimiento'} →</a></footer></div>):<div className="annual-no-indicators"><p>{language==='en'?'This objective still has no indicator.':'Este objetivo todavía no tiene indicador.'}</p>{canManageSelected&&<a href={`/app/management/tracking/new?period=${encodeURIComponent(activePeriodId)}&unit=${encodeURIComponent(selectedUnitId)}&objective=${encodeURIComponent(objective.id)}&workPlan=${encodeURIComponent(selectedPlan.id)}`}>{t.addIndicator}</a>}</div>}</div></article>})}</div>}</section>}
 
-      {view==='calendar'&&<section className="annual-calendar-section"><div className="annual-section-heading"><div><small>{selectedUnit?.code} · {activePeriod?.name}</small><h2>{t.calendarView}</h2><p>{language==='en'?'Activities stay linked to the objective and, when applicable, to the indicator they support.':'Cada actividad permanece vinculada al objetivo y, cuando aplica, al indicador que ayuda a cumplir.'}</p></div>{canManageSelected&&<button onClick={()=>openNewActivity()}>{t.activity}</button>}</div><div className="annual-calendar-grid">{MONTHS[language].map((month,index)=>{const monthRows=planActivities.filter((item)=>new Date(`${item.start_date}T12:00:00`).getMonth()===index);return <article key={month}><header><span>{String(index+1).padStart(2,'0')}</span><strong>{month}</strong><b>{monthRows.length}</b></header><div>{monthRows.length?monthRows.map((activity)=>{const objective=planObjectives.find((item)=>item.id===activity.objective_id);return <button className={`calendar-activity ${activity.status}`} onClick={()=>canManageSelected&&openEditActivity(activity)} key={activity.id}><small>{objective?.code || 'OBJ'} · {ACTIVITY_STATUS[language][activity.status]}</small><strong>{activity.title}</strong><span>{dateLabel(activity.start_date,language)}{activity.end_date&&activity.end_date!==activity.start_date?` — ${dateLabel(activity.end_date,language)}`:''}</span></button>}):<p>{t.noActivities}</p>}</div></article>})}</div></section>}
+      {view==='calendar'&&<section className="annual-calendar-section"><div className="annual-section-heading"><div><small>{selectedUnit?.code} · {activePeriod?.name}</small><h2>{t.calendarView}</h2><p>{language==='en'?'Activities stay linked to the objective and, when applicable, to the indicator they support.':'Cada actividad permanece vinculada al objetivo y, cuando aplica, al indicador que ayuda a cumplir.'}</p></div><a className="annual-calendar-open" href="/app/management/calendar">{language==='en'?'Add in Calendar':'Agregar en Calendario'}</a></div><div className="annual-calendar-grid">{MONTHS[language].map((month,index)=>{const monthRows=planActivities.filter((item)=>new Date(`${item.start_date}T12:00:00`).getMonth()===index);return <article key={month}><header><span>{String(index+1).padStart(2,'0')}</span><strong>{month}</strong><b>{monthRows.length}</b></header><div>{monthRows.length?monthRows.map((activity)=>{const objective=planObjectives.find((item)=>item.id===activity.objective_id);return <div className={`calendar-activity ${activity.status}`} key={activity.id}><small>{objective?.code || 'OBJ'} · {ACTIVITY_STATUS[language][activity.status]}</small><strong>{activity.title}</strong><span>{dateLabel(activity.start_date,language)}{activity.end_date&&activity.end_date!==activity.start_date?` — ${dateLabel(activity.end_date,language)}`:''}</span></div>}):<p>{t.noActivities}</p>}</div></article>})}</div></section>}
     </>}
   </div></ManagementStandaloneShell>
 }
