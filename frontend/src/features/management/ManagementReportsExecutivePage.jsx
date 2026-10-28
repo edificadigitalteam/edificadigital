@@ -76,9 +76,10 @@ export default function ManagementReportsExecutivePage(){
   const ownTopUnit=units.find((unit)=>unit.id===scopeAccess.digen_unit_id)
   const displayedDirectorates=selectedDirectionId ? directorates.filter((u)=>u.id===selectedDirectionId) : directorates
   const reportFor=useCallback((unitId)=>{
+    const ready=(report)=>report&&['submitted','reviewed','approved','closed'].includes(report.status)
     const exact=reports.find((report)=>report.unit_id===unitId&&report.report_window_id===activeWindowId)
-    if(exact)return exact
-    if(activeWindow?.window_type==='annual')return reports.find((report)=>report.unit_id===unitId&&report.management_period_id===activePeriodId&&!report.report_window_id)
+    if(exact)return ready(exact)?exact:null
+    if(activeWindow?.window_type==='annual'){const annual=reports.find((report)=>report.unit_id===unitId&&report.management_period_id===activePeriodId&&!report.report_window_id);return ready(annual)?annual:null}
     return null
   },[reports,activeWindowId,activeWindow,activePeriodId])
   const currentReports=useMemo(()=>directorates.map((unit)=>reportFor(unit.id)).filter(Boolean),[directorates,reportFor])
