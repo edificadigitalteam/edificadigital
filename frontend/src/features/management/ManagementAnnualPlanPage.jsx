@@ -78,7 +78,6 @@ export default function ManagementAnnualPlanPage() {
   const [periods,setPeriods] = useState([])
   const [reportWindows,setReportWindows] = useState([])
   const [units,setUnits] = useState([])
-  const [memberships,setMemberships] = useState([])
   const [operatorUnitOverview,setOperatorUnitOverview] = useState(null)
   const [workPlans,setWorkPlans] = useState([])
   const [objectives,setObjectives] = useState([])
@@ -117,7 +116,6 @@ export default function ManagementAnnualPlanPage() {
     const responses = await Promise.all([
       supabase.from('management_period').select('*').eq('organization_id',organizationId).order('start_date',{ascending:false}),
       supabase.from('organization_unit').select('*').eq('organization_id',organizationId).eq('active',true).order('sort_order').order('name'),
-      supabase.from('organization_unit_member').select('*').eq('organization_id',organizationId).eq('active',true),
       supabase.from('unit_work_plan').select('*').eq('organization_id',organizationId),
       supabase.from('institutional_objective').select('*').eq('organization_id',organizationId).order('code'),
       supabase.from('objective_unit_assignment').select('*').eq('organization_id',organizationId),
@@ -126,11 +124,11 @@ export default function ManagementAnnualPlanPage() {
       supabase.from('management_report_window').select('*').eq('organization_id',organizationId).eq('active',true),
       supabase.rpc('calendar_access_overview',{target_organization_id:organizationId,target_period_id:null}),
     ])
-    const firstError = responses.slice(0,9).find((response)=>response.error)?.error
+    const firstError = responses.slice(0,8).find((response)=>response.error)?.error
     if (firstError) setError(firstError.message)
     else {
       const periodRows=responses[0].data ?? []; const unitRows=responses[1].data ?? []
-      setPeriods(periodRows); setUnits(unitRows); setMemberships(responses[2].data ?? []); setWorkPlans(responses[3].data ?? []); setObjectives(responses[4].data ?? []); setAssignments(responses[5].data ?? []); setIndicators(responses[6].data ?? []); setActivities(responses[7].data ?? []); setReportWindows(responses[8].data ?? []);setOperatorUnitOverview(responses[9].error?null:(responses[9].data??null))
+      setPeriods(periodRows); setUnits(unitRows); setWorkPlans(responses[2].data ?? []); setObjectives(responses[3].data ?? []); setAssignments(responses[4].data ?? []); setIndicators(responses[5].data ?? []); setActivities(responses[6].data ?? []); setReportWindows(responses[7].data ?? []);setOperatorUnitOverview(responses[8].error?null:(responses[8].data??null))
       setActivePeriodId((current)=>periodRows.some((item)=>item.id===current)?current:periodRows.find((item)=>item.status==='active')?.id || periodRows[0]?.id || '')
     }
     setLoading(false)
