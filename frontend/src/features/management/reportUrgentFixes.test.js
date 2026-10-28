@@ -6,6 +6,8 @@ const here=new URL('.',import.meta.url)
 const create=readFileSync(new URL('ManagementReportCreatePage.jsx',here),'utf8')
 const unified=readFileSync(new URL('ManagementReportsUnifiedPage.jsx',here),'utf8')
 const annual=readFileSync(new URL('ManagementAnnualPlanPage.jsx',here),'utf8')
+const executive=readFileSync(new URL('ManagementReportsExecutivePage.jsx',here),'utf8')
+const router=readFileSync(new URL('ManagementReportsV2Page.jsx',here),'utf8')
 const responsive=readFileSync(new URL('management-reports-tablet.css',here),'utf8')
 
 test('drafts are allowed at the very beginning, submitted reports require linked outcomes',()=>{
@@ -40,4 +42,17 @@ test('tablet CSS constrains every report grid and calendar panel',()=>{
  assert.match(responsive,/@media\s*\(min-width:\s*700px\)\s*and\s*\(max-width:\s*1180px\)/)
  assert.match(responsive,/min-width:\s*0/)
  assert.match(responsive,/max-width:\s*100%/)
+})
+
+test('administration can complete missing 2027 windows and annual cut with existing RPC',()=>{
+ assert.match(annual,/needsCuts2027/)
+ assert.match(annual,/completeReportWindows/)
+ assert.match(annual,/target_year:2027/)
+ assert.match(annual,/create_annual_management_cycle/)
+})
+test('report recipients see individual units and printable consolidated',()=>{
+ assert.match(executive,/selectedDirectionId/)
+ assert.match(executive,/displayedDirectorates\.map/)
+ assert.match(executive,/window\.print\(\)/)
+ assert.match(router,/canConsolidate/)
 })
