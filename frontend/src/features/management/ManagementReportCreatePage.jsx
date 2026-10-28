@@ -3,9 +3,10 @@ import { supabase } from '../../lib/supabase.js'
 import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from './ManagementStandaloneShell.jsx'
+import { reportCanSaveDraft, reportCanSubmit, NEXT_STEPS_HELP_ES } from './reportFlow.js'
 import './management-report-create.css'
 
-const statusLabels = { draft: 'Borrador', submitted: 'Enviado a DIAF', reviewed: 'Revisado por DIAF', approved: 'Aprobado por DIAF', closed: 'Cerrado' }
+const statusLabels = { draft: 'Borrador', submitted: 'Enviado a GEN–DIGEN', reviewed: 'Revisado', approved: 'Aprobado', closed: 'Cerrado' }
 const kindLabels = { result: 'Resultado', output: 'Producto / entregable', process: 'Proceso / gestión', impact: 'Impacto' }
 
 function emptyStatement() { return { statement: '', objective_id: '', indicator_id: '' } }
@@ -136,8 +137,11 @@ export default function ManagementReportCreatePage() {
   const save = async (status) => {
     if (!supabase || saving || !windowId || !unitId) return
     const statements = form.statements.filter((row) => row.statement.trim())
-    if (!statements.length) { setError('Agrega por lo menos una declaración al informe.'); return }
-    if (statements.some((row) => !row.objective_id)) { setError('Cada declaración debe estar vinculada a un objetivo.'); return }
+    if (status === 'draft') {
+      if (!reportCanSaveDraft({ windowId, unitId, saving })) return
+    } else {
+      if (!reportCanSubmit(statements, unitIndicators)) {setError('Para enviar, agrega al menos una declaración vinculada a un objetivo y su indicador disponible.');return}
+    }
     if (status === 'submitted') {
       const missingIndicator = statements.find((row) => unitIndicators.some((indicator) => indicator.objective_id === row.objective_id) && !row.indicator_id)
       if (missingIndicator) { setError('Selecciona el indicador que respalda cada declaración cuando ese objetivo tenga indicadores disponibles.'); return }
@@ -161,7 +165,7 @@ export default function ManagementReportCreatePage() {
     if (requestError) setError(requestError.message)
     else {
       setForm((current) => ({ ...current, id: reportId, status }))
-      setMessage(status === 'submitted' ? 'Informe enviado a DIAF.' : 'Borrador guardado.')
+      setMessage(status === 'submitted' ? 'Informe enviado para rendición institucional.' : 'Borrador guardado.')
       await reload()
     }
     setSaving(false)
@@ -222,10 +226,10 @@ export default function ManagementReportCreatePage() {
 
         <section className="report-create-card report-simple-lists">
           <div><div className="report-create-section-title"><div><small>SEGUIMIENTO</small><h2>Retos o asuntos pendientes</h2></div><button type="button" onClick={() => addList('challenges')}>＋ Agregar</button></div>{form.challenges.map((value, index) => <div className="report-list-row" key={index}><span>{index + 1}</span><textarea value={value} onChange={(event) => updateList('challenges', index, event.target.value)} />{form.challenges.length > 1 && <button type="button" onClick={() => removeList('challenges', index)}>×</button>}</div>)}</div>
-          <div><div className="report-create-section-title"><div><small>PRÓXIMO PERÍODO</small><h2>Próximos pasos</h2></div><button type="button" onClick={() => addList('next_steps')}>＋ Agregar</button></div>{form.next_steps.map((value, index) => <div className="report-list-row" key={index}><span>{index + 1}</span><textarea value={value} onChange={(event) => updateList('next_steps', index, event.target.value)} />{form.next_steps.length > 1 && <button type="button" onClick={() => removeList('next_steps', index)}>×</button>}</div>)}</div>
+          <div><div className="report-create-section-title"><div><small>PRÓXIMO PERÍODO</small><h2>Próximos pasos</h2><p className="report-next-help">{NEXT_STEPS_HELP_ES}</p></div><button type="button" onClick={() => addList('next_steps')}>＋ Agregar</button></div>{form.next_steps.map((value, index) => <div className="report-list-row" key={index}><span>{index + 1}</span><textarea value={value} onChange={(event) => updateList('next_steps', index, event.target.value)} />{form.next_steps.length > 1 && <button type="button" onClick={() => removeList('next_steps', index)}>×</button>}</div>)}</div>
         </section>
 
-        <div className="report-create-actions"><a href="/app/management/reports">Cancelar</a><button type="button" onClick={() => save('draft')} disabled={saving || !unitObjectives.length}>Guardar borrador</button><button className="primary" type="button" onClick={() => save('submitted')} disabled={saving || !unitObjectives.length}>{saving ? 'Guardando…' : 'Enviar informe a DIAF'}</button></div>
+        <div className="report-create-actions"><a href="/app/management/reports">Cancelar</a><button type="button" onClick={() => save('draft')} disabled={!reportCanSaveDraft({windowId,unitId,saving})}>Guardar borrador</button><button className="primary" type="button" onClick={() => save('submitted')} disabled={saving}>{saving ? 'Guardando…' : 'Enviar informe para rendición'}</button></div>
       </>}
     </div>
   </ManagementStandaloneShell>
