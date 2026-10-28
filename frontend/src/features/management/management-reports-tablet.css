@@ -47,3 +47,14 @@
 .digen-direction-filter label{display:grid;gap:5px;min-width:min(100%,275px);font-weight:850;color:#3b2650;font-size:14px}
 .digen-direction-filter select{min-height:45px;max-width:100%;width:100%;min-width:0;border:1px solid #bfaed0;border-radius:9px;background:#fff;padding:8px 11px;font:inherit}
 @media print{.digen-direction-filter{display:none!important}}
+
+/* Compact, accessible contextual help: no effect on Add button dimensions. */
+.cycle-section-heading>.report-next-heading-title{display:flex;align-items:center;gap:9px;min-width:0;flex:1 1 auto}
+.report-next-help-control{position:relative;flex:0 0 auto;margin:0}
+.report-next-help-control>summary{display:grid;place-items:center;width:23px;height:23px;min-width:23px;min-height:23px;border:1px solid #8d7b9f;border-radius:50%;list-style:none;background:#f5f1f8;color:#542268;font-size:13px;line-height:1;font-weight:900;cursor:help}
+.report-next-help-control>summary::-webkit-details-marker{display:none}
+.report-next-help-control>summary:focus-visible{outline:3px solid #db9a44;outline-offset:3px}
+.report-next-help-popup{position:absolute;top:calc(100% + 8px);left:0;z-index:10;display:none;width:min(340px,calc(100vw - 65px));max-width:calc(100vw - 65px);padding:13px 15px;border:1px solid #d4c5e3;border-radius:10px;background:#fff;color:#3e3050;font-size:13px;line-height:1.5;font-weight:550;text-align:left;box-shadow:0 10px 35px rgba(31,18,45,.17)}
+.report-next-help-control[open] .report-next-help-popup,.report-next-help-control:hover .report-next-help-popup,.report-next-help-control:focus-within .report-next-help-popup{display:block}
+.cycle-section-heading>.report-next-heading-title h3{min-width:0;overflow-wrap:anywhere}
+@media(max-width:720px){.report-next-help-popup{left:auto;right:-25px}}
