@@ -7,15 +7,20 @@ import ManagementReportsExecutivePage from './ManagementReportsExecutivePage.jsx
 export default function ManagementReportsV2Page(){
   const access=useOperatorAccess()
   const [checking,setChecking]=useState(true)
-  const [isDigen,setIsDigen]=useState(false)
+  const [canConsolidate,setCanConsolidate]=useState(false)
   const ownMode=new URLSearchParams(window.location.search).get('scope')==='own'
 
   useEffect(()=>{
     let active=true
     const check=async()=>{
       if(!supabase||access.status!=='authorized'||!access.organizationId){if(active)setChecking(false);return}
-      const {data,error}=await supabase.rpc('management_report_access_overview',{target_organization_id:access.organizationId})
-      if(active){setIsDigen(!error&&Boolean(data?.is_digen));setChecking(false)}
+      const [reports,calendar]=await Promise.all([
+        supabase.rpc('management_report_access_overview',{target_organization_id:access.organizationId}),
+        supabase.rpc('calendar_access_overview',{target_organization_id:access.organizationId,target_period_id:null}),
+      ])
+      const reportAllowed=!reports.error&&(reports.data?.can_view_all_reports||reports.data?.is_digen)
+      const institutionalEditor=!calendar.error&&calendar.data?.can_edit_consolidated===true
+      if(active){setCanConsolidate(Boolean(reportAllowed||institutionalEditor||access.role==='admin'));setChecking(false)}
     }
     check()
     return()=>{active=false}
@@ -23,5 +28,5 @@ export default function ManagementReportsV2Page(){
 
   if(ownMode||access.status!=='authorized')return <ManagementReportsUnifiedPage/>
   if(checking)return <main style={{minHeight:'70vh',display:'grid',placeItems:'center',fontFamily:'Inter,system-ui,sans-serif',color:'#5d2d70'}}>Cargando informes…</main>
-  return isDigen?<ManagementReportsExecutivePage/>:<ManagementReportsUnifiedPage/>
+  return canConsolidate?<ManagementReportsExecutivePage/>:<ManagementReportsUnifiedPage/>
 }
