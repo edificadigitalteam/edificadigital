@@ -42,3 +42,8 @@
  .report-actions,.management-panel-heading.no-print,.unit-report-v2-actions,.no-print{display:none!important}
  .digen-consolidated p,.cycle-report-document p,.digen-consolidated li{font-size:11pt;line-height:1.5}
 }
+
+.digen-direction-filter{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:12px;max-width:100%;min-width:0;margin:12px 0}
+.digen-direction-filter label{display:grid;gap:5px;min-width:min(100%,275px);font-weight:850;color:#3b2650;font-size:14px}
+.digen-direction-filter select{min-height:45px;max-width:100%;width:100%;min-width:0;border:1px solid #bfaed0;border-radius:9px;background:#fff;padding:8px 11px;font:inherit}
+@media print{.digen-direction-filter{display:none!important}}
