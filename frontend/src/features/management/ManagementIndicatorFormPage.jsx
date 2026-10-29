@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase.js'
 import { OperatorAccessScreen } from '../in-kind/OperatorAccess.jsx'
 import { useOperatorAccess } from '../in-kind/useOperatorAccess.js'
 import ManagementStandaloneShell from './ManagementStandaloneShell.jsx'
+import { indicatorManageableUnitIds } from './indicatorAccess.js'
 import './management-indicator-form.css'
 
 const indicatorKinds = {
@@ -59,7 +60,7 @@ export default function ManagementIndicatorFormPage() {
   const [organizations, setOrganizations] = useState([])
   const [periods, setPeriods] = useState([])
   const [units, setUnits] = useState([])
-  const [memberships, setMemberships] = useState([])
+  const [accessOverview, setAccessOverview] = useState(null)
   const [workPlans, setWorkPlans] = useState([])
   const [objectives, setObjectives] = useState([])
   const [projects, setProjects] = useState([])
@@ -90,7 +91,7 @@ export default function ManagementIndicatorFormPage() {
     const [periodResponse, unitResponse, memberResponse, planResponse, objectiveResponse, projectResponse] = await Promise.all([
       supabase.from('management_period').select('*').eq('organization_id', organizationId).order('start_date', { ascending: false }),
       supabase.from('organization_unit').select('*').eq('organization_id', organizationId).eq('active', true).order('sort_order').order('name'),
-      supabase.from('organization_unit_member').select('*').eq('organization_id', organizationId).eq('active', true),
+      supabase.rpc('calendar_access_overview', { target_organization_id: organizationId, target_period_id: null }),
       supabase.from('unit_work_plan').select('*').eq('organization_id', organizationId),
       supabase.from('institutional_objective').select('*').eq('organization_id', organizationId).order('code'),
       supabase.from('project').select('id,organization_id,code,name,status').eq('organization_id', organizationId).order('created_at', { ascending: false }),
@@ -99,7 +100,7 @@ export default function ManagementIndicatorFormPage() {
     if (firstError) setError(firstError.message)
     else {
       const periodRows = periodResponse.data ?? []; const unitRows = unitResponse.data ?? []
-      setPeriods(periodRows); setUnits(unitRows); setMemberships(memberResponse.data ?? []); setWorkPlans(planResponse.data ?? []); setObjectives(objectiveResponse.data ?? []); setProjects(projectResponse.data ?? [])
+      setPeriods(periodRows); setUnits(unitRows); setAccessOverview(memberResponse.data ?? null); setWorkPlans(planResponse.data ?? []); setObjectives(objectiveResponse.data ?? []); setProjects(projectResponse.data ?? [])
       setPeriodId((current) => periodRows.some((item) => item.id === current) ? current : periodRows.find((item) => item.status === 'active')?.id || periodRows[0]?.id || '')
     }
     setLoading(false)
@@ -108,7 +109,7 @@ export default function ManagementIndicatorFormPage() {
   useEffect(() => { loadOrganizations() }, [loadOrganizations])
   useEffect(() => { reload() }, [reload])
 
-  const manageableUnitIds = useMemo(() => canAdmin ? units.map((unit) => unit.id) : memberships.filter((item) => ['director','manager','operator','reviewer'].includes(item.unit_role)).map((item) => item.unit_id), [canAdmin, memberships, units])
+  const manageableUnitIds = useMemo(() => indicatorManageableUnitIds(units, accessOverview, access.role), [access.role, accessOverview, units])
   const visibleUnits = useMemo(() => canAdmin ? units : units.filter((unit) => manageableUnitIds.includes(unit.id)), [canAdmin, manageableUnitIds, units])
   useEffect(() => { if (!visibleUnits.some((unit) => unit.id === unitId)) setUnitId(visibleUnits[0]?.id || '') }, [unitId, visibleUnits])
 
