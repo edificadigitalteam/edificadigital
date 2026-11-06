@@ -43,7 +43,7 @@ test('PDF has twelve months, carries the institutional header and retains observ
  assert.match(s,/OBSERVADA|Observada/)
  assert.match(s,/DIPROM/)
  assert.match(s,/ASIBEB/)
- for(const month of ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'])assert.ok(s.includes(month),month)
+ for(const month of ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'])assert.ok(s.includes(month.toUpperCase()),month)
  assert.equal((s.match(/\"monthSection\"/g)||[]).length,12)
  assert.match(calendarPdfFilename(periods,'es'),/2027.*\.pdf$/)
 })
