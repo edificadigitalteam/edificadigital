@@ -289,16 +289,32 @@ export default function ManagementCalendarPage(){
   const saveActivity = async (event) => {
     event.preventDefault()
     if (!supabase || saving || !canCreate || !ownSelectedPlan || !form.title.trim() || !form.start_date) return
+    let responsible
+    try {
+      responsible=resolveCalendarResponsibilityUpdate(
+        {unit_id:selectedUnitId,work_plan_id:ownSelectedPlan.id},
+        {unit_id:form.unit_id||selectedUnitId,responsible_name:form.responsible_name},
+        periodPlans,periodId,canReassignResponsibleUnit,
+      )
+    } catch (e) {setError(e.message||t.noTargetPlan);return}
     setSaving(true); setError(''); setMessage('')
-    const objectiveId = form.objective_id || null
+    const changedUnit=responsible.work_plan_id!==ownSelectedPlan.id
+    const objectiveId=changedUnit?null:(form.objective_id||null)
     const payload = {
-      organization_id:organizationId, work_plan_id:ownSelectedPlan.id, objective_id:objectiveId, indicator_id:objectiveId ? (form.indicator_id || null) : null,
-      title:form.title.trim(), description:form.description.trim() || null, start_date:form.start_date, end_date:form.end_date || null,
-      status:form.status, responsible_name:form.responsible_name.trim() || null, modality:form.modality, updated_by:access.userId || null,
+      organization_id:organizationId,...responsible,objective_id:objectiveId,
+      indicator_id:changedUnit?null:(objectiveId?(form.indicator_id||null):null),
+      title:form.title.trim(),description:String(form.description||'').trim()||null,
+      start_date:form.start_date,end_date:form.end_date||null,
+      status:form.status,modality:form.modality,updated_by:access.userId||null,
     }
-    const { error:requestError } = await supabase.from('unit_work_activity').update(payload).eq('id',form.id).eq('work_plan_id',ownSelectedPlan.id)
-    if (requestError) setError(requestError.message)
-    else { setFormOpen(false); setForm(emptyActivity()); setMessage(t.saved); await reloadActivities() }
+    const {data,error:requestError}=await supabase.from('unit_work_activity').update(payload)
+      .eq('id',form.id).eq('organization_id',organizationId).eq('work_plan_id',ownSelectedPlan.id).select('id').maybeSingle()
+    if(requestError||!data?.id)setError(requestError?.message||t.deleteDenied)
+    else {
+      setFormOpen(false);setForm(emptyActivity());setMessage(t.saved)
+      if(changedUnit){setSelectedUnitId(form.unit_id);if(canViewConsolidated)setScope('consolidated')}
+      await reloadActivities()
+    }
     setSaving(false)
   }
 
