@@ -9,6 +9,8 @@ import { canManageAssociationNotices, isAssociationNotice, mergeCalendarActiviti
 import CalendarYearHeader from './CalendarYearHeader.jsx'
 import { readCalendarYearHeader, writeCalendarYearHeader } from './annualHeader.js'
 import { validatePresentationEdit } from './presentation.js'
+import { canDeleteCalendarActivity, resolveCalendarResponsibilityUpdate, calendarPdfFilename } from './calendarOperations.js'
+import { buildCalendarPdfDefinition } from './calendarPdf.js'
 import { DEFAULT_CALENDAR_MODULE_LABEL, buildCalendarActivityPayloads, calendarAccessSummaryKey, canOpenCalendarActivityEntry, resolveCalendarModuleLabel, reviewStatusLabel, selectDefaultCalendarPeriodId, canClearUnitCalendar } from './calendar.js'
 import { canReviewUnitActivity, canViewAllUnits, defaultSelectableUnitId, editableUnitIds, selectableUnits } from '../management/unitScope.js'
 import './management-calendar.css'
@@ -43,7 +45,7 @@ const copy = {
     noObjectives:'Esta unidad necesita al menos un objetivo en su Plan Anual antes de registrar actividades.', openPlan:'Abrir Plan Anual',
     activity:'Actividad', objective:'Objetivo del Plan Anual', indicator:'Indicador relacionado (opcional)', dateFrom:'Fecha de inicio', dateTo:'Fecha de cierre',
     responsible:'Responsable', modality:'Modalidad', status:'Estado', details:'Notas / detalles', save:'Guardar actividad', saving:'Guardando…',
-    cancel:'Cancelar', edit:'Editar', validate:'Validar', observe:'Observar', reviewState:'Estado de revisión', date:'Fecha', direction:'Dirección',
+    cancel:'Cancelar', edit:'Editar', remove:'Eliminar', deleteConfirm:'¿Eliminar definitivamente esta actividad del calendario?', deleteDone:'Actividad eliminada del calendario.', deleteDenied:'La cuenta actual no tiene permiso para eliminar esta actividad. Verifica los permisos administrativos de DIPROM.', downloadPdf:'Descargar PDF', downloadingPdf:'Generando PDF…', pdfSaved:'Respaldo PDF generado.', changeUnit:'Dirección responsable', unitChangeInfo:'Al asignar la actividad a otra Dirección, los objetivos e indicadores anteriores se desvincularán y la actividad volverá a revisión.', noTargetPlan:'La Dirección seleccionada debe contar con un Plan Anual para este año.', validate:'Validar', observe:'Observar', reviewState:'Estado de revisión', date:'Fecha', direction:'Dirección',
     objectiveIndicator:'Objetivo / indicador', loading:'Cargando calendario…', saved:'Actividad guardada.', reviewed:'Revisión actualizada.',
     jointChanged:'Visibilidad conjunta actualizada.', noUnitAccess:'Tu usuario todavía no está asignado a una Dirección o agencia con acceso al calendario.',
   },
@@ -63,7 +65,7 @@ const copy = {
     noObjectives:'This unit needs at least one Annual Work Plan objective before activities can be created.', openPlan:'Open Annual Work Plan',
     activity:'Activity', objective:'Annual Work Plan objective', indicator:'Related indicator (optional)', dateFrom:'Start date', dateTo:'End date',
     responsible:'Responsible', modality:'Modality', status:'Status', details:'Notes / details', save:'Save activity', saving:'Saving…', cancel:'Cancel',
-    edit:'Edit', validate:'Validate', observe:'Observe', reviewState:'Review status', date:'Date', direction:'Unit',
+    edit:'Edit', remove:'Delete', deleteConfirm:'Permanently delete this calendar activity?', deleteDone:'Calendar activity deleted.', deleteDenied:'This account cannot delete this activity. Verify its administrative permissions.', downloadPdf:'Download PDF', downloadingPdf:'Generating PDF…', pdfSaved:'PDF backup created.', changeUnit:'Responsible Directorate', unitChangeInfo:'Moving an activity to another Directorate clears prior objective/indicator links and returns the activity to pending review.', noTargetPlan:'The selected Directorate needs an annual plan for this year.', validate:'Validate', observe:'Observe', reviewState:'Review status', date:'Date', direction:'Unit',
     objectiveIndicator:'Objective / indicator', loading:'Loading calendar…', saved:'Activity saved.', reviewed:'Review updated.',
     jointChanged:'Shared visibility updated.', noUnitAccess:'Your user is not yet assigned to a unit or agency with calendar access.',
   },
@@ -110,6 +112,7 @@ export default function ManagementCalendarPage(){
   const [loading,setLoading] = useState(true)
   const [saving,setSaving] = useState(false)
   const [savingHeader,setSavingHeader] = useState(false)
+  const [pdfLoading,setPdfLoading] = useState(false)
   const [error,setError] = useState('')
   const [message,setMessage] = useState('')
   const organizationId = access.organizationId || ''
@@ -185,6 +188,10 @@ export default function ManagementCalendarPage(){
   const canManageNotices = canManageAssociationNotices(access,calendarAccess)
   const canEditActivity = (activity)=>isAssociationNotice(activity)?canManageNotices:editableUnits.has(activity.unit_id)
   const canReviewActivity = (activity)=>!isAssociationNotice(activity)&&canReviewUnitActivity(activity,calendarAccess)
+  const canDeleteActivity = (activity)=>canDeleteCalendarActivity(activity,calendarAccess,canManageNotices)
+  const canReassignResponsibleUnit = calendarAccess.can_edit_consolidated === true
+  const responsibleUnitOptions = periodPlans.filter(plan=>units.some(unit=>unit.id===plan.unit_id)).map(plan=>units.find(unit=>unit.id===plan.unit_id))
+  const showListActions = visibleActivities.some(activity=>canEditActivity(activity)||canDeleteActivity(activity))
   const visibleUnitCount = new Set(visibleActivities.map((activity)=>activity.unit_id).filter(Boolean)).size
 
   const saveYearHeader = async (header) => {
@@ -240,7 +247,7 @@ export default function ManagementCalendarPage(){
     }
     if (!editableUnits.has(activity.unit_id)) return
     setSelectedUnitId(activity.unit_id)
-    setForm({ ...emptyActivity(), ...activity, objective_id:activity.objective_id || '', end_date:activity.end_date || '', indicator_id:activity.indicator_id || '', description:activity.description || '', responsible_name:activity.responsible_name || '' })
+    setForm({ ...emptyActivity(), ...activity, unit_id:activity.unit_id, objective_id:activity.objective_id || '', end_date:activity.end_date || '', indicator_id:activity.indicator_id || '', description:activity.description || '', responsible_name:activity.responsible_name || '' })
     setFormOpen(true); setBulkOpen(false); setError(''); setMessage(''); window.scrollTo({top:0,behavior:'smooth'})
   }
   const updateBulkRow = (index, field, value) => {
