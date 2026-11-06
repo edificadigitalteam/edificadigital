@@ -340,3 +340,24 @@
 .cnv-activity-row.cnv-state-informational td:first-child{border-left:7px solid #507a9d}
 .cnv-status.cnv-state-informational{background:#deedf9;color:#1d4969;border-color:#8ab0ce}
 .cnv-review-legend.cnv-state-informational i{background:#507a9d}
+
+/* S13.1: safe single-row deletion, responsible reassignment and PDF backup. */
+.calendar-pdf-download{background:#173957!important;border:2px solid #173957!important;color:#fff!important;white-space:normal!important;min-height:44px;padding:10px 16px!important;font-weight:900!important}
+.calendar-pdf-download:hover,.calendar-pdf-download:focus-visible{background:#254d71!important}
+.calendar-delete-action,.cnv-row-actions .cnv-delete-action{background:#fff5f5!important;border:1px solid #cf9296!important;color:#9a2531!important;font-weight:850!important;min-height:36px;padding:6px 10px;border-radius:7px;cursor:pointer}
+.calendar-delete-action:hover,.cnv-row-actions .cnv-delete-action:hover{background:#fce4e5!important}
+.calendar-delete-action:disabled,.cnv-delete-action:disabled{opacity:.55;cursor:default}
+.calendar-event-footer>div,.calendar-list-action{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.calendar-reassignment-help,.cnv-unit-warning{margin:3px 0 0;grid-column:1/-1;color:#5a4073;font-weight:700;font-size:13px;line-height:1.4}
+.cnv-edit-form .cnv-edit-unit{grid-column:1/-1}
+.cnv-edit-form .cnv-edit-unit select{min-height:52px;width:100%;min-width:0;box-sizing:border-box;padding:10px 12px;border:2px solid #8ca2b2;border-radius:7px;background:#fff;color:#173957;font:inherit;font-size:18px}
+.cnv-sheet-tools button{white-space:normal;line-height:1.25}
+.calendar-list-card .calendar-list-action button{max-width:100%;white-space:normal}
+@media(max-width:720px){
+  .calendar-pdf-download{width:auto;max-width:100%;flex:1 1 auto}
+  .cnv-sheet-tools button{flex:1 1 auto}
+  .calendar-list-card .calendar-list-action{justify-content:flex-start}
+}
+@media print{
+ .calendar-pdf-download,.calendar-delete-action,.cnv-delete-action,.cnv-edit-unit,.cnv-unit-warning{display:none!important}
+}
