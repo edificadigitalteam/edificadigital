@@ -9,6 +9,8 @@ import { canManageAssociationNotices, isAssociationNotice, mergeCalendarActiviti
 import CalendarYearHeader from './CalendarYearHeader.jsx'
 import { readCalendarYearHeader, writeCalendarYearHeader } from './annualHeader.js'
 import { validatePresentationEdit } from './presentation.js'
+import { canDeleteCalendarActivity, resolveCalendarResponsibilityUpdate, calendarPdfFilename } from './calendarOperations.js'
+import { buildCalendarPdfDefinition } from './calendarPdf.js'
 import { DEFAULT_CALENDAR_MODULE_LABEL, buildCalendarActivityPayloads, calendarAccessSummaryKey, canOpenCalendarActivityEntry, resolveCalendarModuleLabel, reviewStatusLabel, selectDefaultCalendarPeriodId, canClearUnitCalendar } from './calendar.js'
 import { canReviewUnitActivity, canViewAllUnits, defaultSelectableUnitId, editableUnitIds, selectableUnits } from '../management/unitScope.js'
 import './management-calendar.css'
@@ -43,7 +45,7 @@ const copy = {
     noObjectives:'Esta unidad necesita al menos un objetivo en su Plan Anual antes de registrar actividades.', openPlan:'Abrir Plan Anual',
     activity:'Actividad', objective:'Objetivo del Plan Anual', indicator:'Indicador relacionado (opcional)', dateFrom:'Fecha de inicio', dateTo:'Fecha de cierre',
     responsible:'Responsable', modality:'Modalidad', status:'Estado', details:'Notas / detalles', save:'Guardar actividad', saving:'Guardando…',
-    cancel:'Cancelar', edit:'Editar', validate:'Validar', observe:'Observar', reviewState:'Estado de revisión', date:'Fecha', direction:'Dirección',
+    cancel:'Cancelar', edit:'Editar', remove:'Eliminar', deleteConfirm:'¿Eliminar definitivamente esta actividad del calendario?', deleteDone:'Actividad eliminada del calendario.', deleteDenied:'La cuenta actual no tiene permiso para eliminar esta actividad. Verifica los permisos administrativos de DIPROM.', downloadPdf:'Descargar PDF', downloadingPdf:'Generando PDF…', pdfSaved:'Respaldo PDF generado.', changeUnit:'Dirección responsable', unitChangeInfo:'Al asignar la actividad a otra Dirección, los objetivos e indicadores anteriores se desvincularán y la actividad volverá a revisión.', noTargetPlan:'La Dirección seleccionada debe contar con un Plan Anual para este año.', validate:'Validar', observe:'Observar', reviewState:'Estado de revisión', date:'Fecha', direction:'Dirección',
     objectiveIndicator:'Objetivo / indicador', loading:'Cargando calendario…', saved:'Actividad guardada.', reviewed:'Revisión actualizada.',
     jointChanged:'Visibilidad conjunta actualizada.', noUnitAccess:'Tu usuario todavía no está asignado a una Dirección o agencia con acceso al calendario.',
   },
@@ -63,7 +65,7 @@ const copy = {
     noObjectives:'This unit needs at least one Annual Work Plan objective before activities can be created.', openPlan:'Open Annual Work Plan',
     activity:'Activity', objective:'Annual Work Plan objective', indicator:'Related indicator (optional)', dateFrom:'Start date', dateTo:'End date',
     responsible:'Responsible', modality:'Modality', status:'Status', details:'Notes / details', save:'Save activity', saving:'Saving…', cancel:'Cancel',
-    edit:'Edit', validate:'Validate', observe:'Observe', reviewState:'Review status', date:'Date', direction:'Unit',
+    edit:'Edit', remove:'Delete', deleteConfirm:'Permanently delete this calendar activity?', deleteDone:'Calendar activity deleted.', deleteDenied:'This account cannot delete this activity. Verify its administrative permissions.', downloadPdf:'Download PDF', downloadingPdf:'Generating PDF…', pdfSaved:'PDF backup created.', changeUnit:'Responsible Directorate', unitChangeInfo:'Moving an activity to another Directorate clears prior objective/indicator links and returns the activity to pending review.', noTargetPlan:'The selected Directorate needs an annual plan for this year.', validate:'Validate', observe:'Observe', reviewState:'Review status', date:'Date', direction:'Unit',
     objectiveIndicator:'Objective / indicator', loading:'Loading calendar…', saved:'Activity saved.', reviewed:'Review updated.',
     jointChanged:'Shared visibility updated.', noUnitAccess:'Your user is not yet assigned to a unit or agency with calendar access.',
   },
@@ -110,6 +112,7 @@ export default function ManagementCalendarPage(){
   const [loading,setLoading] = useState(true)
   const [saving,setSaving] = useState(false)
   const [savingHeader,setSavingHeader] = useState(false)
+  const [pdfLoading,setPdfLoading] = useState(false)
   const [error,setError] = useState('')
   const [message,setMessage] = useState('')
   const organizationId = access.organizationId || ''
@@ -185,6 +188,10 @@ export default function ManagementCalendarPage(){
   const canManageNotices = canManageAssociationNotices(access,calendarAccess)
   const canEditActivity = (activity)=>isAssociationNotice(activity)?canManageNotices:editableUnits.has(activity.unit_id)
   const canReviewActivity = (activity)=>!isAssociationNotice(activity)&&canReviewUnitActivity(activity,calendarAccess)
+  const canDeleteActivity = (activity)=>canDeleteCalendarActivity(activity,calendarAccess,canManageNotices)
+  const canReassignResponsibleUnit = calendarAccess.can_edit_consolidated === true
+  const responsibleUnitOptions = periodPlans.filter(plan=>units.some(unit=>unit.id===plan.unit_id)).map(plan=>units.find(unit=>unit.id===plan.unit_id))
+  const showListActions = visibleActivities.some(activity=>canEditActivity(activity)||canDeleteActivity(activity))
   const visibleUnitCount = new Set(visibleActivities.map((activity)=>activity.unit_id).filter(Boolean)).size
 
   const saveYearHeader = async (header) => {
@@ -240,7 +247,7 @@ export default function ManagementCalendarPage(){
     }
     if (!editableUnits.has(activity.unit_id)) return
     setSelectedUnitId(activity.unit_id)
-    setForm({ ...emptyActivity(), ...activity, objective_id:activity.objective_id || '', end_date:activity.end_date || '', indicator_id:activity.indicator_id || '', description:activity.description || '', responsible_name:activity.responsible_name || '' })
+    setForm({ ...emptyActivity(), ...activity, unit_id:activity.unit_id, objective_id:activity.objective_id || '', end_date:activity.end_date || '', indicator_id:activity.indicator_id || '', description:activity.description || '', responsible_name:activity.responsible_name || '' })
     setFormOpen(true); setBulkOpen(false); setError(''); setMessage(''); window.scrollTo({top:0,behavior:'smooth'})
   }
   const updateBulkRow = (index, field, value) => {
@@ -282,16 +289,32 @@ export default function ManagementCalendarPage(){
   const saveActivity = async (event) => {
     event.preventDefault()
     if (!supabase || saving || !canCreate || !ownSelectedPlan || !form.title.trim() || !form.start_date) return
+    let responsible
+    try {
+      responsible=resolveCalendarResponsibilityUpdate(
+        {unit_id:selectedUnitId,work_plan_id:ownSelectedPlan.id},
+        {unit_id:form.unit_id||selectedUnitId,responsible_name:form.responsible_name},
+        periodPlans,periodId,canReassignResponsibleUnit,
+      )
+    } catch (e) {setError(e.message||t.noTargetPlan);return}
     setSaving(true); setError(''); setMessage('')
-    const objectiveId = form.objective_id || null
+    const changedUnit=responsible.work_plan_id!==ownSelectedPlan.id
+    const objectiveId=changedUnit?null:(form.objective_id||null)
     const payload = {
-      organization_id:organizationId, work_plan_id:ownSelectedPlan.id, objective_id:objectiveId, indicator_id:objectiveId ? (form.indicator_id || null) : null,
-      title:form.title.trim(), description:form.description.trim() || null, start_date:form.start_date, end_date:form.end_date || null,
-      status:form.status, responsible_name:form.responsible_name.trim() || null, modality:form.modality, updated_by:access.userId || null,
+      organization_id:organizationId,...responsible,objective_id:objectiveId,
+      indicator_id:changedUnit?null:(objectiveId?(form.indicator_id||null):null),
+      title:form.title.trim(),description:String(form.description||'').trim()||null,
+      start_date:form.start_date,end_date:form.end_date||null,
+      status:form.status,modality:form.modality,updated_by:access.userId||null,
     }
-    const { error:requestError } = await supabase.from('unit_work_activity').update(payload).eq('id',form.id).eq('work_plan_id',ownSelectedPlan.id)
-    if (requestError) setError(requestError.message)
-    else { setFormOpen(false); setForm(emptyActivity()); setMessage(t.saved); await reloadActivities() }
+    const {data,error:requestError}=await supabase.from('unit_work_activity').update(payload)
+      .eq('id',form.id).eq('organization_id',organizationId).eq('work_plan_id',ownSelectedPlan.id).select('id').maybeSingle()
+    if(requestError||!data?.id)setError(requestError?.message||t.deleteDenied)
+    else {
+      setFormOpen(false);setForm(emptyActivity());setMessage(t.saved)
+      if(changedUnit){setSelectedUnitId(form.unit_id);if(canViewConsolidated)setScope('consolidated')}
+      await reloadActivities()
+    }
     setSaving(false)
   }
 
@@ -318,17 +341,20 @@ export default function ManagementCalendarPage(){
   const savePresentationEdit = async (activity, draft) => {
     if (!supabase || saving || !canEditActivity(activity) || validatePresentationEdit(draft, activePeriod)) return false
     if(isAssociationNotice(activity) && !String(draft.responsible_name||'').trim()) {setError(language==='en'?'Responsible association required.':'Debes indicar la asociación responsable.');return false}
+    let responsibility={}
+    if(!isAssociationNotice(activity)){
+      try {
+        responsibility=resolveCalendarResponsibilityUpdate(activity,draft,periodPlans,periodId,canReassignResponsibleUnit)
+      } catch(e) {setError(e.message||t.noTargetPlan);return false}
+    }
     setSaving(true); setError(''); setMessage('')
     const { data, error: requestError } = await supabase.from(isAssociationNotice(activity)?'association_calendar_notice':'unit_work_activity')
       .update(isAssociationNotice(activity)?{
         title:draft.title.trim(),start_date:draft.start_date,end_date:draft.end_date||null,
         association_name:String(draft.responsible_name||'').trim(),updated_by:access.userId||null,
       }:{
-        title: draft.title.trim(),
-        start_date: draft.start_date,
-        end_date: draft.end_date || null,
-        responsible_name: String(draft.responsible_name || '').trim() || null,
-        updated_by: access.userId || null,
+        title:draft.title.trim(),start_date:draft.start_date,end_date:draft.end_date||null,
+        ...responsibility,updated_by:access.userId||null,
       })
       .eq('id', activity.id)
       .eq(isAssociationNotice(activity)?'management_period_id':'work_plan_id',isAssociationNotice(activity)?periodId:activity.work_plan_id)
@@ -343,6 +369,56 @@ export default function ManagementCalendarPage(){
     setMessage(t.saved)
     setSaving(false)
     return true
+  }
+
+  const deleteCalendarActivity = async (activity) => {
+    if(!supabase||saving||!organizationId||!periodId||!canDeleteActivity(activity))return false
+    const title=String(activity.title||'').trim()
+    const date=String(activity.start_date||'')
+    if(!window.confirm(`${t.deleteConfirm}\n\n${title}\n${date}`))return false
+    setSaving(true);setError('');setMessage('')
+    const notice=isAssociationNotice(activity)
+    let request=supabase.from(notice?'association_calendar_notice':'unit_work_activity')
+      .delete().eq('organization_id',organizationId).eq('id',activity.id)
+    request=notice?request.eq('management_period_id',periodId):request.eq('work_plan_id',activity.work_plan_id)
+    const {data,error:requestError}=await request.select('id').maybeSingle()
+    if(requestError||!data?.id){
+      setError(requestError?.message||t.deleteDenied)
+      setSaving(false)
+      return false
+    }
+    setMessage(t.deleteDone)
+    if(notice)setAssociationNotices(rows=>rows.filter(row=>row.id!==activity.id))
+    else setActivities(rows=>rows.filter(row=>row.id!==activity.id))
+    setFormOpen(false);setEditingNotice(null);setAssociationFormOpen(false)
+    await reloadActivities()
+    setSaving(false)
+    return true
+  }
+
+  const downloadPdf = async () => {
+    if(pdfLoading||!activePeriod||!organizationId)return
+    setPdfLoading(true);setError('');setMessage('')
+    try{
+      const [{default:pdfMake},{default:pdfFonts}]=await Promise.all([
+        import('pdfmake/build/pdfmake.js'),import('pdfmake/build/vfs_fonts.js'),
+      ])
+      pdfMake.vfs=pdfFonts
+      const doc=buildCalendarPdfDefinition({
+        organizationName:organization?.name||'',period:activePeriod,header:calendarYearHeader,
+        activities:visibleActivities,units,language,
+        scopeLabel:scope==='consolidated'?t.consolidated:t.myCalendar,generatedAt:new Date(),
+      })
+      const blob=await new Promise(resolve=>pdfMake.createPdf(doc).getBlob(resolve))
+      const url=URL.createObjectURL(blob)
+      const link=document.createElement('a')
+      link.href=url;link.download=calendarPdfFilename(activePeriod,language)
+      document.body.appendChild(link);link.click();link.remove()
+      window.setTimeout(()=>URL.revokeObjectURL(url),60000)
+      setMessage(t.pdfSaved)
+    }catch(e){
+      setError(e?.message||(language==='en'?'Could not generate PDF.':'No se pudo generar el PDF.'))
+    }finally{setPdfLoading(false)}
   }
 
   const reviewActivity = async (activity,status) => {
@@ -380,6 +456,7 @@ export default function ManagementCalendarPage(){
       <div className="management-panel-heading calendar-page-heading">
         <div><p>{t.eyebrow}</p><h1 data-no-translate>{moduleLabel || DEFAULT_CALENDAR_MODULE_LABEL}</h1><span>{t.intro}</span></div>
         <div className="management-heading-actions calendar-heading-actions">
+          <button className="calendar-pdf-download" type="button" disabled={pdfLoading||loading||saving||!activePeriod} onClick={downloadPdf}>{pdfLoading?t.downloadingPdf:t.downloadPdf}</button>
           {canClearOwn && <button className="secondary calendar-clear-button" type="button" onClick={clearCalendar} disabled={saving || !enrichedActivities.some((activity)=>activity.unit_id===selectedUnitId)}>{t.clear}</button>}
           {calendarAccess.can_manage_joint_review && <button className="secondary" type="button" onClick={toggleJointReview} disabled={saving}>{calendarAccess.joint_review_enabled?t.jointOff:t.jointOn}</button>}
           {canCreate && <button type="button" onClick={openNew} disabled={!canOpenCalendarActivityEntry({ canCreate, saving })}>{t.newActivity}</button>}
@@ -435,7 +512,7 @@ export default function ManagementCalendarPage(){
           <label><span>{t.indicator}</span><select value={form.indicator_id} disabled={!form.objective_id} onChange={(event)=>setForm((current)=>({...current,indicator_id:event.target.value}))}><option value="">—</option>{planIndicators.filter((indicator)=>indicator.objective_id===form.objective_id).map((indicator)=><option key={indicator.id} value={indicator.id}>{indicator.name}</option>)}</select></label>
           <label><span>{t.dateFrom} *</span><input type="date" value={form.start_date} min={activePeriod?.start_date} max={activePeriod?.end_date} onChange={(event)=>setForm((current)=>({...current,start_date:event.target.value}))} required /></label>
           <label><span>{t.dateTo}</span><input type="date" value={form.end_date} min={form.start_date||activePeriod?.start_date} max={activePeriod?.end_date} onChange={(event)=>setForm((current)=>({...current,end_date:event.target.value}))} /></label>
-          <label><span>{t.responsible}</span><input value={form.responsible_name} onChange={(event)=>setForm((current)=>({...current,responsible_name:event.target.value}))} /></label>
+          <label><span>{t.responsible}</span><input value={form.responsible_name} onChange={(event)=>setForm((current)=>({...current,responsible_name:event.target.value}))} /></label>{canReassignResponsibleUnit&&responsibleUnitOptions.length>1&&<label><span>{t.changeUnit}</span><select value={form.unit_id||selectedUnitId} onChange={(event)=>setForm((current)=>({...current,unit_id:event.target.value,objective_id:'',indicator_id:''}))}>{responsibleUnitOptions.map((unit)=><option key={unit.id} value={unit.id}>{unit.code} · {unit.name}</option>)}</select></label>}{form.unit_id&&form.unit_id!==selectedUnitId&&<p className="calendar-reassignment-help">{t.unitChangeInfo}</p>}
           <label><span>{t.modality}</span><select value={form.modality} onChange={(event)=>setForm((current)=>({...current,modality:event.target.value}))}>{Object.entries(MODALITY[language]).map(([value,label])=><option value={value} key={value}>{label}</option>)}</select></label>
           <label><span>{t.status}</span><select value={form.status} onChange={(event)=>setForm((current)=>({...current,status:event.target.value}))}>{Object.entries(STATUS[language]).map(([value,label])=><option value={value} key={value}>{label}</option>)}</select></label>
           <label className="wide"><span>{t.details}</span><textarea value={form.description} onChange={(event)=>setForm((current)=>({...current,description:event.target.value}))} /></label>
@@ -467,14 +544,14 @@ export default function ManagementCalendarPage(){
               <div className="calendar-event-top"><span>{dateLabel(activity.start_date,language)}</span><b>{isAssociationNotice(activity)?t.association:unit?.code||'—'}</b></div>
               <strong>{activity.title}</strong><small>{isAssociationNotice(activity)?activity.association_name:(objective?.code||'')+(indicator ? ' · ' + indicator.name : '')}</small>
               <div className="calendar-event-meta">{isAssociationNotice(activity)?<span>{t.associationInfo}</span>:<><span>{MODALITY[language][activity.modality]||activity.modality}</span><span>{STATUS[language][activity.status]||activity.status}</span></>}</div>
-              <div className="calendar-event-footer"><span className={'calendar-review-badge ' + (activity.review_status||'pending')}>{reviewStatusLabel(activity.review_status,language)}</span><div>{editable && <button type="button" onClick={()=>openEdit(activity)}>{t.edit}</button>}{canReviewActivity(activity) && <><button className="validate" type="button" onClick={()=>reviewActivity(activity,'validated')}>{t.validate}</button><button className="observe" type="button" onClick={()=>reviewActivity(activity,'observed')}>{t.observe}</button></>}</div></div>
+              <div className="calendar-event-footer"><span className={'calendar-review-badge ' + (activity.review_status||'pending')}>{reviewStatusLabel(activity.review_status,language)}</span><div>{editable && <button type="button" onClick={()=>openEdit(activity)}>{t.edit}</button>}{canDeleteActivity(activity)&&<button type="button" className="calendar-delete-action" onClick={()=>deleteCalendarActivity(activity)} disabled={saving}>{t.remove}</button>}{canReviewActivity(activity) && <><button className="validate" type="button" onClick={()=>reviewActivity(activity,'validated')}>{t.validate}</button><button className="observe" type="button" onClick={()=>reviewActivity(activity,'observed')}>{t.observe}</button></>}</div></div>
             </div>
           }) : <p>{t.noActivities}</p>}</div></article>
         })}</section> : presentation==='list' ? <section className="calendar-list-card">
-          <div className={"calendar-list-head" + (scope==="consolidated" && calendarAccess.can_edit_consolidated ? " has-actions" : "")}><span>{t.date}</span><span>{t.activity}</span><span>{t.direction}</span><span>{t.objectiveIndicator}</span><span>{t.reviewState}</span>{scope==="consolidated" && calendarAccess.can_edit_consolidated && <span>{t.actions}</span>}</div>
+          <div className={"calendar-list-head" + (showListActions ? " has-actions" : "")}><span>{t.date}</span><span>{t.activity}</span><span>{t.direction}</span><span>{t.objectiveIndicator}</span><span>{t.reviewState}</span>{showListActions && <span>{t.actions}</span>}</div>
           {visibleActivities.length ? visibleActivities.map((activity)=>{
             const unit=units.find((row)=>row.id===activity.unit_id); const objective=objectives.find((row)=>row.id===activity.objective_id); const indicator=indicators.find((row)=>row.id===activity.indicator_id)
-            return <div className={"calendar-list-row" + (scope==="consolidated" && calendarAccess.can_edit_consolidated ? " has-actions" : "")} key={activity.id}><div className="calendar-list-cell" data-label={t.date}><span>{dateLabel(activity.start_date,language)}</span></div><div className="calendar-list-cell calendar-list-activity" data-label={t.activity}><strong>{activity.title}</strong></div><div className="calendar-list-cell" data-label={t.direction}><span>{isAssociationNotice(activity)?t.association:unit?.code||'—'}</span></div><div className="calendar-list-cell calendar-list-objective" data-label={t.objectiveIndicator}><span>{isAssociationNotice(activity)?activity.association_name:(objective?.code||'—')}</span>{!isAssociationNotice(activity)&&indicator?<small>{indicator.name}</small>:null}</div><div className="calendar-list-cell" data-label={t.reviewState}><span className={'calendar-review-badge ' + (activity.review_status||'pending')}>{reviewStatusLabel(activity.review_status,language)}</span></div>{scope==="consolidated" && calendarAccess.can_edit_consolidated && <div className="calendar-list-cell calendar-list-action" data-label={t.actions}>{canEditActivity(activity)&&<button type="button" onClick={()=>openEdit(activity)}>{t.edit}</button>}</div>}</div>
+            return <div className={"calendar-list-row" + (showListActions ? " has-actions" : "")} key={activity.id}><div className="calendar-list-cell" data-label={t.date}><span>{dateLabel(activity.start_date,language)}</span></div><div className="calendar-list-cell calendar-list-activity" data-label={t.activity}><strong>{activity.title}</strong></div><div className="calendar-list-cell" data-label={t.direction}><span>{isAssociationNotice(activity)?t.association:unit?.code||'—'}</span></div><div className="calendar-list-cell calendar-list-objective" data-label={t.objectiveIndicator}><span>{isAssociationNotice(activity)?activity.association_name:(objective?.code||'—')}</span>{!isAssociationNotice(activity)&&indicator?<small>{indicator.name}</small>:null}</div><div className="calendar-list-cell" data-label={t.reviewState}><span className={'calendar-review-badge ' + (activity.review_status||'pending')}>{reviewStatusLabel(activity.review_status,language)}</span></div>{showListActions && <div className="calendar-list-cell calendar-list-action" data-label={t.actions}>{canEditActivity(activity)&&<button type="button" onClick={()=>openEdit(activity)}>{t.edit}</button>}{canDeleteActivity(activity)&&<button type="button" className="calendar-delete-action" onClick={()=>deleteCalendarActivity(activity)} disabled={saving}>{t.remove}</button>}</div>}</div>
           }) : <p className="management-empty">{t.noActivities}</p>}
         </section> : <CalendarPresentationView
           activities={visibleActivities}
@@ -490,6 +567,12 @@ export default function ManagementCalendarPage(){
           editableUnits={editableUnits}
           canEdit={canEditActivity}
           canReview={canReviewActivity}
+          canDelete={canDeleteActivity}
+          onDelete={deleteCalendarActivity}
+          responsibleUnitOptions={responsibleUnitOptions}
+          canReassignResponsibleUnit={canReassignResponsibleUnit}
+          onDownloadPdf={downloadPdf}
+          pdfLoading={pdfLoading}
           onSave={savePresentationEdit}
           onReview={reviewActivity}
           onRefresh={reloadActivities}

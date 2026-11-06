@@ -9,7 +9,7 @@ const phrases = {
     management:'Gestión', responsables:'RESPONSABLES', monthActivity:'ACTIVIDADES DEL MES',
     date:'FECHA', one:'actividad', many:'actividades', empty:'Sin actividades registradas para este mes.',
     months:'Ir al mes', fullscreen:'Pantalla completa', exit:'Salir de pantalla completa', refresh:'Actualizar',
-    legend:'Estados de revisión', edit:'Editar', save:'Guardar cambios', saving:'Guardando…', cancel:'Cancelar',
+    legend:'Estados de revisión', edit:'Editar', remove:'Eliminar', downloadPdf:'Descargar PDF', downloadingPdf:'Generando PDF…',changeUnit:'Dirección responsable',unitChangeNote:'Si cambias la Dirección, los objetivos e indicadores anteriores se desvincularán y la actividad quedará pendiente de revisión.', save:'Guardar cambios', saving:'Guardando…', cancel:'Cancelar',
     name:'Actividad', from:'Fecha de inicio', to:'Fecha de cierre', who:'Persona responsable (opcional)',
     missing:'Escribe el nombre de la actividad e indica la fecha de inicio.',
     invalid:'Las fechas deben estar dentro de la gestión seleccionada y la fecha de cierre debe ser igual o posterior a la de inicio.',
@@ -23,7 +23,7 @@ const phrases = {
     management:'Management year', responsables:'RESPONSIBLE', monthActivity:'MONTHLY ACTIVITIES',
     date:'DATE', one:'activity', many:'activities', empty:'No activities scheduled for this month.',
     months:'Jump to month', fullscreen:'Full screen', exit:'Exit full screen', refresh:'Refresh',
-    legend:'Review statuses', edit:'Edit', save:'Save changes', saving:'Saving…', cancel:'Cancel',
+    legend:'Review statuses', edit:'Edit', remove:'Delete', downloadPdf:'Download PDF', downloadingPdf:'Generating PDF…',changeUnit:'Responsible Directorate',unitChangeNote:'Changing Directorate clears previous objective and indicator links and sends the activity back to pending review.', save:'Save changes', saving:'Saving…', cancel:'Cancel',
     name:'Activity', from:'Start date', to:'End date', who:'Responsible person (optional)',
     missing:'Provide an activity name and start date.',
     invalid:'Dates must be within the selected year and the end date must be on or after the start date.',
@@ -35,7 +35,8 @@ const phrases = {
 }
 
 export default function CalendarPresentationView({
-  activities, units, monthNames, period, language, canEdit, canReview,
+  activities, units, monthNames, period, language, canEdit, canReview, canDelete, onDelete,
+  responsibleUnitOptions=[], canReassignResponsibleUnit=false, onDownloadPdf, pdfLoading=false,
   onSave, onReview, onRefresh, saving, organizationName,
   annualHeader, canEditYearHeader, onSaveYearHeader, savingYearHeader,
 }) {
@@ -43,7 +44,7 @@ export default function CalendarPresentationView({
   const panelRef = useRef(null)
   const [isFull, setIsFull] = useState(false)
   const [editingId, setEditingId] = useState('')
-  const [draft, setDraft] = useState({title:'',start_date:'',end_date:'',responsible_name:''})
+  const [draft, setDraft] = useState({title:'',start_date:'',end_date:'',responsible_name:'',unit_id:''})
   const [editError, setEditError] = useState('')
   const [notice, setNotice] = useState('')
   const year = period?.start_date ? Number(period.start_date.slice(0,4)) : null
@@ -80,6 +81,7 @@ export default function CalendarPresentationView({
       start_date:activity.start_date || '',
       end_date:activity.end_date || '',
       responsible_name:activity.responsible_name || '',
+      unit_id:activity.unit_id || '',
     })
     setEditingId(activity.id)
     setEditError('')
@@ -109,6 +111,7 @@ export default function CalendarPresentationView({
         <CalendarYearHeader header={annualHeader} period={period} language={language} canEdit={canEditYearHeader} onSave={onSaveYearHeader} saving={savingYearHeader} compact/>
       </div>
       <div className="cnv-sheet-tools">
+        <button type="button" onClick={onDownloadPdf} disabled={saving||pdfLoading} title={t.downloadPdf}>{pdfLoading?t.downloadingPdf:t.downloadPdf}</button>
         <button type="button" onClick={onRefresh} disabled={saving} title={t.refresh}>{t.refresh}</button>
         <button type="button" className="cnv-fullscreen" onClick={toggleFullscreen} title={isFull ? t.exit : t.fullscreen}>{isFull ? t.exit : t.fullscreen}</button>
       </div>
@@ -145,6 +148,7 @@ export default function CalendarPresentationView({
                 const unit = units.find((item)=>item.id===activity.unit_id)
                 const state = presentationReviewState(activity.review_status,language)
                 const editable = canEdit(activity)
+                const deletable = canDelete(activity)
                 const informationOnly=isAssociationNotice(activity)
                 const reviewable = canReview(activity)
                 return <Fragment key={activity.id}>
@@ -155,8 +159,9 @@ export default function CalendarPresentationView({
                       <div className="cnv-activity-bottom">
                         <span className={'cnv-status cnv-state-'+state.tone}>{state.label}</span>
                         {activity.review_note && <span className="cnv-review-note">{t.note}: {activity.review_note}</span>}
-                        {(editable || reviewable) && <div className="cnv-row-actions">
+                        {(editable || reviewable || deletable) && <div className="cnv-row-actions">
                           {editable && <button type="button" onClick={()=>startEdit(activity)} disabled={saving} title={t.direct}>{t.edit}</button>}
+                          {deletable&&<button type="button" className="cnv-delete-action" onClick={async()=>{const removed=await onDelete(activity);if(removed&&editingId===activity.id)setEditingId('')}} disabled={saving}>{t.remove}</button>}
                           {reviewable && <>
                             {state.tone!=='validated' && <button type="button" onClick={()=>onReview(activity,'validated')} disabled={saving} title={t.validate}>{t.validate}</button>}
                             {state.tone!=='observed' && <button type="button" onClick={()=>onReview(activity,'observed')} disabled={saving} title={t.observe}>{t.observe}</button>}
@@ -177,6 +182,8 @@ export default function CalendarPresentationView({
                       <label>{t.from}<input type="date" required value={draft.start_date} min={period?.start_date} max={period?.end_date} onChange={(e)=>setDraft((d)=>({...d,start_date:e.target.value}))}/></label>
                       <label>{t.to}<input type="date" value={draft.end_date} min={draft.start_date||period?.start_date} max={period?.end_date} onChange={(e)=>setDraft((d)=>({...d,end_date:e.target.value}))}/></label>
                       <label className="cnv-edit-who">{informationOnly?t.associationResponsible:t.who}<input required={informationOnly} value={draft.responsible_name} onChange={(e)=>setDraft((d)=>({...d,responsible_name:e.target.value}))}/></label>
+                      {canReassignResponsibleUnit&&!informationOnly&&responsibleUnitOptions.length>1&&<label className="cnv-edit-unit">{t.changeUnit}<select value={draft.unit_id||activity.unit_id} onChange={e=>setDraft(d=>({...d,unit_id:e.target.value}))}>{responsibleUnitOptions.map(unit=><option key={unit.id} value={unit.id}>{unit.code} · {unit.name}</option>)}</select></label>}
+                      {draft.unit_id&&draft.unit_id!==activity.unit_id&&<p className="cnv-unit-warning">{t.unitChangeNote}</p>}
                       {editError && <p className="cnv-edit-error" role="alert">{editError}</p>}
                       <div className="cnv-edit-actions">
                         <button type="button" onClick={()=>{setEditingId('');setEditError('')}} disabled={saving}>{t.cancel}</button>
