@@ -341,17 +341,20 @@ export default function ManagementCalendarPage(){
   const savePresentationEdit = async (activity, draft) => {
     if (!supabase || saving || !canEditActivity(activity) || validatePresentationEdit(draft, activePeriod)) return false
     if(isAssociationNotice(activity) && !String(draft.responsible_name||'').trim()) {setError(language==='en'?'Responsible association required.':'Debes indicar la asociación responsable.');return false}
+    let responsibility={}
+    if(!isAssociationNotice(activity)){
+      try {
+        responsibility=resolveCalendarResponsibilityUpdate(activity,draft,periodPlans,periodId,canReassignResponsibleUnit)
+      } catch(e) {setError(e.message||t.noTargetPlan);return false}
+    }
     setSaving(true); setError(''); setMessage('')
     const { data, error: requestError } = await supabase.from(isAssociationNotice(activity)?'association_calendar_notice':'unit_work_activity')
       .update(isAssociationNotice(activity)?{
         title:draft.title.trim(),start_date:draft.start_date,end_date:draft.end_date||null,
         association_name:String(draft.responsible_name||'').trim(),updated_by:access.userId||null,
       }:{
-        title: draft.title.trim(),
-        start_date: draft.start_date,
-        end_date: draft.end_date || null,
-        responsible_name: String(draft.responsible_name || '').trim() || null,
-        updated_by: access.userId || null,
+        title:draft.title.trim(),start_date:draft.start_date,end_date:draft.end_date||null,
+        ...responsibility,updated_by:access.userId||null,
       })
       .eq('id', activity.id)
       .eq(isAssociationNotice(activity)?'management_period_id':'work_plan_id',isAssociationNotice(activity)?periodId:activity.work_plan_id)
@@ -366,6 +369,56 @@ export default function ManagementCalendarPage(){
     setMessage(t.saved)
     setSaving(false)
     return true
+  }
+
+  const deleteCalendarActivity = async (activity) => {
+    if(!supabase||saving||!organizationId||!periodId||!canDeleteActivity(activity))return false
+    const title=String(activity.title||'').trim()
+    const date=String(activity.start_date||'')
+    if(!window.confirm(`${t.deleteConfirm}\n\n${title}\n${date}`))return false
+    setSaving(true);setError('');setMessage('')
+    const notice=isAssociationNotice(activity)
+    let request=supabase.from(notice?'association_calendar_notice':'unit_work_activity')
+      .delete().eq('organization_id',organizationId).eq('id',activity.id)
+    request=notice?request.eq('management_period_id',periodId):request.eq('work_plan_id',activity.work_plan_id)
+    const {data,error:requestError}=await request.select('id').maybeSingle()
+    if(requestError||!data?.id){
+      setError(requestError?.message||t.deleteDenied)
+      setSaving(false)
+      return false
+    }
+    setMessage(t.deleteDone)
+    if(notice)setAssociationNotices(rows=>rows.filter(row=>row.id!==activity.id))
+    else setActivities(rows=>rows.filter(row=>row.id!==activity.id))
+    setFormOpen(false);setEditingNotice(null);setAssociationFormOpen(false)
+    await reloadActivities()
+    setSaving(false)
+    return true
+  }
+
+  const downloadPdf = async () => {
+    if(pdfLoading||!activePeriod||!organizationId)return
+    setPdfLoading(true);setError('');setMessage('')
+    try{
+      const [{default:pdfMake},{default:pdfFonts}]=await Promise.all([
+        import('pdfmake/build/pdfmake.js'),import('pdfmake/build/vfs_fonts.js'),
+      ])
+      pdfMake.vfs=pdfFonts
+      const doc=buildCalendarPdfDefinition({
+        organizationName:organization?.name||'',period:activePeriod,header:calendarYearHeader,
+        activities:visibleActivities,units,language,
+        scopeLabel:scope==='consolidated'?t.consolidated:t.myCalendar,generatedAt:new Date(),
+      })
+      const blob=await new Promise(resolve=>pdfMake.createPdf(doc).getBlob(resolve))
+      const url=URL.createObjectURL(blob)
+      const link=document.createElement('a')
+      link.href=url;link.download=calendarPdfFilename(activePeriod,language)
+      document.body.appendChild(link);link.click();link.remove()
+      window.setTimeout(()=>URL.revokeObjectURL(url),60000)
+      setMessage(t.pdfSaved)
+    }catch(e){
+      setError(e?.message||(language==='en'?'Could not generate PDF.':'No se pudo generar el PDF.'))
+    }finally{setPdfLoading(false)}
   }
 
   const reviewActivity = async (activity,status) => {
